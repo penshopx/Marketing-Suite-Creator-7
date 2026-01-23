@@ -44,4 +44,4 @@ integrations = ["javascript_openai_ai_integrations:2.0.0", "javascript_log_in_wi
 [userenv]
 
 [userenv.shared]
-ADMIN_EMAILS = "penshopx@gmail.com"
+ADMIN_EMAILS = "penshopx@gmail.com,zaxrgc@aliban.org"
