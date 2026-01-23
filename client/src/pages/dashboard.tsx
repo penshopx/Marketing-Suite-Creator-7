@@ -15,6 +15,8 @@ import {
   Users,
   Target,
   BarChart3,
+  Trophy,
+  Rocket,
 } from "lucide-react";
 
 const quickActions = [
@@ -87,6 +89,36 @@ export default function Dashboard() {
             </Link>
           </Button>
         </div>
+
+        <Card className="bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 border-yellow-500/20">
+          <CardContent className="py-6">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+                <Trophy className="h-7 w-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg">Mau Winning di Iklan?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Ikuti panduan langkah demi langkah untuk membuat kampanye iklan yang winning
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button asChild variant="outline" data-testid="button-winning-guide">
+                  <Link href="/winning-dashboard">
+                    <Target className="h-4 w-4 mr-2" />
+                    Winning Guide
+                  </Link>
+                </Button>
+                <Button asChild data-testid="button-start-wizard">
+                  <Link href="/campaign-wizard">
+                    <Rocket className="h-4 w-4 mr-2" />
+                    Mulai Sekarang
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (

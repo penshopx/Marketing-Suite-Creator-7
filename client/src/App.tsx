@@ -21,11 +21,19 @@ import AdCreator from "@/pages/ad-creator";
 import StoryTelling from "@/pages/story-telling";
 import AITemplates from "@/pages/ai-templates";
 import LandingPage from "@/pages/landing-page";
+import CampaignWizard from "@/pages/campaign-wizard";
+import CampaignAnalyzer from "@/pages/campaign-analyzer";
+import AudienceBuilder from "@/pages/audience-builder";
+import WinningDashboard from "@/pages/winning-dashboard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/winning-dashboard" component={WinningDashboard} />
+      <Route path="/campaign-wizard" component={CampaignWizard} />
+      <Route path="/campaign-analyzer" component={CampaignAnalyzer} />
+      <Route path="/audience-builder" component={AudienceBuilder} />
       <Route path="/ai-chat" component={AIChat} />
       <Route path="/ai-expert" component={AIExpert} />
       <Route path="/ai-images" component={AIImages} />

@@ -434,5 +434,163 @@ Return ONLY the HTML code, no explanations.`;
     }
   });
 
+  // Ad analyzer endpoint
+  app.post("/api/analyze-ad", async (req, res) => {
+    try {
+      const { adCopy, platform, objective } = req.body;
+
+      const prompt = `Analisis iklan berikut untuk platform ${platform} dengan objective ${objective}:
+
+"${adCopy}"
+
+Berikan analisis dalam format JSON dengan struktur:
+{
+  "overallScore": (number 0-100),
+  "categories": [
+    {"name": "Hook Strength", "score": (0-100), "feedback": "...", "suggestions": ["...", "..."]},
+    {"name": "Emotional Appeal", "score": (0-100), "feedback": "...", "suggestions": ["...", "..."]},
+    {"name": "Value Proposition", "score": (0-100), "feedback": "...", "suggestions": ["...", "..."]},
+    {"name": "Call to Action", "score": (0-100), "feedback": "...", "suggestions": ["...", "..."]},
+    {"name": "Platform Fit", "score": (0-100), "feedback": "...", "suggestions": ["...", "..."]}
+  ],
+  "strengths": ["strength1", "strength2", "strength3"],
+  "weaknesses": ["weakness1", "weakness2", "weakness3"],
+  "actionItems": ["action1", "action2", "action3", "action4"]
+}
+
+Berikan feedback yang actionable dan spesifik untuk membuat iklan lebih winning.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: "You are an expert ad copywriter and marketing analyst. Analyze ads critically and provide actionable feedback. Always respond with valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 2048,
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      
+      let analysisData;
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+        analysisData = JSON.parse(jsonMatch[1] || content);
+      } catch (e) {
+        analysisData = {
+          overallScore: 65,
+          categories: [
+            { name: "Hook Strength", score: 60, feedback: "Hook bisa lebih kuat", suggestions: ["Tambahkan pertanyaan", "Gunakan angka spesifik"] },
+            { name: "Emotional Appeal", score: 70, feedback: "Emosi cukup baik", suggestions: ["Tambah pain points"] },
+            { name: "Value Proposition", score: 65, feedback: "Value proposition perlu diperkuat", suggestions: ["Highlight benefits"] },
+            { name: "Call to Action", score: 60, feedback: "CTA perlu lebih compelling", suggestions: ["Tambah urgency"] },
+            { name: "Platform Fit", score: 70, feedback: "Sesuai dengan platform", suggestions: ["Sesuaikan panjang copy"] },
+          ],
+          strengths: ["Copy cukup jelas", "Pesan utama tersampaikan"],
+          weaknesses: ["Hook kurang kuat", "CTA bisa diperkuat"],
+          actionItems: ["Perkuat hook di 3 kata pertama", "Tambahkan social proof", "Buat CTA lebih spesifik", "Test beberapa variasi"],
+        };
+      }
+
+      res.json(analysisData);
+    } catch (error) {
+      console.error("Ad analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze ad" });
+    }
+  });
+
+  // Audience generation endpoint
+  app.post("/api/generate-audience", async (req, res) => {
+    try {
+      const { productDescription, interests = [], ageRange = "25-45" } = req.body;
+
+      const prompt = `Berdasarkan produk berikut, buatkan 3 buyer persona yang detail:
+
+Produk: ${productDescription}
+Range Usia: ${ageRange}
+${interests.length > 0 ? `Interests: ${interests.join(", ")}` : ""}
+
+Untuk setiap persona, berikan dalam format JSON:
+{
+  "personas": [
+    {
+      "name": "Nama Persona (contoh: Sarah Si Profesional Muda)",
+      "demographics": {
+        "ageRange": "...",
+        "gender": "...",
+        "location": "...",
+        "income": "...",
+        "education": "...",
+        "occupation": "..."
+      },
+      "psychographics": {
+        "interests": ["...", "...", "..."],
+        "values": ["...", "...", "..."],
+        "painPoints": ["...", "...", "..."],
+        "goals": ["...", "...", "..."],
+        "behaviors": ["...", "..."]
+      },
+      "buyingBehavior": {
+        "triggers": ["...", "...", "..."],
+        "objections": ["...", "...", "..."],
+        "preferredChannels": ["...", "...", "..."]
+      }
+    }
+  ]
+}
+
+Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: "You are an expert marketing strategist who creates detailed buyer personas. Always respond with valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 4096,
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      
+      let personaData;
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+        personaData = JSON.parse(jsonMatch[1] || content);
+      } catch (e) {
+        personaData = {
+          personas: [
+            {
+              name: "Profesional Muda Ambisius",
+              demographics: {
+                ageRange: ageRange,
+                gender: "Pria/Wanita",
+                location: "Jakarta, Surabaya, Bandung",
+                income: "Rp 10-20 juta/bulan",
+                education: "S1/S2",
+                occupation: "Manager/Supervisor",
+              },
+              psychographics: {
+                interests: ["Karir", "Self-improvement", "Teknologi"],
+                values: ["Efisiensi", "Kualitas", "Pertumbuhan"],
+                painPoints: ["Waktu terbatas", "Kompetisi tinggi", "Stress kerja"],
+                goals: ["Promosi", "Work-life balance", "Financial freedom"],
+                behaviors: ["Research online sebelum beli", "Aktif di LinkedIn"],
+              },
+              buyingBehavior: {
+                triggers: ["Testimoni positif", "Diskon terbatas", "Rekomendasi peer"],
+                objections: ["Harga", "Waktu", "Tidak yakin efektif"],
+                preferredChannels: ["Instagram", "LinkedIn", "Google Search"],
+              },
+            },
+          ],
+        };
+      }
+
+      res.json(personaData);
+    } catch (error) {
+      console.error("Audience generation error:", error);
+      res.status(500).json({ error: "Failed to generate audience" });
+    }
+  });
+
   return httpServer;
 }

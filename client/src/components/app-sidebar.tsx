@@ -13,6 +13,10 @@ import {
   BookMarked,
   Globe,
   ChevronDown,
+  Trophy,
+  Target,
+  Users,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +42,29 @@ const mainItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+  },
+];
+
+const winningItems = [
+  {
+    title: "Winning Guide",
+    url: "/winning-dashboard",
+    icon: Trophy,
+  },
+  {
+    title: "Campaign Wizard",
+    url: "/campaign-wizard",
+    icon: Target,
+  },
+  {
+    title: "Audience Builder",
+    url: "/audience-builder",
+    icon: Users,
+  },
+  {
+    title: "Ad Analyzer",
+    url: "/campaign-analyzer",
+    icon: BarChart3,
   },
 ];
 
@@ -197,6 +224,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        <NavGroup label="Winning Campaign" items={winningItems} />
         <NavGroup label="AI Assistant" items={aiAssistantItems} />
         <NavGroup label="AI Creator" items={aiCreatorItems} />
         <NavGroup label="AI Audio" items={aiAudioItems} />
