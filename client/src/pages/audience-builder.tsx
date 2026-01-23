@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Users, Sparkles, Loader2, Plus, X, Target, Brain, Heart, ShoppingBag, MapPin, Calendar, DollarSign, Briefcase } from "lucide-react";
+import { FeatureGate } from "@/components/feature-gate";
 
 interface AudiencePersona {
   name: string;
@@ -119,17 +120,22 @@ export default function AudienceBuilder() {
   };
 
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Users className="h-8 w-8 text-primary" />
-            Audience Builder
-          </h1>
-          <p className="text-muted-foreground">
-            Bangun dan pahami target audience ideal Anda untuk kampanye yang winning
-          </p>
-        </div>
+    <FeatureGate
+      feature="audienceBuilder"
+      fallbackTitle="Audience Builder - Fitur Premium"
+      fallbackDescription="Upgrade ke Pro untuk membangun dan memahami target audience ideal Anda."
+    >
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Users className="h-8 w-8 text-primary" />
+              Audience Builder
+            </h1>
+            <p className="text-muted-foreground">
+              Bangun dan pahami target audience ideal Anda untuk kampanye yang winning
+            </p>
+          </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-1">
@@ -325,5 +331,6 @@ export default function AudienceBuilder() {
         </div>
       </div>
     </div>
+    </FeatureGate>
   );
 }

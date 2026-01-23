@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, CheckCircle2, XCircle, AlertTriangle, Sparkles, Loader2, Target, TrendingUp, Zap, MessageSquare, Eye, MousePointer } from "lucide-react";
+import { FeatureGate } from "@/components/feature-gate";
 
 interface AnalysisResult {
   overallScore: number;
@@ -97,17 +98,22 @@ export default function CampaignAnalyzer() {
   };
 
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <BarChart3 className="h-8 w-8 text-primary" />
-            AI Campaign Analyzer
-          </h1>
-          <p className="text-muted-foreground">
-            Analisis dan skor iklan Anda untuk memaksimalkan potensi winning
-          </p>
-        </div>
+    <FeatureGate
+      feature="adAnalyzer"
+      fallbackTitle="AI Campaign Analyzer - Fitur Premium"
+      fallbackDescription="Upgrade ke Pro untuk analisis dan skor iklan Anda secara otomatis."
+    >
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <BarChart3 className="h-8 w-8 text-primary" />
+              AI Campaign Analyzer
+            </h1>
+            <p className="text-muted-foreground">
+              Analisis dan skor iklan Anda untuk memaksimalkan potensi winning
+            </p>
+          </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
@@ -315,5 +321,6 @@ export default function CampaignAnalyzer() {
         )}
       </div>
     </div>
+    </FeatureGate>
   );
 }

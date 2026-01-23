@@ -1,14 +1,64 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import OpenAI from "openai";
 import { storage } from "./storage";
 import { generateImageBuffer } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
+import { db } from "./db";
+import { subscriptions, type SubscriptionTier } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
+
+type FeatureName = "campaignWizard" | "audienceBuilder" | "adAnalyzer" | "landingPageCreator" | "videoCreator" | "articleGeneration" | "ttsGeneration" | "sttTranscription";
+
+const FEATURE_TIER_REQUIREMENTS: Record<FeatureName, SubscriptionTier[]> = {
+  campaignWizard: ["pro", "enterprise"],
+  audienceBuilder: ["pro", "enterprise"],
+  adAnalyzer: ["pro", "enterprise"],
+  landingPageCreator: ["pro", "enterprise"],
+  articleGeneration: ["pro", "enterprise"],
+  ttsGeneration: ["pro", "enterprise"],
+  sttTranscription: ["pro", "enterprise"],
+  videoCreator: ["enterprise"],
+};
+
+async function getUserTier(req: Request): Promise<SubscriptionTier> {
+  const user = (req as any).user;
+  if (!user) return "free";
+  
+  try {
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, user.id))
+      .limit(1);
+    
+    return (subscription?.tier as SubscriptionTier) || "free";
+  } catch {
+    return "free";
+  }
+}
+
+function requireFeature(feature: FeatureName) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const tier = await getUserTier(req);
+    const allowedTiers = FEATURE_TIER_REQUIREMENTS[feature];
+    
+    if (!allowedTiers.includes(tier)) {
+      return res.status(403).json({ 
+        error: "Upgrade required",
+        message: `This feature requires a ${allowedTiers[0]} subscription`,
+        requiredTier: allowedTiers[0]
+      });
+    }
+    
+    next();
+  };
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -120,8 +170,8 @@ export async function registerRoutes(
     }
   });
 
-  // Article generation endpoint with streaming
-  app.post("/api/generate-article", async (req, res) => {
+  // Article generation endpoint with streaming (Pro+ only)
+  app.post("/api/generate-article", requireFeature("articleGeneration"), async (req, res) => {
     try {
       const { topic, keywords = "", tone = "professional", length = "medium" } = req.body;
 
@@ -334,8 +384,8 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
     }
   });
 
-  // Text-to-Speech endpoint
-  app.post("/api/text-to-speech", async (req, res) => {
+  // Text-to-Speech endpoint (Pro+ only)
+  app.post("/api/text-to-speech", requireFeature("ttsGeneration"), async (req, res) => {
     try {
       const { text, voice = "alloy" } = req.body;
 
@@ -353,8 +403,8 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
     }
   });
 
-  // Speech-to-Text endpoint
-  app.post("/api/speech-to-text", async (req, res) => {
+  // Speech-to-Text endpoint (Pro+ only)
+  app.post("/api/speech-to-text", requireFeature("sttTranscription"), async (req, res) => {
     try {
       const { audio } = req.body;
       const audioBuffer = Buffer.from(audio, "base64");
@@ -370,8 +420,8 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
     }
   });
 
-  // Landing page generation endpoint
-  app.post("/api/generate-landing-page", async (req, res) => {
+  // Landing page generation endpoint (Pro+ only)
+  app.post("/api/generate-landing-page", requireFeature("landingPageCreator"), async (req, res) => {
     try {
       const {
         productName,
@@ -435,8 +485,8 @@ Return ONLY the HTML code, no explanations.`;
     }
   });
 
-  // Ad analyzer endpoint
-  app.post("/api/analyze-ad", async (req, res) => {
+  // Ad analyzer endpoint (Pro+ only)
+  app.post("/api/analyze-ad", requireFeature("adAnalyzer"), async (req, res) => {
     try {
       const { adCopy, platform, objective } = req.body;
 
@@ -499,8 +549,8 @@ Berikan feedback yang actionable dan spesifik untuk membuat iklan lebih winning.
     }
   });
 
-  // Audience generation endpoint
-  app.post("/api/generate-audience", async (req, res) => {
+  // Audience generation endpoint (Pro+ only)
+  app.post("/api/generate-audience", requireFeature("audienceBuilder"), async (req, res) => {
     try {
       const { productDescription, interests = [], ageRange = "25-45" } = req.body;
 
@@ -590,6 +640,36 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
     } catch (error) {
       console.error("Audience generation error:", error);
       res.status(500).json({ error: "Failed to generate audience" });
+    }
+  });
+
+  // Get user subscription
+  app.get("/api/subscription", async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const [subscription] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, user.id))
+        .limit(1);
+
+      if (!subscription) {
+        return res.json({ tier: "free", status: "active" });
+      }
+
+      res.json({
+        tier: subscription.tier,
+        status: subscription.status,
+        currentPeriodEnd: subscription.currentPeriodEnd?.toISOString(),
+      });
+    } catch (error) {
+      console.error("Subscription fetch error:", error);
+      res.json({ tier: "free", status: "active" });
     }
   });
 

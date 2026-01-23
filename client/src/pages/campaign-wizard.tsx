@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Circle, ArrowRight, ArrowLeft, Target, Users, Lightbulb, Rocket, TrendingUp, Sparkles, Trophy, Loader2 } from "lucide-react";
+import { FeatureGate } from "@/components/feature-gate";
 
 interface WizardStep {
   id: number;
@@ -446,17 +447,22 @@ Berikan strategi lengkap meliputi:
   };
 
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Trophy className="h-8 w-8 text-primary" />
-            Campaign Wizard
-          </h1>
-          <p className="text-muted-foreground">
-            Ikuti panduan langkah demi langkah untuk membuat kampanye iklan yang winning
-          </p>
-        </div>
+    <FeatureGate
+      feature="campaignWizard"
+      fallbackTitle="Campaign Wizard - Fitur Premium"
+      fallbackDescription="Upgrade ke Pro untuk mengakses panduan langkah demi langkah membuat kampanye winning."
+    >
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Trophy className="h-8 w-8 text-primary" />
+              Campaign Wizard
+            </h1>
+            <p className="text-muted-foreground">
+              Ikuti panduan langkah demi langkah untuk membuat kampanye iklan yang winning
+            </p>
+          </div>
 
         <Card>
           <CardHeader className="pb-4">
@@ -530,5 +536,6 @@ Berikan strategi lengkap meliputi:
         </div>
       </div>
     </div>
+    </FeatureGate>
   );
 }

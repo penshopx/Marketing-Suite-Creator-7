@@ -108,6 +108,7 @@ The app runs on port 5000 with `npm run dev`. The frontend and backend are serve
 - Three subscription tiers: Free, Pro, Enterprise
 - Pricing page at /pricing
 - Subscription data stored in subscriptions table
+- **Stripe Integration**: Not yet configured. User needs to set up Stripe connector when ready to accept payments. Currently, subscription upgrades are not functional.
 
 ## Recent Changes
 - 2026-01-23: Added landing page, authentication (Replit Auth), and monetization system

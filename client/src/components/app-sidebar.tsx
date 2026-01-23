@@ -23,6 +23,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -203,6 +204,7 @@ function NavGroup({ label, items, defaultOpen = true }: NavGroupProps) {
 
 function UserProfile() {
   const { user, logout } = useAuth();
+  const { tier } = useSubscription();
   
   if (!user) return null;
   
@@ -210,6 +212,12 @@ function UserProfile() {
   const displayName = user.firstName 
     ? `${user.firstName} ${user.lastName || ""}`.trim()
     : user.email || "User";
+
+  const tierLabels: Record<string, string> = {
+    free: "Free Plan",
+    pro: "Pro Plan",
+    enterprise: "Enterprise",
+  };
   
   return (
     <div className="flex items-center justify-between">
@@ -219,8 +227,8 @@ function UserProfile() {
           <AvatarFallback className="text-xs">{initials.toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
-          <span className="text-xs font-medium truncate max-w-[100px]">{displayName}</span>
-          <span className="text-xs text-muted-foreground">Free Plan</span>
+          <span className="text-xs font-medium truncate max-w-[100px]" data-testid="text-username">{displayName}</span>
+          <span className="text-xs text-muted-foreground" data-testid="text-user-tier">{tierLabels[tier] || "Free Plan"}</span>
         </div>
       </div>
       <Button 
