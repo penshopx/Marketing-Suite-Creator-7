@@ -84,43 +84,6 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  // Simple email login endpoint
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { email, name } = req.body;
-      
-      if (!email || typeof email !== "string") {
-        return res.status(400).json({ error: "Email is required" });
-      }
-      
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({ error: "Invalid email format" });
-      }
-      
-      const userId = email.replace(/[^a-zA-Z0-9]/g, "").slice(0, 20) + Date.now().toString().slice(-6);
-      const displayName = name || email.split("@")[0];
-      const nameParts = displayName.split(" ");
-      
-      const user = {
-        id: userId,
-        email: email.toLowerCase(),
-        firstName: nameParts[0] || displayName,
-        lastName: nameParts.slice(1).join(" ") || "",
-        profileImageUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      (req.session as any).user = user;
-      
-      res.json(user);
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ error: "Login failed" });
-    }
-  });
-
   // AI Chat endpoint with streaming
   app.post("/api/chat", async (req, res) => {
     try {
