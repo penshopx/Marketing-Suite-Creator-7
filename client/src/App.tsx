@@ -25,12 +25,14 @@ import CampaignWizard from "@/pages/campaign-wizard";
 import CampaignAnalyzer from "@/pages/campaign-analyzer";
 import AudienceBuilder from "@/pages/audience-builder";
 import WinningDashboard from "@/pages/winning-dashboard";
+import WinningGuide from "@/pages/winning-guide";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/winning-dashboard" component={WinningDashboard} />
+      <Route path="/winning-guide" component={WinningGuide} />
       <Route path="/campaign-wizard" component={CampaignWizard} />
       <Route path="/campaign-analyzer" component={CampaignAnalyzer} />
       <Route path="/audience-builder" component={AudienceBuilder} />

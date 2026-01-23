@@ -17,6 +17,7 @@ import {
   Target,
   Users,
   BarChart3,
+  GraduationCap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -47,9 +48,14 @@ const mainItems = [
 
 const winningItems = [
   {
-    title: "Winning Guide",
+    title: "Roadmap Winning",
     url: "/winning-dashboard",
     icon: Trophy,
+  },
+  {
+    title: "Panduan Praktis",
+    url: "/winning-guide",
+    icon: GraduationCap,
   },
   {
     title: "Campaign Wizard",
