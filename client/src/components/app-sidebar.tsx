@@ -1,0 +1,219 @@
+import { Link, useLocation } from "wouter";
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Image,
+  FileText,
+  Volume2,
+  Megaphone,
+  BookOpen,
+  Sparkles,
+  Palette,
+  Video,
+  BookMarked,
+  Globe,
+  ChevronDown,
+} from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+} from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+
+const mainItems = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: LayoutDashboard,
+  },
+];
+
+const aiAssistantItems = [
+  {
+    title: "AI Chat",
+    url: "/ai-chat",
+    icon: MessageSquare,
+  },
+  {
+    title: "AI Expert Chat",
+    url: "/ai-expert",
+    icon: Sparkles,
+  },
+];
+
+const aiCreatorItems = [
+  {
+    title: "Image Creator",
+    url: "/ai-images",
+    icon: Image,
+  },
+  {
+    title: "Article Creator",
+    url: "/ai-articles",
+    icon: FileText,
+  },
+  {
+    title: "Banner Creator",
+    url: "/ai-banners",
+    icon: Palette,
+  },
+  {
+    title: "Video Creator",
+    url: "/ai-video",
+    icon: Video,
+  },
+];
+
+const aiAudioItems = [
+  {
+    title: "Text to Speech",
+    url: "/ai-tts",
+    icon: Volume2,
+  },
+  {
+    title: "Speech to Text",
+    url: "/ai-stt",
+    icon: Volume2,
+  },
+];
+
+const marketingItems = [
+  {
+    title: "Ad Creator",
+    url: "/ad-creator",
+    icon: Megaphone,
+  },
+  {
+    title: "Story Telling",
+    url: "/story-telling",
+    icon: BookOpen,
+  },
+  {
+    title: "AI Templates",
+    url: "/ai-templates",
+    icon: BookMarked,
+  },
+  {
+    title: "Landing Page",
+    url: "/landing-page",
+    icon: Globe,
+  },
+];
+
+interface NavGroupProps {
+  label: string;
+  items: { title: string; url: string; icon: React.ElementType }[];
+  defaultOpen?: boolean;
+}
+
+function NavGroup({ label, items, defaultOpen = true }: NavGroupProps) {
+  const [location] = useLocation();
+  
+  return (
+    <Collapsible defaultOpen={defaultOpen} className="group/collapsible">
+      <SidebarGroup>
+        <CollapsibleTrigger asChild>
+          <SidebarGroupLabel className="cursor-pointer flex items-center justify-between hover-elevate rounded-md">
+            <span>{label}</span>
+            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+          </SidebarGroupLabel>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    className={cn(
+                      location === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <Link href={item.url} data-testid={`link-${item.url.replace(/\//g, '-').slice(1) || 'home'}`}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
+
+export function AppSidebar() {
+  const [location] = useLocation();
+
+  return (
+    <Sidebar>
+      <SidebarHeader className="border-b border-sidebar-border p-4">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">Marketing Tools</span>
+            <span className="text-xs text-muted-foreground">AI Powered Suite</span>
+          </div>
+        </Link>
+      </SidebarHeader>
+      
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    className={cn(
+                      location === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <Link href={item.url} data-testid={`link-${item.url.replace(/\//g, '-').slice(1) || 'dashboard'}`}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <NavGroup label="AI Assistant" items={aiAssistantItems} />
+        <NavGroup label="AI Creator" items={aiCreatorItems} />
+        <NavGroup label="AI Audio" items={aiAudioItems} />
+        <NavGroup label="Marketing" items={marketingItems} />
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border p-4">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+            <span className="text-xs font-medium">U</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-medium">User</span>
+            <span className="text-xs text-muted-foreground">Free Plan</span>
+          </div>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
