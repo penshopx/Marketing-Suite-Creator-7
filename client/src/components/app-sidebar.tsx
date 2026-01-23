@@ -204,7 +204,7 @@ function NavGroup({ label, items, defaultOpen = true }: NavGroupProps) {
 
 function UserProfile() {
   const { user, logout } = useAuth();
-  const { tier } = useSubscription();
+  const { tier, isAdmin } = useSubscription();
   
   if (!user) return null;
   
@@ -219,6 +219,8 @@ function UserProfile() {
     enterprise: "Enterprise",
   };
   
+  const displayTier = isAdmin ? "Admin (Full Access)" : tierLabels[tier] || "Free Plan";
+  
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -228,7 +230,7 @@ function UserProfile() {
         </Avatar>
         <div className="flex flex-col">
           <span className="text-xs font-medium truncate max-w-[100px]" data-testid="text-username">{displayName}</span>
-          <span className="text-xs text-muted-foreground" data-testid="text-user-tier">{tierLabels[tier] || "Free Plan"}</span>
+          <span className="text-xs text-muted-foreground" data-testid="text-user-tier">{displayTier}</span>
         </div>
       </div>
       <Button 

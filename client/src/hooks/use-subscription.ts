@@ -72,13 +72,17 @@ const FEATURE_LIMITS: Record<SubscriptionTier, FeatureLimits> = {
   },
 };
 
-async function fetchSubscription(): Promise<SubscriptionData> {
+interface SubscriptionResponse extends SubscriptionData {
+  isAdmin?: boolean;
+}
+
+async function fetchSubscription(): Promise<SubscriptionResponse> {
   const response = await fetch("/api/subscription", {
     credentials: "include",
   });
 
   if (!response.ok) {
-    return { tier: "free", status: "active" };
+    return { tier: "free", status: "active", isAdmin: false };
   }
 
   return response.json();
@@ -87,7 +91,7 @@ async function fetchSubscription(): Promise<SubscriptionData> {
 export function useSubscription() {
   const { user, isAuthenticated } = useAuth();
   
-  const { data: subscription, isLoading } = useQuery<SubscriptionData>({
+  const { data: subscription, isLoading } = useQuery<SubscriptionResponse>({
     queryKey: ["/api/subscription"],
     queryFn: fetchSubscription,
     enabled: isAuthenticated,
@@ -95,15 +99,17 @@ export function useSubscription() {
   });
 
   const tier: SubscriptionTier = subscription?.tier || "free";
+  const isAdmin = subscription?.isAdmin || false;
   const limits = FEATURE_LIMITS[tier];
 
   const canAccess = (feature: keyof FeatureLimits): boolean => {
+    if (isAdmin) return true;
     const limit = limits[feature];
     return typeof limit === "boolean" ? limit : limit > 0;
   };
 
-  const isPro = tier === "pro" || tier === "enterprise";
-  const isEnterprise = tier === "enterprise";
+  const isPro = tier === "pro" || tier === "enterprise" || isAdmin;
+  const isEnterprise = tier === "enterprise" || isAdmin;
 
   return {
     subscription,
@@ -113,5 +119,6 @@ export function useSubscription() {
     canAccess,
     isPro,
     isEnterprise,
+    isAdmin,
   };
 }

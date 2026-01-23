@@ -13,7 +13,22 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+const ADMIN_SECRET = process.env.ADMIN_SECRET || "admin2024";
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").filter(Boolean);
+
 type FeatureName = "campaignWizard" | "audienceBuilder" | "adAnalyzer" | "landingPageCreator" | "videoCreator" | "articleGeneration" | "ttsGeneration" | "sttTranscription";
+
+function isAdminUser(req: Request): boolean {
+  const user = (req as any).user;
+  if (!user) return false;
+  
+  if (ADMIN_EMAILS.includes(user.email)) return true;
+  
+  const adminHeader = req.headers["x-admin-key"];
+  if (adminHeader === ADMIN_SECRET) return true;
+  
+  return false;
+}
 
 const FEATURE_TIER_REQUIREMENTS: Record<FeatureName, SubscriptionTier[]> = {
   campaignWizard: ["pro", "enterprise"],
@@ -45,6 +60,10 @@ async function getUserTier(req: Request): Promise<SubscriptionTier> {
 
 function requireFeature(feature: FeatureName) {
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (isAdminUser(req)) {
+      return next();
+    }
+    
     const tier = await getUserTier(req);
     const allowedTiers = FEATURE_TIER_REQUIREMENTS[feature];
     
@@ -652,6 +671,8 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
         return res.status(401).json({ error: "Not authenticated" });
       }
 
+      const admin = isAdminUser(req);
+
       const [subscription] = await db
         .select()
         .from(subscriptions)
@@ -659,17 +680,18 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
         .limit(1);
 
       if (!subscription) {
-        return res.json({ tier: "free", status: "active" });
+        return res.json({ tier: "free", status: "active", isAdmin: admin });
       }
 
       res.json({
         tier: subscription.tier,
         status: subscription.status,
         currentPeriodEnd: subscription.currentPeriodEnd?.toISOString(),
+        isAdmin: admin,
       });
     } catch (error) {
       console.error("Subscription fetch error:", error);
-      res.json({ tier: "free", status: "active" });
+      res.json({ tier: "free", status: "active", isAdmin: false });
     }
   });
 

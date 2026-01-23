@@ -110,6 +110,12 @@ The app runs on port 5000 with `npm run dev`. The frontend and backend are serve
 - Subscription data stored in subscriptions table
 - **Stripe Integration**: Not yet configured. User needs to set up Stripe connector when ready to accept payments. Currently, subscription upgrades are not functional.
 
+## Admin Access
+- **ADMIN_EMAILS**: Set this environment variable with comma-separated email addresses (e.g., "admin@example.com,owner@example.com") to grant full admin access
+- **ADMIN_SECRET**: Alternative method - set this env var and pass it via `x-admin-key` header for API access (default: "admin2024")
+- Admin users can access all premium features without subscription
+- Sidebar shows "Admin (Full Access)" for admin users
+
 ## Recent Changes
 - 2026-01-23: Added landing page, authentication (Replit Auth), and monetization system
 - 2026-01-23: Added Winning Campaign System (Dashboard, Wizard, Analyzer, Audience Builder, Simulasi Beriklan)
