@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Sparkles, Zap, Target, Users, MessageSquare, Image, FileText, 
   Video, Megaphone, BarChart3, CheckCircle2, ArrowRight, Star,
-  Shield, Clock, TrendingUp, Trophy
+  Shield, Clock, TrendingUp, Trophy, LogIn
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -133,11 +133,11 @@ export default function Landing() {
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <Button variant="ghost" asChild data-testid="button-login">
-                <a href="/api/login">Masuk</a>
-              </Button>
-              <Button asChild data-testid="button-signup">
-                <a href="/api/login">Daftar Gratis</a>
+              <Button size="lg" asChild data-testid="button-login">
+                <a href="/api/login">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Login
+                </a>
               </Button>
             </div>
           </div>
