@@ -99,9 +99,20 @@ shared/
 ## Running the Application
 The app runs on port 5000 with `npm run dev`. The frontend and backend are served from the same port via Vite middleware.
 
+## Authentication
+- Uses Replit Auth (OIDC) for login/registration
+- Supports Google, GitHub, X, Apple, and email/password
+- User data stored in PostgreSQL users table
+
+## Monetization
+- Three subscription tiers: Free, Pro, Enterprise
+- Pricing page at /pricing
+- Subscription data stored in subscriptions table
+
 ## Recent Changes
-- 2026-01-23: Added Winning Campaign System (Dashboard, Wizard, Analyzer, Audience Builder)
+- 2026-01-23: Added landing page, authentication (Replit Auth), and monetization system
+- 2026-01-23: Added Winning Campaign System (Dashboard, Wizard, Analyzer, Audience Builder, Simulasi Beriklan)
 - 2026-01-23: Initial build with all 13 AI-powered tools
 - Using Replit AI Integrations for OpenAI access (charges to credits)
 - Complete sidebar navigation with collapsible groups
-- Light/Dark theme toggle
+- Light/Dark theme toggle with user profile in sidebar

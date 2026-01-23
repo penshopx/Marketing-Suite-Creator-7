@@ -7,8 +7,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
+import Landing from "@/pages/landing";
 import AIChat from "@/pages/ai-chat";
 import AIExpert from "@/pages/ai-expert";
 import AIImages from "@/pages/ai-images";
@@ -20,13 +22,14 @@ import AISTT from "@/pages/ai-stt";
 import AdCreator from "@/pages/ad-creator";
 import StoryTelling from "@/pages/story-telling";
 import AITemplates from "@/pages/ai-templates";
-import LandingPage from "@/pages/landing-page";
+import LandingPageCreator from "@/pages/landing-page";
 import CampaignWizard from "@/pages/campaign-wizard";
 import CampaignAnalyzer from "@/pages/campaign-analyzer";
 import AudienceBuilder from "@/pages/audience-builder";
 import WinningDashboard from "@/pages/winning-dashboard";
 import WinningGuide from "@/pages/winning-guide";
 import AdSimulation from "@/pages/ad-simulation";
+import Pricing from "@/pages/pricing";
 
 function Router() {
   return (
@@ -49,36 +52,61 @@ function Router() {
       <Route path="/ad-creator" component={AdCreator} />
       <Route path="/story-telling" component={StoryTelling} />
       <Route path="/ai-templates" component={AITemplates} />
-      <Route path="/landing-page" component={LandingPage} />
+      <Route path="/landing-page" component={LandingPageCreator} />
+      <Route path="/pricing" component={Pricing} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function App() {
+function AuthenticatedApp() {
   const sidebarStyle = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
 
   return (
+    <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <header className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <ThemeToggle />
+          </header>
+          <main className="flex-1 overflow-hidden">
+            <Router />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+function AppContent() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Landing />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="marketing-tools-theme">
         <TooltipProvider>
-          <SidebarProvider style={sidebarStyle as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <div className="flex flex-col flex-1 overflow-hidden">
-                <header className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <ThemeToggle />
-                </header>
-                <main className="flex-1 overflow-hidden">
-                  <Router />
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
+          <AppContent />
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>

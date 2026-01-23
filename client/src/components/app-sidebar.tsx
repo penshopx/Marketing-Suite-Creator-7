@@ -19,7 +19,12 @@ import {
   BarChart3,
   GraduationCap,
   Play,
+  LogOut,
+  CreditCard,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -196,6 +201,40 @@ function NavGroup({ label, items, defaultOpen = true }: NavGroupProps) {
   );
 }
 
+function UserProfile() {
+  const { user, logout } = useAuth();
+  
+  if (!user) return null;
+  
+  const initials = (user.firstName?.[0] || "") + (user.lastName?.[0] || user.email?.[0] || "U");
+  const displayName = user.firstName 
+    ? `${user.firstName} ${user.lastName || ""}`.trim()
+    : user.email || "User";
+  
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
+          <AvatarFallback className="text-xs">{initials.toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <span className="text-xs font-medium truncate max-w-[100px]">{displayName}</span>
+          <span className="text-xs text-muted-foreground">Free Plan</span>
+        </div>
+      </div>
+      <Button 
+        variant="ghost" 
+        size="icon"
+        onClick={() => logout()}
+        data-testid="button-logout"
+      >
+        <LogOut className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export function AppSidebar() {
   const [location] = useLocation();
 
@@ -243,16 +282,14 @@ export function AppSidebar() {
         <NavGroup label="Marketing" items={marketingItems} />
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-            <span className="text-xs font-medium">U</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-medium">User</span>
-            <span className="text-xs text-muted-foreground">Free Plan</span>
-          </div>
-        </div>
+      <SidebarFooter className="border-t border-sidebar-border p-4 space-y-3">
+        <Link href="/pricing">
+          <Button variant="outline" size="sm" className="w-full justify-start" data-testid="button-pricing">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Upgrade Plan
+          </Button>
+        </Link>
+        <UserProfile />
       </SidebarFooter>
     </Sidebar>
   );

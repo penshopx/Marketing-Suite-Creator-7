@@ -129,11 +129,12 @@ export async function registerRoutes(
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const wordCount = {
+      const wordCounts: Record<string, number> = {
         short: 500,
         medium: 1000,
         long: 2000,
-      }[length] || 1000;
+      };
+      const wordCount = wordCounts[length as string] || 1000;
 
       const prompt = `Write a ${tone} blog article about "${topic}".
 ${keywords ? `Include these keywords: ${keywords}` : ""}
