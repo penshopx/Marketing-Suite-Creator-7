@@ -16,9 +16,10 @@ A comprehensive AI-powered marketing tools application built with React, Express
 ### Winning Campaign System (NEW)
 1. **Roadmap Winning** - Complete roadmap to winning campaigns with progress tracking
 2. **Panduan Praktis** - 8 prinsip fundamental iklan winning (hook, emotional trigger, copywriting formula, dll)
-3. **Campaign Wizard** - 5-step guided process (Research > Audience > Competitors > Creative > Launch)
-4. **Audience Builder** - Create detailed buyer personas with AI
-5. **Ad Analyzer** - Score and analyze your ad copy for improvements
+3. **Simulasi Beriklan** - Interactive step-by-step simulation untuk Meta Ads, Instagram, TikTok, LinkedIn, YouTube, Google Ads
+4. **Campaign Wizard** - 5-step guided process (Research > Audience > Competitors > Creative > Launch)
+5. **Audience Builder** - Create detailed buyer personas with AI
+6. **Ad Analyzer** - Score and analyze your ad copy for improvements
 
 ### AI Tools
 1. **AI Chat** - General marketing assistant
@@ -47,6 +48,7 @@ client/
 │   │   ├── dashboard.tsx    # Main dashboard
 │   │   ├── winning-dashboard.tsx  # Roadmap winning
 │   │   ├── winning-guide.tsx      # Panduan praktis 8 prinsip
+│   │   ├── ad-simulation.tsx      # Simulasi beriklan multi-platform
 │   │   ├── campaign-wizard.tsx    # Step-by-step wizard
 │   │   ├── campaign-analyzer.tsx  # Ad scoring
 │   │   ├── audience-builder.tsx   # Persona builder

@@ -18,6 +18,7 @@ import {
   Users,
   BarChart3,
   GraduationCap,
+  Play,
 } from "lucide-react";
 import {
   Sidebar,
@@ -56,6 +57,11 @@ const winningItems = [
     title: "Panduan Praktis",
     url: "/winning-guide",
     icon: GraduationCap,
+  },
+  {
+    title: "Simulasi Beriklan",
+    url: "/ad-simulation",
+    icon: Play,
   },
   {
     title: "Campaign Wizard",
