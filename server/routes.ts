@@ -663,13 +663,17 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
   });
 
   // Get user subscription
-  app.get("/api/subscription", async (req, res) => {
+  app.get("/api/subscription", async (req: any, res) => {
     try {
-      const user = (req as any).user;
+      // Check for simple session login first, then Replit Auth
+      const user = req.session?.simpleUser || req.user;
       
       if (!user) {
         return res.status(401).json({ error: "Not authenticated" });
       }
+      
+      // Set user on request for isAdminUser check
+      req.user = user;
 
       const admin = isAdminUser(req);
 
