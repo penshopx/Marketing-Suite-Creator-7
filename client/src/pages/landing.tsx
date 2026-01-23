@@ -134,7 +134,7 @@ export default function Landing() {
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <Button size="lg" asChild data-testid="button-login">
-                <a href="/api/login">
+                <a href="/login">
                   <LogIn className="h-4 w-4 mr-2" />
                   Login
                 </a>
@@ -162,7 +162,7 @@ export default function Landing() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="text-lg px-8" asChild data-testid="button-cta-hero">
-                  <a href="/api/login">
+                  <a href="/login">
                     Mulai Gratis
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </a>
@@ -378,7 +378,7 @@ export default function Landing() {
                     asChild
                     data-testid={`button-pricing-${plan.name.toLowerCase()}`}
                   >
-                    <a href="/api/login">{plan.cta}</a>
+                    <a href="/login">{plan.cta}</a>
                   </Button>
                 </CardContent>
               </Card>
@@ -432,7 +432,7 @@ export default function Landing() {
             Bergabung dengan 10,000+ marketer yang sudah menggunakan AI Marketing Tools
           </p>
           <Button size="lg" className="text-lg px-8" asChild data-testid="button-cta-bottom">
-            <a href="/api/login">
+            <a href="/login">
               Mulai Gratis Sekarang
               <ArrowRight className="ml-2 h-5 w-5" />
             </a>
