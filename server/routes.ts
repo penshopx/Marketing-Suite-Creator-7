@@ -673,7 +673,7 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
     }
   });
 
-  // Guide Chatbot endpoint using Qwen API
+  // Guide Chatbot endpoint using OpenAI (Replit AI Integration)
   app.post("/api/guide-chat", async (req, res) => {
     try {
       const { message, history = [] } = req.body;
@@ -684,10 +684,6 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
 
       if (!Array.isArray(history)) {
         return res.status(400).json({ error: "History must be an array" });
-      }
-
-      if (!qwenClient) {
-        return res.status(500).json({ error: "Qwen API key not configured. Please add QWEN_API_KEY to secrets." });
       }
 
       res.setHeader("Content-Type", "text/event-stream");
@@ -744,7 +740,7 @@ ATURAN FORMAT JAWABAN:
 - Jika user bertanya tentang fitur tertentu, jelaskan dengan detail
 - Sebutkan path/link ke fitur jika relevan agar user bisa langsung navigasi`;
 
-      // Build messages for Qwen API
+      // Build messages for OpenAI API
       const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
         { role: "system", content: systemPrompt },
       ];
@@ -762,8 +758,8 @@ ATURAN FORMAT JAWABAN:
       // Add current user message
       messages.push({ role: "user", content: message });
 
-      const stream = await qwenClient.chat.completions.create({
-        model: "qwen-plus",
+      const stream = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
         messages,
         stream: true,
       });
