@@ -32,6 +32,7 @@ import AdSimulation from "@/pages/ad-simulation";
 import Pricing from "@/pages/pricing";
 import Login from "@/pages/login";
 import GuideChatbot from "@/pages/guide-chatbot";
+import { FloatingChatbot } from "@/components/floating-chatbot";
 
 function Router() {
   return (
@@ -82,6 +83,7 @@ function AuthenticatedApp() {
           </main>
         </div>
       </div>
+      <FloatingChatbot />
     </SidebarProvider>
   );
 }
