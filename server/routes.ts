@@ -18,6 +18,14 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+// Qwen API client (OpenAI-compatible)
+const qwenClient = process.env.QWEN_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.QWEN_API_KEY,
+      baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    })
+  : null;
+
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "admin2024";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").filter(Boolean);
 
@@ -667,7 +675,7 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
     }
   });
 
-  // Guide Chatbot endpoint using Gemini
+  // Guide Chatbot endpoint using Qwen
   app.post("/api/guide-chat", async (req, res) => {
     try {
       const { message, history = [] } = req.body;
@@ -680,15 +688,15 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
         return res.status(400).json({ error: "History must be an array" });
       }
 
-      if (!genAI) {
-        return res.status(500).json({ error: "Gemini API key not configured. Please add GEMINI_API_KEY to secrets." });
+      if (!qwenClient) {
+        return res.status(500).json({ error: "Qwen API key not configured. Please add QWEN_API_KEY to secrets." });
       }
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const systemInstruction = `Kamu adalah Asisten Panduan untuk aplikasi Marketing Tools AI. Tugasmu adalah membantu user memahami dan menggunakan semua fitur yang ada di aplikasi ini.
+      const systemPrompt = `Kamu adalah Asisten Panduan untuk aplikasi Marketing Tools AI. Tugasmu adalah membantu user memahami dan menggunakan semua fitur yang ada di aplikasi ini.
 
 DAFTAR FITUR APLIKASI:
 
@@ -734,39 +742,32 @@ PENTING:
 - Jika user bertanya tentang fitur tertentu, jelaskan dengan detail
 - Sebutkan path/link ke fitur jika relevan agar user bisa langsung navigasi`;
 
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: systemInstruction,
-      });
+      // Build messages for OpenAI-compatible API
+      const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
+        { role: "system", content: systemPrompt },
+      ];
 
-      // Filter history to remove leading assistant messages (Gemini requires first message to be from user)
-      let filteredHistory = history.filter((m: { role: string; content: string }) => m.role && m.content);
-      
-      // Find first user message index and remove all messages before it
-      const firstUserIndex = filteredHistory.findIndex((m: { role: string }) => m.role === "user");
-      
-      // If no user messages or first user message is not at start, slice appropriately
-      if (firstUserIndex === -1) {
-        // No user messages in history, start fresh
-        filteredHistory = [];
-      } else if (firstUserIndex > 0) {
-        // Remove leading assistant messages
-        filteredHistory = filteredHistory.slice(firstUserIndex);
+      // Add history (filter out initial assistant greeting)
+      for (const msg of history) {
+        if (msg.role && msg.content) {
+          messages.push({
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+          });
+        }
       }
-      
-      const chatHistory = filteredHistory.map((m: { role: string; content: string }) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      }));
 
-      const chat = model.startChat({
-        history: chatHistory,
+      // Add current user message
+      messages.push({ role: "user", content: message });
+
+      const stream = await qwenClient.chat.completions.create({
+        model: "qwen-plus",
+        messages,
+        stream: true,
       });
 
-      const result = await chat.sendMessageStream(message);
-
-      for await (const chunk of result.stream) {
-        const text = chunk.text();
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content;
         if (text) {
           res.write(`data: ${JSON.stringify({ text })}\n\n`);
         }
