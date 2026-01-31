@@ -1,9 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { 
   Bot, 
   Send, 
@@ -22,6 +20,7 @@ import {
   Palette,
   Video,
   Volume2,
+  Mic,
   Megaphone,
   BookOpen,
   BookMarked,
@@ -82,6 +81,16 @@ const featureCards = [
     ],
   },
   {
+    title: "AI Audio",
+    description: "Konversi suara dan teks",
+    icon: Volume2,
+    color: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+    features: [
+      { name: "Text to Speech", path: "/ai-tts", icon: Volume2 },
+      { name: "Speech to Text", path: "/ai-stt", icon: Mic },
+    ],
+  },
+  {
     title: "Marketing Tools",
     description: "Tools untuk pembuatan konten marketing",
     icon: Megaphone,
@@ -104,20 +113,23 @@ export default function GuideChatbot() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: messageText };
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedHistory = [...messages, userMessage];
+    setMessages(updatedHistory);
     setInput("");
     setIsLoading(true);
 
@@ -127,7 +139,7 @@ export default function GuideChatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: messageText,
-          history: messages,
+          history: updatedHistory.slice(0, -1),
         }),
       });
 
@@ -228,7 +240,7 @@ export default function GuideChatbot() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-                <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+                <div className="flex-1 overflow-y-auto p-4">
                   <div className="space-y-4">
                     {messages.map((message, index) => (
                       <div
@@ -269,8 +281,9 @@ export default function GuideChatbot() {
                         </div>
                       </div>
                     )}
+                    <div ref={messagesEndRef} />
                   </div>
-                </ScrollArea>
+                </div>
 
                 <div className="p-4 border-t space-y-3">
                   <div className="flex flex-wrap gap-2">

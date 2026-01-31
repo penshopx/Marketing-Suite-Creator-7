@@ -672,6 +672,14 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
     try {
       const { message, history = [] } = req.body;
 
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required and must be a string" });
+      }
+
+      if (!Array.isArray(history)) {
+        return res.status(400).json({ error: "History must be an array" });
+      }
+
       if (!genAI) {
         return res.status(500).json({ error: "Gemini API key not configured. Please add GEMINI_API_KEY to secrets." });
       }
@@ -680,7 +688,7 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const systemPrompt = `Kamu adalah Asisten Panduan untuk aplikasi Marketing Tools AI. Tugasmu adalah membantu user memahami dan menggunakan semua fitur yang ada di aplikasi ini.
+      const systemInstruction = `Kamu adalah Asisten Panduan untuk aplikasi Marketing Tools AI. Tugasmu adalah membantu user memahami dan menggunakan semua fitur yang ada di aplikasi ini.
 
 DAFTAR FITUR APLIKASI:
 
@@ -724,23 +732,22 @@ PENTING:
 - Jawab dalam Bahasa Indonesia yang ramah dan profesional
 - Berikan respons yang actionable dan praktis
 - Jika user bertanya tentang fitur tertentu, jelaskan dengan detail
-- Sebutkan path/link ke fitur jika relevan agar user bisa langsung navigasi
+- Sebutkan path/link ke fitur jika relevan agar user bisa langsung navigasi`;
 
-Sekarang bantu user dengan pertanyaannya.`;
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash",
+        systemInstruction: systemInstruction,
+      });
 
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-      const chatHistory = history.map((m: { role: string; content: string }) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      }));
+      const chatHistory = history
+        .filter((m: { role: string; content: string }) => m.role && m.content)
+        .map((m: { role: string; content: string }) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        }));
 
       const chat = model.startChat({
-        history: [
-          { role: "user", parts: [{ text: systemPrompt }] },
-          { role: "model", parts: [{ text: "Baik, saya siap membantu Anda memahami dan menggunakan semua fitur di aplikasi Marketing Tools AI. Silakan tanyakan apa saja tentang fitur-fitur yang tersedia!" }] },
-          ...chatHistory,
-        ],
+        history: chatHistory,
       });
 
       const result = await chat.sendMessageStream(message);
