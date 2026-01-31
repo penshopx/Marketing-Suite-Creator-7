@@ -129,19 +129,21 @@ export function FloatingChatbot() {
 
   if (!isOpen) {
     return (
-      <Button
-        onClick={() => setIsOpen(true)}
-        size="lg"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-        data-testid="button-open-chatbot"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+      <div className="fixed bottom-6 right-6 z-[9999]">
+        <Button
+          onClick={() => setIsOpen(true)}
+          size="lg"
+          className="h-14 w-14 rounded-full shadow-xl"
+          data-testid="button-open-chatbot"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-[380px] h-[500px] shadow-2xl z-50 flex flex-col overflow-hidden" data-testid="floating-chatbot">
+    <Card className="fixed bottom-6 right-6 w-[380px] h-[500px] shadow-2xl z-[9999] flex flex-col overflow-hidden" data-testid="floating-chatbot">
       <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-full bg-primary/10">
