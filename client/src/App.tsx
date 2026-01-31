@@ -103,11 +103,21 @@ function AppContent() {
   }
 
   if (location === "/login") {
-    return <Login />;
+    return (
+      <>
+        <Login />
+        <FloatingChatbot />
+      </>
+    );
   }
 
   if (!user) {
-    return <Landing />;
+    return (
+      <>
+        <Landing />
+        <FloatingChatbot />
+      </>
+    );
   }
 
   return <AuthenticatedApp />;

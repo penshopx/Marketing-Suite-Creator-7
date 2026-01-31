@@ -2,14 +2,17 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useLocation } from "wouter";
+import { useGuideContext, type GuideContext } from "@/hooks/use-guide-context";
 import { 
   Bot, 
   Send, 
   User, 
-  X,
   Loader2,
   MessageCircle,
   Minimize2,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 
 interface ChatMessage {
@@ -17,23 +20,16 @@ interface ChatMessage {
   content: string;
 }
 
-const quickQuestions = [
-  "Apa itu Winning Campaign?",
-  "Bagaimana cara membuat iklan?",
-  "Fitur apa yang cocok untuk pemula?",
-];
-
 export function FloatingChatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content: "Halo! Saya asisten AI untuk membantu kamu memahami fitur-fitur di Marketing Tools. Ada yang bisa saya bantu?"
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [location] = useLocation();
+  const context = useGuideContext();
+  const prevLocationRef = useRef(location);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,6 +38,39 @@ export function FloatingChatbot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  const getProactiveGreeting = useCallback((ctx: GuideContext): string => {
+    const { currentPage, userName, isAuthenticated, subscriptionTier } = ctx;
+    const name = userName ? `, ${userName}` : "";
+    
+    if (!isAuthenticated) {
+      return `Halo${name}! Saya AI Assistant untuk Marketing Tools. Kamu sedang di halaman ${currentPage.title}. Untuk mengakses semua fitur, silakan login atau daftar terlebih dahulu. Ada yang bisa saya bantu?`;
+    }
+
+    const tierInfo = subscriptionTier === "free" 
+      ? "Kamu menggunakan paket Free. Upgrade ke Pro untuk akses fitur premium!"
+      : subscriptionTier === "pro" 
+        ? "Kamu menggunakan paket Pro dengan akses ke banyak fitur premium."
+        : "Kamu menggunakan paket Enterprise dengan akses penuh ke semua fitur.";
+
+    return `Halo${name}! Saya AI Assistant siap membantu. Kamu sedang di ${currentPage.title} - ${currentPage.description}. ${tierInfo} Apa yang ingin kamu lakukan?`;
+  }, []);
+
+  useEffect(() => {
+    if (!hasInitialized && isOpen) {
+      const greeting = getProactiveGreeting(context);
+      setMessages([{ role: "assistant", content: greeting }]);
+      setHasInitialized(true);
+    }
+  }, [isOpen, hasInitialized, context, getProactiveGreeting]);
+
+  useEffect(() => {
+    if (hasInitialized && prevLocationRef.current !== location && isOpen) {
+      const pageChangeMessage = `Kamu berpindah ke halaman ${context.currentPage.title}. ${context.currentPage.description}. Ada yang bisa saya bantu di halaman ini?`;
+      setMessages(prev => [...prev, { role: "assistant", content: pageChangeMessage }]);
+    }
+    prevLocationRef.current = location;
+  }, [location, hasInitialized, context, isOpen]);
 
   const sendMessage = async (messageText?: string) => {
     const text = messageText || input.trim();
@@ -60,6 +89,16 @@ export function FloatingChatbot() {
         body: JSON.stringify({
           message: text,
           history: updatedHistory.slice(0, -1),
+          context: {
+            isAuthenticated: context.isAuthenticated,
+            userName: context.userName,
+            subscriptionTier: context.subscriptionTier,
+            isAdmin: context.isAdmin,
+            currentPage: context.currentPage.path,
+            currentPageTitle: context.currentPage.title,
+            availableFeatures: context.availableFeatures,
+            lockedFeatures: context.lockedFeatures,
+          },
         }),
       });
 
@@ -127,35 +166,41 @@ export function FloatingChatbot() {
     }
   };
 
+  const quickActions = context.currentPage.suggestedActions.slice(0, 3);
+
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-[9999]">
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="h-14 w-14 rounded-full shadow-xl"
+          className="rounded-full shadow-xl"
           data-testid="button-open-chatbot"
         >
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-5 w-5" />
         </Button>
       </div>
     );
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-[380px] h-[500px] shadow-2xl z-[9999] flex flex-col overflow-hidden" data-testid="floating-chatbot">
-      <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between gap-2">
+    <Card className="fixed bottom-6 right-6 w-[380px] h-[520px] shadow-2xl z-[9999] flex flex-col overflow-hidden" data-testid="floating-chatbot">
+      <CardHeader className="py-3 px-4 border-b flex flex-row items-center justify-between gap-2 bg-primary/5">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-full bg-primary/10">
-            <Bot className="h-5 w-5 text-primary" />
+            <Sparkles className="h-5 w-5 text-primary" />
           </div>
-          <CardTitle className="text-base">Panduan Fitur</CardTitle>
+          <div>
+            <CardTitle className="text-base">Attentive AI Guide</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {context.currentPage.title}
+            </p>
+          </div>
         </div>
         <div className="flex gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
             onClick={() => setIsOpen(false)}
             data-testid="button-close-chatbot"
           >
@@ -212,17 +257,18 @@ export function FloatingChatbot() {
 
         <div className="p-3 border-t space-y-2">
           <div className="flex flex-wrap gap-1.5">
-            {quickQuestions.map((question, index) => (
+            {quickActions.map((action, index) => (
               <Button
                 key={index}
                 variant="outline"
                 size="sm"
-                className="text-xs h-7 px-2"
-                onClick={() => sendMessage(question)}
+                className="text-xs gap-1"
+                onClick={() => sendMessage(action)}
                 disabled={isLoading}
                 data-testid={`button-quick-${index}`}
               >
-                {question}
+                <ArrowRight className="h-3 w-3" />
+                {action}
               </Button>
             ))}
           </div>
@@ -231,7 +277,7 @@ export function FloatingChatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ketik pertanyaan..."
+              placeholder="Ketik pertanyaan atau perintah..."
               className="min-h-[40px] max-h-[80px] text-sm resize-none"
               disabled={isLoading}
               data-testid="input-chat"
@@ -240,7 +286,7 @@ export function FloatingChatbot() {
               onClick={() => sendMessage()}
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="h-10 w-10 flex-shrink-0"
+              className="flex-shrink-0"
               data-testid="button-send"
             >
               {isLoading ? (
