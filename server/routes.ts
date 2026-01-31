@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "./storage";
-import { generateImageBuffer } from "./replit_integrations/image/client";
+import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
 import { db } from "./db";
 import { subscriptions, type SubscriptionTier } from "@shared/schema";
@@ -13,18 +13,8 @@ const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
-
-// Qwen API client (OpenAI-compatible)
-const qwenClient = process.env.QWEN_API_KEY
-  ? new OpenAI({
-      apiKey: process.env.QWEN_API_KEY,
-      baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    })
-  : null;
+// Use AI Integrations OpenAI client
+const openai = aiIntegrationsOpenai;
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "admin2024";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").filter(Boolean);
