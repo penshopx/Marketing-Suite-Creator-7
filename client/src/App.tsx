@@ -31,6 +31,7 @@ import WinningGuide from "@/pages/winning-guide";
 import AdSimulation from "@/pages/ad-simulation";
 import Pricing from "@/pages/pricing";
 import Login from "@/pages/login";
+import GuideChatbot from "@/pages/guide-chatbot";
 
 function Router() {
   return (
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/ai-templates" component={AITemplates} />
       <Route path="/landing-page" component={LandingPageCreator} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/guide-chatbot" component={GuideChatbot} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -21,6 +21,7 @@ import {
   Play,
   LogOut,
   CreditCard,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -50,6 +51,11 @@ const mainItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Panduan Fitur",
+    url: "/guide-chatbot",
+    icon: HelpCircle,
   },
 ];
 

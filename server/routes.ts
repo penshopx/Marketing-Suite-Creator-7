@@ -1,12 +1,17 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "./storage";
 import { generateImageBuffer } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
 import { db } from "./db";
 import { subscriptions, type SubscriptionTier } from "@shared/schema";
 import { eq } from "drizzle-orm";
+
+const genAI = process.env.GEMINI_API_KEY 
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null;
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -659,6 +664,99 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
     } catch (error) {
       console.error("Audience generation error:", error);
       res.status(500).json({ error: "Failed to generate audience" });
+    }
+  });
+
+  // Guide Chatbot endpoint using Gemini
+  app.post("/api/guide-chat", async (req, res) => {
+    try {
+      const { message, history = [] } = req.body;
+
+      if (!genAI) {
+        return res.status(500).json({ error: "Gemini API key not configured. Please add GEMINI_API_KEY to secrets." });
+      }
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const systemPrompt = `Kamu adalah Asisten Panduan untuk aplikasi Marketing Tools AI. Tugasmu adalah membantu user memahami dan menggunakan semua fitur yang ada di aplikasi ini.
+
+DAFTAR FITUR APLIKASI:
+
+**1. WINNING CAMPAIGN SYSTEM:**
+- Roadmap Winning (/winning-dashboard): Peta jalan lengkap untuk membuat campaign iklan yang sukses dengan tracking progress.
+- Panduan Praktis (/winning-guide): 8 prinsip fundamental iklan winning: hook, emotional trigger, value proposition, CTA, targeting, testing, optimization, scaling.
+- Simulasi Beriklan (/ad-simulation): Simulasi interaktif untuk berbagai platform (Meta, Instagram, TikTok, LinkedIn, YouTube, Google Ads). User bisa latihan beriklan tanpa mengeluarkan uang.
+- Campaign Wizard (/campaign-wizard): Proses 5 langkah: Research → Audience → Competitors → Creative → Launch.
+- Audience Builder (/audience-builder): Buat buyer persona detail dengan bantuan AI.
+- Ad Analyzer (/campaign-analyzer): Analisis dan scoring copy iklan, dapatkan feedback untuk improvement.
+
+**2. AI ASSISTANT:**
+- AI Chat (/ai-chat): Chat dengan AI assistant untuk konsultasi marketing.
+- AI Expert Chat (/ai-expert): Chat dengan AI persona spesialis (Marketing, SEO, Copywriting, dll).
+
+**3. AI CREATOR:**
+- Image Creator (/ai-images): Generate gambar marketing dengan AI.
+- Article Creator (/ai-articles): Buat artikel SEO-optimized secara otomatis.
+- Banner Creator (/ai-banners): Desain banner untuk iklan.
+- Video Creator (/ai-video): Pembuatan video (fitur premium).
+
+**4. AI AUDIO:**
+- Text to Speech (/ai-tts): Konversi teks ke suara natural.
+- Speech to Text (/ai-stt): Transkripsi rekaman audio ke teks.
+
+**5. MARKETING TOOLS:**
+- Ad Creator (/ad-creator): Generate copy iklan untuk berbagai platform.
+- Story Telling (/story-telling): Buat narasi promosi yang menarik.
+- AI Templates (/ai-templates): Library template marketing.
+- Landing Page Creator (/landing-page): Generate halaman landing HTML.
+
+CARA KAMU MEMBANTU:
+1. Jelaskan fitur dengan bahasa yang mudah dipahami
+2. Berikan arahan langkah demi langkah cara menggunakan fitur
+3. Rekomendasikan fitur yang tepat berdasarkan kebutuhan user
+4. Jelaskan tips dan best practices
+5. Bantu user memahami alur kerja yang optimal
+6. Jika user minta simulasi, jelaskan step-by-step dengan contoh konkret
+
+PENTING:
+- Jawab dalam Bahasa Indonesia yang ramah dan profesional
+- Berikan respons yang actionable dan praktis
+- Jika user bertanya tentang fitur tertentu, jelaskan dengan detail
+- Sebutkan path/link ke fitur jika relevan agar user bisa langsung navigasi
+
+Sekarang bantu user dengan pertanyaannya.`;
+
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+      const chatHistory = history.map((m: { role: string; content: string }) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
+
+      const chat = model.startChat({
+        history: [
+          { role: "user", parts: [{ text: systemPrompt }] },
+          { role: "model", parts: [{ text: "Baik, saya siap membantu Anda memahami dan menggunakan semua fitur di aplikasi Marketing Tools AI. Silakan tanyakan apa saja tentang fitur-fitur yang tersedia!" }] },
+          ...chatHistory,
+        ],
+      });
+
+      const result = await chat.sendMessageStream(message);
+
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) {
+          res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Guide chat error:", error);
+      res.status(500).json({ error: "Failed to process guide chat" });
     }
   });
 
