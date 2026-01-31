@@ -739,12 +739,19 @@ PENTING:
         systemInstruction: systemInstruction,
       });
 
-      const chatHistory = history
-        .filter((m: { role: string; content: string }) => m.role && m.content)
-        .map((m: { role: string; content: string }) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }],
-        }));
+      // Filter history to remove leading assistant messages (Gemini requires first message to be from user)
+      let filteredHistory = history.filter((m: { role: string; content: string }) => m.role && m.content);
+      
+      // Find first user message index and remove all messages before it
+      const firstUserIndex = filteredHistory.findIndex((m: { role: string }) => m.role === "user");
+      if (firstUserIndex > 0) {
+        filteredHistory = filteredHistory.slice(firstUserIndex);
+      }
+      
+      const chatHistory = filteredHistory.map((m: { role: string; content: string }) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
 
       const chat = model.startChat({
         history: chatHistory,
@@ -755,11 +762,11 @@ PENTING:
       for await (const chunk of result.stream) {
         const text = chunk.text();
         if (text) {
-          res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          res.write(`data: ${JSON.stringify({ text })}\n\n`);
         }
       }
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.write(`data: [DONE]\n\n`);
       res.end();
     } catch (error) {
       console.error("Guide chat error:", error);
