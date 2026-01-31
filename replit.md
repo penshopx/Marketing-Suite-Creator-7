@@ -22,7 +22,7 @@ A comprehensive AI-powered marketing tools application built with React, Express
 6. **Ad Analyzer** - Score and analyze your ad copy for improvements
 
 ### Panduan Fitur (Guide Chatbot)
-- **Panduan Fitur** (/guide-chatbot) - Chatbot AI menggunakan Gemini untuk membantu user memahami dan menggunakan semua fitur aplikasi. Dapat menjelaskan fitur, memberikan arahan langkah demi langkah, dan merekomendasikan fitur yang tepat berdasarkan kebutuhan user.
+- **Panduan Fitur** - Floating chatbot AI di pojok kanan bawah layar menggunakan OpenAI (via Replit AI Integrations) untuk membantu user memahami dan menggunakan semua fitur aplikasi. Dapat menjelaskan fitur, memberikan arahan langkah demi langkah, dan merekomendasikan fitur yang tepat berdasarkan kebutuhan user. Format jawaban bersih tanpa markdown.
 
 ### AI Tools
 1. **AI Chat** - General marketing assistant
@@ -92,7 +92,7 @@ shared/
 - `POST /api/generate-landing-page` - Landing page HTML generation
 - `POST /api/analyze-ad` - Ad copy analysis and scoring
 - `POST /api/generate-audience` - Buyer persona generation
-- `POST /api/guide-chat` - Guide chatbot with Gemini AI (streaming)
+- `POST /api/guide-chat` - Guide chatbot with OpenAI (streaming, no markdown)
 
 ## Design System
 - **Primary Color**: Purple (HSL 252, 85%, 60%)
