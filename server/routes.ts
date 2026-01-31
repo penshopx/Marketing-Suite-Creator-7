@@ -16,6 +16,14 @@ const genAI = process.env.GEMINI_API_KEY
 // Use AI Integrations OpenAI client
 const openai = aiIntegrationsOpenai;
 
+// Qwen API client (OpenAI-compatible)
+const qwenClient = process.env.QWEN_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.QWEN_API_KEY,
+      baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    })
+  : null;
+
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "admin2024";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").filter(Boolean);
 
@@ -665,7 +673,7 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
     }
   });
 
-  // Guide Chatbot endpoint using Replit AI Integrations (OpenAI)
+  // Guide Chatbot endpoint using Qwen API
   app.post("/api/guide-chat", async (req, res) => {
     try {
       const { message, history = [] } = req.body;
@@ -678,6 +686,10 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
         return res.status(400).json({ error: "History must be an array" });
       }
 
+      if (!qwenClient) {
+        return res.status(500).json({ error: "Qwen API key not configured. Please add QWEN_API_KEY to secrets." });
+      }
+
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
@@ -686,29 +698,29 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
 
 DAFTAR FITUR APLIKASI:
 
-**1. WINNING CAMPAIGN SYSTEM:**
+1. WINNING CAMPAIGN SYSTEM:
 - Roadmap Winning (/winning-dashboard): Peta jalan lengkap untuk membuat campaign iklan yang sukses dengan tracking progress.
 - Panduan Praktis (/winning-guide): 8 prinsip fundamental iklan winning: hook, emotional trigger, value proposition, CTA, targeting, testing, optimization, scaling.
 - Simulasi Beriklan (/ad-simulation): Simulasi interaktif untuk berbagai platform (Meta, Instagram, TikTok, LinkedIn, YouTube, Google Ads). User bisa latihan beriklan tanpa mengeluarkan uang.
-- Campaign Wizard (/campaign-wizard): Proses 5 langkah: Research → Audience → Competitors → Creative → Launch.
+- Campaign Wizard (/campaign-wizard): Proses 5 langkah: Research, Audience, Competitors, Creative, Launch.
 - Audience Builder (/audience-builder): Buat buyer persona detail dengan bantuan AI.
 - Ad Analyzer (/campaign-analyzer): Analisis dan scoring copy iklan, dapatkan feedback untuk improvement.
 
-**2. AI ASSISTANT:**
+2. AI ASSISTANT:
 - AI Chat (/ai-chat): Chat dengan AI assistant untuk konsultasi marketing.
 - AI Expert Chat (/ai-expert): Chat dengan AI persona spesialis (Marketing, SEO, Copywriting, dll).
 
-**3. AI CREATOR:**
+3. AI CREATOR:
 - Image Creator (/ai-images): Generate gambar marketing dengan AI.
 - Article Creator (/ai-articles): Buat artikel SEO-optimized secara otomatis.
 - Banner Creator (/ai-banners): Desain banner untuk iklan.
 - Video Creator (/ai-video): Pembuatan video (fitur premium).
 
-**4. AI AUDIO:**
+4. AI AUDIO:
 - Text to Speech (/ai-tts): Konversi teks ke suara natural.
 - Speech to Text (/ai-stt): Transkripsi rekaman audio ke teks.
 
-**5. MARKETING TOOLS:**
+5. MARKETING TOOLS:
 - Ad Creator (/ad-creator): Generate copy iklan untuk berbagai platform.
 - Story Telling (/story-telling): Buat narasi promosi yang menarik.
 - AI Templates (/ai-templates): Library template marketing.
@@ -722,13 +734,17 @@ CARA KAMU MEMBANTU:
 5. Bantu user memahami alur kerja yang optimal
 6. Jika user minta simulasi, jelaskan step-by-step dengan contoh konkret
 
-PENTING:
+ATURAN FORMAT JAWABAN:
+- JANGAN gunakan format markdown seperti **, *, #, ##, atau tanda formatting lainnya
+- Gunakan teks biasa tanpa formatting khusus
+- Untuk daftar, gunakan angka atau tanda hubung sederhana
+- Jawab dengan paragraf yang rapi dan mudah dibaca
 - Jawab dalam Bahasa Indonesia yang ramah dan profesional
 - Berikan respons yang actionable dan praktis
 - Jika user bertanya tentang fitur tertentu, jelaskan dengan detail
 - Sebutkan path/link ke fitur jika relevan agar user bisa langsung navigasi`;
 
-      // Build messages for OpenAI API
+      // Build messages for Qwen API
       const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
         { role: "system", content: systemPrompt },
       ];
@@ -746,8 +762,8 @@ PENTING:
       // Add current user message
       messages.push({ role: "user", content: message });
 
-      const stream = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+      const stream = await qwenClient.chat.completions.create({
+        model: "qwen-plus",
         messages,
         stream: true,
       });
