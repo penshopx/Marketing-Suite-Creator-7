@@ -744,7 +744,13 @@ PENTING:
       
       // Find first user message index and remove all messages before it
       const firstUserIndex = filteredHistory.findIndex((m: { role: string }) => m.role === "user");
-      if (firstUserIndex > 0) {
+      
+      // If no user messages or first user message is not at start, slice appropriately
+      if (firstUserIndex === -1) {
+        // No user messages in history, start fresh
+        filteredHistory = [];
+      } else if (firstUserIndex > 0) {
+        // Remove leading assistant messages
         filteredHistory = filteredHistory.slice(firstUserIndex);
       }
       
