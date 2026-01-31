@@ -21,8 +21,16 @@ A comprehensive AI-powered marketing tools application built with React, Express
 5. **Audience Builder** - Create detailed buyer personas with AI
 6. **Ad Analyzer** - Score and analyze your ad copy for improvements
 
-### Panduan Fitur (Guide Chatbot)
-- **Panduan Fitur** - Floating chatbot AI di pojok kanan bawah layar menggunakan OpenAI (via Replit AI Integrations) untuk membantu user memahami dan menggunakan semua fitur aplikasi. Dapat menjelaskan fitur, memberikan arahan langkah demi langkah, dan merekomendasikan fitur yang tepat berdasarkan kebutuhan user. Format jawaban bersih tanpa markdown.
+### Attentive Agentic AI (Guide Chatbot)
+- **Attentive AI Guide** - Floating chatbot AI proaktif di pojok kanan bawah layar (tersedia di semua halaman termasuk landing page)
+- Menggunakan OpenAI via Replit AI Integrations
+- **Context-Aware**: Mengetahui status login user, subscription tier, halaman saat ini, dan fitur yang tersedia/terkunci
+- **Proactive Guidance**: Memberikan salam dan saran berdasarkan konteks halaman user
+- **Task-Ready**: Siap menerima tugas seperti "bantu buat iklan" atau "analisis copy saya"
+- **Feature Gating**: Menjelaskan fitur premium dengan sopan dan mengarahkan ke upgrade jika diperlukan
+- **User Journey Aware**: Memahami alur lengkap dari landing page, login, dashboard, hingga semua fitur
+- Format jawaban bersih tanpa markdown
+- Key files: `client/src/components/floating-chatbot.tsx`, `client/src/hooks/use-guide-context.ts`
 
 ### AI Tools
 1. **AI Chat** - General marketing assistant
@@ -121,7 +129,10 @@ The app runs on port 5000 with `npm run dev`. The frontend and backend are serve
 - Sidebar shows "Admin (Full Access)" for admin users
 
 ## Recent Changes
-- 2026-01-31: Added Guide Chatbot (Panduan Fitur) using Gemini AI to help users understand and navigate features
+- 2026-01-31: Upgraded Guide Chatbot to "Attentive Agentic AI" - now proaktif, context-aware, memahami alur user journey lengkap, dan siap menerima tugas
+- 2026-01-31: Added FloatingChatbot to landing page and login page for non-authenticated users
+- 2026-01-31: Created use-guide-context hook for assembling user context (auth, subscription, page, features)
+- 2026-01-31: Enhanced system prompt with complete feature mapping and subscription tier gating
 - 2026-01-23: Added landing page, authentication (Replit Auth), and monetization system
 - 2026-01-23: Added Winning Campaign System (Dashboard, Wizard, Analyzer, Audience Builder, Simulasi Beriklan)
 - 2026-01-23: Initial build with all 13 AI-powered tools
