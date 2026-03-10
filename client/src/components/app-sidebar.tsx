@@ -20,11 +20,9 @@ import {
   GraduationCap,
   Play,
   LogOut,
-  CreditCard,
   HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -210,7 +208,6 @@ function NavGroup({ label, items, defaultOpen = true }: NavGroupProps) {
 
 function UserProfile() {
   const { user, logout } = useAuth();
-  const { tier, isAdmin } = useSubscription();
   
   if (!user) return null;
   
@@ -218,14 +215,6 @@ function UserProfile() {
   const displayName = user.firstName 
     ? `${user.firstName} ${user.lastName || ""}`.trim()
     : user.email || "User";
-
-  const tierLabels: Record<string, string> = {
-    free: "Free Plan",
-    pro: "Pro Plan",
-    enterprise: "Enterprise",
-  };
-  
-  const displayTier = isAdmin ? "Admin (Full Access)" : tierLabels[tier] || "Free Plan";
   
   return (
     <div className="flex items-center justify-between">
@@ -236,7 +225,7 @@ function UserProfile() {
         </Avatar>
         <div className="flex flex-col">
           <span className="text-xs font-medium truncate max-w-[100px]" data-testid="text-username">{displayName}</span>
-          <span className="text-xs text-muted-foreground" data-testid="text-user-tier">{displayTier}</span>
+          <span className="text-xs text-muted-foreground" data-testid="text-user-email">{user.email}</span>
         </div>
       </div>
       <Button 
@@ -299,12 +288,6 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4 space-y-3">
-        <Link href="/pricing">
-          <Button variant="outline" size="sm" className="w-full justify-start" data-testid="button-pricing">
-            <CreditCard className="h-4 w-4 mr-2" />
-            Upgrade Plan
-          </Button>
-        </Link>
         <UserProfile />
       </SidebarFooter>
     </Sidebar>

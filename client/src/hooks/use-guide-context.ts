@@ -1,5 +1,4 @@
 import { useAuth } from "./use-auth";
-import { useSubscription } from "./use-subscription";
 import { useLocation } from "wouter";
 
 interface PageInfo {
@@ -17,7 +16,7 @@ const PAGE_INFO: Record<string, PageInfo> = {
     suggestedActions: [
       "Daftar gratis sekarang",
       "Lihat fitur aplikasi",
-      "Cek paket harga",
+      "Login ke akun",
     ],
   },
   "/login": {
@@ -25,9 +24,8 @@ const PAGE_INFO: Record<string, PageInfo> = {
     title: "Login",
     description: "Halaman masuk ke akun kamu",
     suggestedActions: [
-      "Login dengan email",
+      "Login dengan email dan password",
       "Daftar akun baru",
-      "Lupa password?",
     ],
   },
   "/": {
@@ -103,11 +101,10 @@ const PAGE_INFO: Record<string, PageInfo> = {
   "/ai-video": {
     path: "/ai-video",
     title: "AI Video Creator",
-    description: "Pembuatan video marketing (fitur premium Enterprise)",
+    description: "Pembuatan video marketing",
     suggestedActions: [
       "Buat video promosi",
       "Generate video ads",
-      "Upgrade untuk akses",
     ],
   },
   "/ai-tts": {
@@ -220,16 +217,6 @@ const PAGE_INFO: Record<string, PageInfo> = {
       "Dapatkan saran perbaikan",
     ],
   },
-  "/pricing": {
-    path: "/pricing",
-    title: "Pricing",
-    description: "Pilih paket yang sesuai dengan kebutuhan",
-    suggestedActions: [
-      "Bandingkan paket",
-      "Upgrade ke Pro",
-      "Lihat fitur Enterprise",
-    ],
-  },
   "/guide-chatbot": {
     path: "/guide-chatbot",
     title: "Panduan Fitur",
@@ -246,10 +233,6 @@ export interface GuideContext {
   isAuthenticated: boolean;
   userName: string | null;
   userEmail: string | null;
-  subscriptionTier: string;
-  isAdmin: boolean;
-  isPro: boolean;
-  isEnterprise: boolean;
   currentPage: PageInfo;
   availableFeatures: string[];
   lockedFeatures: string[];
@@ -257,10 +240,8 @@ export interface GuideContext {
 
 export function useGuideContext(): GuideContext {
   const { user, isAuthenticated } = useAuth();
-  const { tier, isAdmin, isPro, isEnterprise, canAccess } = useSubscription();
   const [location] = useLocation();
 
-  // For non-authenticated users at root, show landing page context
   let currentPage: PageInfo;
   if (!isAuthenticated && location === "/") {
     currentPage = PAGE_INFO["landing"];
@@ -273,62 +254,30 @@ export function useGuideContext(): GuideContext {
     };
   }
 
-  // For unauthenticated users, provide default feature lists
-  // They need to login first before accessing any features
   if (!isAuthenticated) {
     return {
       isAuthenticated: false,
       userName: null,
       userEmail: null,
-      subscriptionTier: "guest",
-      isAdmin: false,
-      isPro: false,
-      isEnterprise: false,
       currentPage,
-      availableFeatures: ["Melihat Landing Page", "Melihat Pricing", "Login/Daftar"],
+      availableFeatures: ["Melihat Landing Page", "Login/Daftar"],
       lockedFeatures: ["Semua fitur aplikasi (perlu login terlebih dahulu)"],
     };
   }
 
   const allFeatures = [
-    { name: "AI Chat", key: "aiChatsPerDay", path: "/ai-chat" },
-    { name: "AI Expert Chat", key: "aiChatsPerDay", path: "/ai-expert" },
-    { name: "Ad Creator", key: "adCopiesPerDay", path: "/ad-creator" },
-    { name: "Image Creator", key: "imageGenerations", path: "/ai-images" },
-    { name: "Article Creator", key: "articleGeneration", path: "/ai-articles" },
-    { name: "Banner Creator", key: "imageGenerations", path: "/ai-banners" },
-    { name: "Text to Speech", key: "ttsGeneration", path: "/ai-tts" },
-    { name: "Speech to Text", key: "sttTranscription", path: "/ai-stt" },
-    { name: "Story Telling", key: "adCopiesPerDay", path: "/story-telling" },
-    { name: "AI Templates", key: "aiChatsPerDay", path: "/ai-templates" },
-    { name: "Landing Page Creator", key: "landingPageCreator", path: "/landing-page" },
-    { name: "Campaign Wizard", key: "campaignWizard", path: "/campaign-wizard" },
-    { name: "Audience Builder", key: "audienceBuilder", path: "/audience-builder" },
-    { name: "Ad Analyzer", key: "adAnalyzer", path: "/campaign-analyzer" },
-    { name: "Video Creator", key: "videoCreator", path: "/ai-video" },
+    "AI Chat", "AI Expert Chat", "Ad Creator", "Image Creator",
+    "Article Creator", "Banner Creator", "Text to Speech", "Speech to Text",
+    "Story Telling", "AI Templates", "Landing Page Creator",
+    "Campaign Wizard", "Audience Builder", "Ad Analyzer", "Video Creator",
   ];
-
-  const availableFeatures: string[] = [];
-  const lockedFeatures: string[] = [];
-
-  for (const feature of allFeatures) {
-    if (canAccess(feature.key as any)) {
-      availableFeatures.push(feature.name);
-    } else {
-      lockedFeatures.push(feature.name);
-    }
-  }
 
   return {
     isAuthenticated,
     userName: user?.firstName || null,
     userEmail: user?.email || null,
-    subscriptionTier: tier,
-    isAdmin,
-    isPro,
-    isEnterprise,
     currentPage,
-    availableFeatures,
-    lockedFeatures,
+    availableFeatures: allFeatures,
+    lockedFeatures: [],
   };
 }

@@ -41,57 +41,16 @@ const features = [
   },
 ];
 
-const pricingPlans = [
-  {
-    name: "Free",
-    price: "Rp 0",
-    period: "/bulan",
-    description: "Untuk yang baru mulai",
-    features: [
-      "5 AI Chat/hari",
-      "3 Ad Copy/hari",
-      "1 Artikel/hari",
-      "Akses Panduan Praktis",
-      "Akses Simulasi Beriklan",
-    ],
-    cta: "Mulai Gratis",
-    popular: false,
-  },
-  {
-    name: "Pro",
-    price: "Rp 199K",
-    period: "/bulan",
-    description: "Untuk marketer serius",
-    features: [
-      "Unlimited AI Chat",
-      "Unlimited Ad Copy",
-      "Unlimited Artikel",
-      "AI Image Generator",
-      "Campaign Wizard",
-      "Audience Builder",
-      "Ad Analyzer",
-      "Priority Support",
-    ],
-    cta: "Pilih Pro",
-    popular: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Rp 499K",
-    period: "/bulan",
-    description: "Untuk agency & tim besar",
-    features: [
-      "Semua fitur Pro",
-      "Team Collaboration",
-      "White-label Reports",
-      "API Access",
-      "Custom AI Training",
-      "Dedicated Support",
-      "SLA Guarantee",
-    ],
-    cta: "Hubungi Sales",
-    popular: false,
-  },
+const highlightFeatures = [
+  "AI Chat & Expert Consultation",
+  "Ad Creator untuk semua platform",
+  "Image, Article, Banner & Video Creator",
+  "Campaign Wizard & Ad Analyzer",
+  "Audience Builder & Story Telling",
+  "Text-to-Speech & Speech-to-Text",
+  "Landing Page Creator",
+  "AI Templates Library",
+  "Panduan Praktis & Simulasi Beriklan",
 ];
 
 const testimonials = [
@@ -128,7 +87,6 @@ export default function Landing() {
             </div>
             <div className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Fitur</a>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Harga</a>
               <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">Testimoni</a>
             </div>
             <div className="flex items-center gap-3">
@@ -332,58 +290,42 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
+      {/* All Features Section */}
+      <section id="all-features" className="py-20 px-4">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">Harga Transparan</Badge>
+            <Badge variant="outline" className="mb-4">Akses Penuh</Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Pilih Paket yang Sesuai
+              Semua Fitur Tersedia
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Mulai gratis, upgrade kapan saja
+              Daftar sekarang dan akses semua fitur marketing AI tanpa batasan
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <Card 
-                key={index} 
-                className={`relative ${plan.popular ? "border-primary border-2 shadow-xl" : ""}`}
+          <Card className="border-primary border-2 shadow-xl">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-2xl">Fitur Lengkap</CardTitle>
+              <CardDescription>Semua tools AI marketing dalam satu platform</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="grid md:grid-cols-2 gap-3">
+                {highlightFeatures.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button 
+                className="w-full" 
+                size="lg"
+                asChild
+                data-testid="button-register-cta"
               >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary">Paling Populer</Badge>
-                  </div>
-                )}
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <div className="pt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className="w-full" 
-                    variant={plan.popular ? "default" : "outline"}
-                    asChild
-                    data-testid={`button-pricing-${plan.name.toLowerCase()}`}
-                  >
-                    <a href="/login">{plan.cta}</a>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                <a href="/login">Daftar Sekarang</a>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </section>
 

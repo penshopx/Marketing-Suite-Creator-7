@@ -7,7 +7,6 @@ import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, CheckCircle2, XCircle, AlertTriangle, Sparkles, Loader2, Target, TrendingUp, Zap, MessageSquare, Eye, MousePointer } from "lucide-react";
-import { FeatureGate } from "@/components/feature-gate";
 
 interface AnalysisResult {
   overallScore: number;
@@ -98,11 +97,7 @@ export default function CampaignAnalyzer() {
   };
 
   return (
-    <FeatureGate
-      feature="adAnalyzer"
-      fallbackTitle="AI Campaign Analyzer - Fitur Premium"
-      fallbackDescription="Upgrade ke Pro untuk analisis dan skor iklan Anda secara otomatis."
-    >
+    <>
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="space-y-2">
@@ -321,6 +316,6 @@ export default function CampaignAnalyzer() {
         )}
       </div>
     </div>
-    </FeatureGate>
+    </>
   );
 }

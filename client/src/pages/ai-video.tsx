@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Video, Loader2, Play, Sparkles, Film, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { FeatureGate } from "@/components/feature-gate";
 
 const videoTypes = [
   { id: "text-to-video", name: "Text to Video", desc: "Create video from text description" },
@@ -56,12 +55,7 @@ export default function AIVideo() {
   };
 
   return (
-    <FeatureGate
-      feature="videoCreator"
-      requiredTier="enterprise"
-      fallbackTitle="AI Video Creator - Fitur Enterprise"
-      fallbackDescription="Upgrade ke Enterprise untuk akses pembuatan video marketing otomatis."
-    >
+    <>
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           <div>
@@ -242,6 +236,6 @@ export default function AIVideo() {
         </Tabs>
       </div>
     </div>
-    </FeatureGate>
+    </>
   );
 }

@@ -112,29 +112,24 @@ shared/
 The app runs on port 5000 with `npm run dev`. The frontend and backend are served from the same port via Vite middleware.
 
 ## Authentication
-- Uses Replit Auth (OIDC) for login/registration
-- Supports Google, GitHub, X, Apple, and email/password
-- User data stored in PostgreSQL users table
+- Registration with email, name, and password (bcryptjs hashing)
+- Login with email and password
+- Session-based authentication stored in PostgreSQL (connect-pg-simple)
+- User data stored in PostgreSQL users table with password field
+- Replit Auth (OIDC) still available as fallback
 
-## Monetization
-- Three subscription tiers: Free, Pro, Enterprise
-- Pricing page at /pricing
-- Subscription data stored in subscriptions table
-- **Stripe Integration**: Not yet configured. User needs to set up Stripe connector when ready to accept payments. Currently, subscription upgrades are not functional.
-
-## Admin Access
-- **ADMIN_EMAILS**: Set this environment variable with comma-separated email addresses (e.g., "admin@example.com,owner@example.com") to grant full admin access
-- **ADMIN_SECRET**: Alternative method - set this env var and pass it via `x-admin-key` header for API access (default: "admin2024")
-- Admin users can access all premium features without subscription
-- Sidebar shows "Admin (Full Access)" for admin users
+## Feature Access
+- All features are open to all registered users (no subscription/tier system)
+- No feature gating or upgrade prompts
+- Admin system still exists via ADMIN_EMAILS env var for potential future admin features
 
 ## Recent Changes
-- 2026-01-31: Upgraded Guide Chatbot to "Attentive Agentic AI" - now proaktif, context-aware, memahami alur user journey lengkap, dan siap menerima tugas
-- 2026-01-31: Added FloatingChatbot to landing page and login page for non-authenticated users
-- 2026-01-31: Created use-guide-context hook for assembling user context (auth, subscription, page, features)
-- 2026-01-31: Enhanced system prompt with complete feature mapping and subscription tier gating
-- 2026-01-23: Added landing page, authentication (Replit Auth), and monetization system
-- 2026-01-23: Added Winning Campaign System (Dashboard, Wizard, Analyzer, Audience Builder, Simulasi Beriklan)
+- 2026-03-10: Removed subscription/upgrade system - all features now open to all users
+- 2026-03-10: Changed auth to registration + password login (bcryptjs)
+- 2026-03-10: Removed pricing page, feature gates, and tier-based access control
+- 2026-03-10: Updated landing page to show all features without pricing tiers
+- 2026-01-31: Upgraded Guide Chatbot to "Attentive Agentic AI"
+- 2026-01-23: Added Winning Campaign System
 - 2026-01-23: Initial build with all 13 AI-powered tools
 - Using Replit AI Integrations for OpenAI access (charges to credits)
 - Complete sidebar navigation with collapsible groups

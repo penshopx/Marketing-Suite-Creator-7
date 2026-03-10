@@ -29,7 +29,6 @@ import AudienceBuilder from "@/pages/audience-builder";
 import WinningDashboard from "@/pages/winning-dashboard";
 import WinningGuide from "@/pages/winning-guide";
 import AdSimulation from "@/pages/ad-simulation";
-import Pricing from "@/pages/pricing";
 import Login from "@/pages/login";
 import GuideChatbot from "@/pages/guide-chatbot";
 import { FloatingChatbot } from "@/components/floating-chatbot";
@@ -56,7 +55,6 @@ function Router() {
       <Route path="/story-telling" component={StoryTelling} />
       <Route path="/ai-templates" component={AITemplates} />
       <Route path="/landing-page" component={LandingPageCreator} />
-      <Route path="/pricing" component={Pricing} />
       <Route path="/guide-chatbot" component={GuideChatbot} />
       <Route component={NotFound} />
     </Switch>

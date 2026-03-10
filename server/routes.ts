@@ -1,13 +1,10 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "./storage";
 import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
-import { db } from "./db";
-import { subscriptions, type SubscriptionTier } from "@shared/schema";
-import { eq } from "drizzle-orm";
 
 const genAI = process.env.GEMINI_API_KEY 
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -27,8 +24,6 @@ const qwenClient = process.env.QWEN_API_KEY
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "admin2024";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
 
-type FeatureName = "campaignWizard" | "audienceBuilder" | "adAnalyzer" | "landingPageCreator" | "videoCreator" | "articleGeneration" | "ttsGeneration" | "sttTranscription";
-
 function isAdminUser(req: Request): boolean {
   const user = (req as any).user;
   if (!user) return false;
@@ -39,55 +34,6 @@ function isAdminUser(req: Request): boolean {
   if (adminHeader === ADMIN_SECRET) return true;
   
   return false;
-}
-
-const FEATURE_TIER_REQUIREMENTS: Record<FeatureName, SubscriptionTier[]> = {
-  campaignWizard: ["pro", "enterprise"],
-  audienceBuilder: ["pro", "enterprise"],
-  adAnalyzer: ["pro", "enterprise"],
-  landingPageCreator: ["pro", "enterprise"],
-  articleGeneration: ["pro", "enterprise"],
-  ttsGeneration: ["pro", "enterprise"],
-  sttTranscription: ["pro", "enterprise"],
-  videoCreator: ["enterprise"],
-};
-
-async function getUserTier(req: Request): Promise<SubscriptionTier> {
-  const user = (req as any).user;
-  if (!user) return "free";
-  
-  try {
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, user.id))
-      .limit(1);
-    
-    return (subscription?.tier as SubscriptionTier) || "free";
-  } catch {
-    return "free";
-  }
-}
-
-function requireFeature(feature: FeatureName) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    if (isAdminUser(req)) {
-      return next();
-    }
-    
-    const tier = await getUserTier(req);
-    const allowedTiers = FEATURE_TIER_REQUIREMENTS[feature];
-    
-    if (!allowedTiers.includes(tier)) {
-      return res.status(403).json({ 
-        error: "Upgrade required",
-        message: `This feature requires a ${allowedTiers[0]} subscription`,
-        requiredTier: allowedTiers[0]
-      });
-    }
-    
-    next();
-  };
 }
 
 export async function registerRoutes(
@@ -201,7 +147,7 @@ export async function registerRoutes(
   });
 
   // Article generation endpoint with streaming (Pro+ only)
-  app.post("/api/generate-article", requireFeature("articleGeneration"), async (req, res) => {
+  app.post("/api/generate-article", async (req, res) => {
     try {
       const { topic, keywords = "", tone = "professional", length = "medium" } = req.body;
 
@@ -415,7 +361,7 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
   });
 
   // Text-to-Speech endpoint (Pro+ only)
-  app.post("/api/text-to-speech", requireFeature("ttsGeneration"), async (req, res) => {
+  app.post("/api/text-to-speech", async (req, res) => {
     try {
       const { text, voice = "alloy" } = req.body;
 
@@ -434,7 +380,7 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
   });
 
   // Speech-to-Text endpoint (Pro+ only)
-  app.post("/api/speech-to-text", requireFeature("sttTranscription"), async (req, res) => {
+  app.post("/api/speech-to-text", async (req, res) => {
     try {
       const { audio } = req.body;
       const audioBuffer = Buffer.from(audio, "base64");
@@ -451,7 +397,7 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
   });
 
   // Landing page generation endpoint (Pro+ only)
-  app.post("/api/generate-landing-page", requireFeature("landingPageCreator"), async (req, res) => {
+  app.post("/api/generate-landing-page", async (req, res) => {
     try {
       const {
         productName,
@@ -516,7 +462,7 @@ Return ONLY the HTML code, no explanations.`;
   });
 
   // Ad analyzer endpoint (Pro+ only)
-  app.post("/api/analyze-ad", requireFeature("adAnalyzer"), async (req, res) => {
+  app.post("/api/analyze-ad", async (req, res) => {
     try {
       const { adCopy, platform, objective } = req.body;
 
@@ -580,7 +526,7 @@ Berikan feedback yang actionable dan spesifik untuk membuat iklan lebih winning.
   });
 
   // Audience generation endpoint (Pro+ only)
-  app.post("/api/generate-audience", requireFeature("audienceBuilder"), async (req, res) => {
+  app.post("/api/generate-audience", async (req, res) => {
     try {
       const { productDescription, interests = [], ageRange = "25-45" } = req.body;
 
@@ -695,11 +641,8 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
 KONTEKS USER SAAT INI:
 - Status Login: ${context.isAuthenticated ? 'Sudah login' : 'Belum login (pengunjung)'}
 - Nama User: ${context.userName || 'Pengunjung'}
-- Paket Langganan: ${context.subscriptionTier || 'free'}
-- Status Admin: ${context.isAdmin ? 'Ya (akses penuh)' : 'Tidak'}
 - Halaman Saat Ini: ${context.currentPageTitle || 'Dashboard'} (${context.currentPage || '/'})
-- Fitur yang Dapat Diakses: ${context.availableFeatures?.join(', ') || 'Fitur dasar'}
-- Fitur yang Terkunci: ${context.lockedFeatures?.join(', ') || 'Tidak ada'}`;
+- Fitur yang Dapat Diakses: ${context.availableFeatures?.join(', ') || 'Semua fitur'}`;
 
       const systemPrompt = `Kamu adalah "Attentive Agentic AI" - asisten proaktif dan cerdas untuk aplikasi Marketing Tools AI. Kamu bukan hanya menjawab pertanyaan, tapi juga proaktif memberikan panduan, siap menerima tugas, dan mengarahkan user ke fitur yang tepat.
 
@@ -708,14 +651,14 @@ ${contextInfo}
 ALUR USER JOURNEY LENGKAP:
 
 1. LANDING PAGE (untuk pengunjung belum login):
-   - Pengunjung melihat halaman landing dengan penjelasan fitur dan paket harga
-   - Ada tombol "Mulai Gratis" untuk daftar dan "Login" untuk user yang sudah punya akun
-   - Pengunjung bisa melihat daftar fitur, testimonial, dan paket harga (Free, Pro, Enterprise)
+   - Pengunjung melihat halaman landing dengan penjelasan fitur
+   - Ada tombol "Daftar Sekarang" dan "Login" untuk user yang sudah punya akun
+   - Pengunjung bisa melihat daftar lengkap semua fitur dan testimoni
 
 2. PROSES REGISTRASI & LOGIN:
-   - User bisa login dengan Replit Auth (Google, GitHub, X, Apple, email)
-   - Atau login sederhana dengan email dan nama
-   - Setelah login, user masuk ke Dashboard utama
+   - User mendaftar dengan email, nama, dan password
+   - Atau login dengan email dan password jika sudah punya akun
+   - Setelah login, user masuk ke Dashboard utama dengan akses semua fitur
 
 3. DASHBOARD (setelah login):
    - Halaman utama dengan akses cepat ke semua fitur
@@ -736,9 +679,9 @@ A. WINNING CAMPAIGN SYSTEM (Sistem Iklan Sukses):
   7. Optimization berkelanjutan
   8. Scaling yang terukur
 - Simulasi Beriklan (/ad-simulation): Simulasi interaktif untuk platform Meta Ads, Instagram, TikTok, LinkedIn, YouTube, Google Ads. Latihan beriklan tanpa keluar uang!
-- Campaign Wizard (/campaign-wizard): Proses 5 langkah sistematis - Research, Audience, Competitors, Creative, Launch. [FITUR PRO]
-- Audience Builder (/audience-builder): Buat buyer persona detail dengan AI. [FITUR PRO]
-- Ad Analyzer (/campaign-analyzer): Analisis dan scoring copy iklan untuk improvement. [FITUR PRO]
+- Campaign Wizard (/campaign-wizard): Proses 5 langkah sistematis - Research, Audience, Competitors, Creative, Launch.
+- Audience Builder (/audience-builder): Buat buyer persona detail dengan AI.
+- Ad Analyzer (/campaign-analyzer): Analisis dan scoring copy iklan untuk improvement.
 
 B. AI ASSISTANT:
 - AI Chat (/ai-chat): Chat dengan AI untuk konsultasi marketing, brainstorming ide, dan strategi.
@@ -746,38 +689,30 @@ B. AI ASSISTANT:
 
 C. AI CONTENT CREATOR:
 - Image Creator (/ai-images): Generate gambar marketing berkualitas dengan AI.
-- Article Creator (/ai-articles): Buat artikel SEO-optimized otomatis. [FITUR PRO]
+- Article Creator (/ai-articles): Buat artikel SEO-optimized otomatis.
 - Banner Creator (/ai-banners): Desain banner untuk iklan dan promosi.
-- Video Creator (/ai-video): Pembuatan video marketing. [FITUR ENTERPRISE]
+- Video Creator (/ai-video): Pembuatan video marketing.
 
 D. AI AUDIO:
-- Text to Speech (/ai-tts): Konversi teks ke suara natural untuk voiceover. [FITUR PRO]
-- Speech to Text (/ai-stt): Transkripsi rekaman audio ke teks. [FITUR PRO]
+- Text to Speech (/ai-tts): Konversi teks ke suara natural untuk voiceover.
+- Speech to Text (/ai-stt): Transkripsi rekaman audio ke teks.
 
 E. MARKETING TOOLS:
 - Ad Creator (/ad-creator): Generate copy iklan untuk Meta, TikTok, Google, YouTube, LinkedIn.
 - Story Telling (/story-telling): Buat narasi promosi yang engaging.
 - AI Templates (/ai-templates): Library template marketing siap pakai.
-- Landing Page Creator (/landing-page): Generate halaman landing HTML profesional. [FITUR PRO]
-
-F. PRICING & SUBSCRIPTION (/pricing):
-- Free: 5 AI Chat/hari, 3 Ad Copy/hari, akses Panduan Praktis dan Simulasi
-- Pro (Rp 199K/bulan): Unlimited chat, unlimited ad copy, semua fitur AI, Campaign Wizard, Audience Builder, Ad Analyzer
-- Enterprise (Rp 499K/bulan): Semua fitur Pro + Video Creator, Team Collaboration, API Access
+- Landing Page Creator (/landing-page): Generate halaman landing HTML profesional.
 
 CARA KAMU BEKERJA SEBAGAI ATTENTIVE AGENTIC AI:
 
 1. PROAKTIF: Berikan saran dan langkah selanjutnya tanpa diminta
 2. KONTEKSTUAL: Sesuaikan respons dengan halaman user saat ini dan fitur yang tersedia
 3. SIAP TUGAS: Jika user minta bantuan tugas spesifik (buat iklan, analisis copy, dll), arahkan ke fitur yang tepat dan berikan panduan
-4. ARAHKAN: Jika user butuh fitur premium tapi paketnya belum sesuai, jelaskan dengan sopan dan arahkan ke upgrade
-5. JELASKAN ALUR: Selalu jelaskan proses dari awal sampai akhir dengan jelas
+4. JELASKAN ALUR: Selalu jelaskan proses dari awal sampai akhir dengan jelas
 
 RESPONS BERDASARKAN KONTEKS:
-- Jika user belum login: Jelaskan manfaat aplikasi dan arahkan untuk login/daftar
-- Jika user di landing page: Jelaskan fitur unggulan dan paket yang tersedia
-- Jika user paket Free: Rekomendasikan fitur gratis, jelaskan upgrade jika butuh fitur premium
-- Jika user paket Pro/Enterprise: Maksimalkan penggunaan semua fitur premium
+- Jika user belum login: Jelaskan manfaat aplikasi dan arahkan untuk daftar/login
+- Jika user sudah login: Semua fitur tersedia, bantu maksimalkan penggunaannya
 
 CONTOH TUGAS YANG BISA KAMU BANTU:
 - "Bantu saya buat iklan Facebook untuk produk skincare" -> Arahkan ke Ad Creator, berikan tips struktur iklan
@@ -785,15 +720,9 @@ CONTOH TUGAS YANG BISA KAMU BANTU:
 - "Saya pemula, harus mulai dari mana?" -> Arahkan ke Winning Dashboard dan Simulasi Beriklan
 - "Analisis copy iklan saya ini" -> Arahkan ke Ad Analyzer, jelaskan cara kerjanya
 
-PENTING - ATURAN FITUR TERKUNCI:
-- SELALU cek daftar "Fitur yang Terkunci" dalam konteks user sebelum merekomendasikan fitur
-- Jika user bertanya tentang fitur yang TERKUNCI (ada di lockedFeatures), JANGAN langsung merekomendasikan fitur tersebut
-- Sebaliknya, jelaskan bahwa fitur tersebut memerlukan upgrade dan arahkan ke /pricing
-- Untuk user yang belum login (guest), SELALU arahkan untuk login/daftar terlebih dahulu
-- Hanya rekomendasikan fitur yang ADA di "Fitur yang Dapat Diakses" (availableFeatures)
-
-CONTOH RESPONS UNTUK FITUR TERKUNCI:
-- User free bertanya Campaign Wizard: "Campaign Wizard adalah fitur premium yang membantu kamu membuat campaign step-by-step. Untuk mengakses fitur ini, kamu perlu upgrade ke paket Pro. Kunjungi /pricing untuk melihat detail paket. Sementara itu, kamu bisa mempelajari prinsip-prinsip dasar di Panduan Praktis (/winning-guide) yang tersedia gratis."
+PENTING:
+- Untuk user yang belum login, SELALU arahkan untuk daftar/login terlebih dahulu
+- Semua fitur tersedia untuk user yang sudah login, tidak ada batasan
 
 ATURAN FORMAT JAWABAN:
 - JANGAN gunakan format markdown seperti **, *, #, ##, atau tanda formatting lainnya
@@ -842,43 +771,6 @@ ATURAN FORMAT JAWABAN:
     } catch (error) {
       console.error("Guide chat error:", error);
       res.status(500).json({ error: "Failed to process guide chat" });
-    }
-  });
-
-  // Get user subscription
-  app.get("/api/subscription", async (req: any, res) => {
-    try {
-      // Check for simple session login first, then Replit Auth
-      const user = req.session?.simpleUser || req.user;
-      
-      if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      // Set user on request for isAdminUser check
-      req.user = user;
-
-      const admin = isAdminUser(req);
-
-      const [subscription] = await db
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, user.id))
-        .limit(1);
-
-      if (!subscription) {
-        return res.json({ tier: "free", status: "active", isAdmin: admin });
-      }
-
-      res.json({
-        tier: subscription.tier,
-        status: subscription.status,
-        currentPeriodEnd: subscription.currentPeriodEnd?.toISOString(),
-        isAdmin: admin,
-      });
-    } catch (error) {
-      console.error("Subscription fetch error:", error);
-      res.json({ tier: "free", status: "active", isAdmin: false });
     }
   });
 

@@ -40,20 +40,14 @@ export function FloatingChatbot() {
   }, [messages, scrollToBottom]);
 
   const getProactiveGreeting = useCallback((ctx: GuideContext): string => {
-    const { currentPage, userName, isAuthenticated, subscriptionTier } = ctx;
+    const { currentPage, userName, isAuthenticated } = ctx;
     const name = userName ? `, ${userName}` : "";
     
     if (!isAuthenticated) {
       return `Halo${name}! Saya AI Assistant untuk Marketing Tools. Kamu sedang di halaman ${currentPage.title}. Untuk mengakses semua fitur, silakan login atau daftar terlebih dahulu. Ada yang bisa saya bantu?`;
     }
 
-    const tierInfo = subscriptionTier === "free" 
-      ? "Kamu menggunakan paket Free. Upgrade ke Pro untuk akses fitur premium!"
-      : subscriptionTier === "pro" 
-        ? "Kamu menggunakan paket Pro dengan akses ke banyak fitur premium."
-        : "Kamu menggunakan paket Enterprise dengan akses penuh ke semua fitur.";
-
-    return `Halo${name}! Saya AI Assistant siap membantu. Kamu sedang di ${currentPage.title} - ${currentPage.description}. ${tierInfo} Apa yang ingin kamu lakukan?`;
+    return `Halo${name}! Saya AI Assistant siap membantu. Kamu sedang di ${currentPage.title} - ${currentPage.description}. Semua fitur tersedia untukmu. Apa yang ingin kamu lakukan?`;
   }, []);
 
   useEffect(() => {
@@ -92,12 +86,9 @@ export function FloatingChatbot() {
           context: {
             isAuthenticated: context.isAuthenticated,
             userName: context.userName,
-            subscriptionTier: context.subscriptionTier,
-            isAdmin: context.isAdmin,
             currentPage: context.currentPage.path,
             currentPageTitle: context.currentPage.title,
             availableFeatures: context.availableFeatures,
-            lockedFeatures: context.lockedFeatures,
           },
         }),
       });

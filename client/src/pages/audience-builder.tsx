@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Users, Sparkles, Loader2, Plus, X, Target, Brain, Heart, ShoppingBag, MapPin, Calendar, DollarSign, Briefcase } from "lucide-react";
-import { FeatureGate } from "@/components/feature-gate";
 
 interface AudiencePersona {
   name: string;
@@ -120,11 +119,7 @@ export default function AudienceBuilder() {
   };
 
   return (
-    <FeatureGate
-      feature="audienceBuilder"
-      fallbackTitle="Audience Builder - Fitur Premium"
-      fallbackDescription="Upgrade ke Pro untuk membangun dan memahami target audience ideal Anda."
-    >
+    <>
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="space-y-2">
@@ -331,6 +326,6 @@ export default function AudienceBuilder() {
         </div>
       </div>
     </div>
-    </FeatureGate>
+    </>
   );
 }
