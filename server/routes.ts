@@ -25,7 +25,7 @@ const qwenClient = process.env.QWEN_API_KEY
   : null;
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "admin2024";
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").filter(Boolean);
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
 
 type FeatureName = "campaignWizard" | "audienceBuilder" | "adAnalyzer" | "landingPageCreator" | "videoCreator" | "articleGeneration" | "ttsGeneration" | "sttTranscription";
 
@@ -33,7 +33,7 @@ function isAdminUser(req: Request): boolean {
   const user = (req as any).user;
   if (!user) return false;
   
-  if (ADMIN_EMAILS.includes(user.email)) return true;
+  if (user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim())) return true;
   
   const adminHeader = req.headers["x-admin-key"];
   if (adminHeader === ADMIN_SECRET) return true;
