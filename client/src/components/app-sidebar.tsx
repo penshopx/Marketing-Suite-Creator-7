@@ -21,8 +21,10 @@ import {
   Play,
   LogOut,
   HelpCircle,
+  Download,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { usePWAInstall } from "@/hooks/use-pwa-install";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -242,6 +244,7 @@ function UserProfile() {
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { canInstall, isInstalling, install } = usePWAInstall();
 
   return (
     <Sidebar>
@@ -288,6 +291,19 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4 space-y-3">
+        {canInstall && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-xs border-primary/40 text-primary hover:bg-primary/10"
+            onClick={install}
+            disabled={isInstalling}
+            data-testid="button-install-pwa"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {isInstalling ? "Menginstall..." : "Install App di HP"}
+          </Button>
+        )}
         <UserProfile />
       </SidebarFooter>
     </Sidebar>
