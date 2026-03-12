@@ -1,4 +1,4 @@
-const CACHE_NAME = "marketing-tools-v1";
+const CACHE_NAME = "marketing-tools-v2";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",

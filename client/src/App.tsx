@@ -32,6 +32,7 @@ import AdSimulation from "@/pages/ad-simulation";
 import Login from "@/pages/login";
 import GuideChatbot from "@/pages/guide-chatbot";
 import { FloatingChatbot } from "@/components/floating-chatbot";
+import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
 function Router() {
   return (
@@ -84,6 +85,7 @@ function AuthenticatedApp() {
         </div>
       </SidebarProvider>
       <FloatingChatbot />
+      <PWAInstallBanner />
     </>
   );
 }
@@ -105,6 +107,7 @@ function AppContent() {
       <>
         <Login />
         <FloatingChatbot />
+        <PWAInstallBanner />
       </>
     );
   }
@@ -114,6 +117,7 @@ function AppContent() {
       <>
         <Landing />
         <FloatingChatbot />
+        <PWAInstallBanner />
       </>
     );
   }
