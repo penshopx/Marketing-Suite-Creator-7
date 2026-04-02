@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sparkles, Bot, Loader2, Copy, CheckCircle2, Download,
-  MessageSquare, BookOpen, AlertCircle, ChevronRight, Info, Zap,
+  MessageSquare, BookOpen, AlertCircle, ChevronRight, Info, Zap, ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCampaignStore } from "@/hooks/use-campaign-store";
+import { CampaignContextBar } from "@/components/campaign-context-bar";
 
 interface QnaItem {
   pertanyaan: string;
@@ -51,6 +54,22 @@ export default function CsBotScript() {
   const [result, setResult] = useState<BotScript | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const { toast } = useToast();
+  const { campaign, save, markToolUsed } = useCampaignStore();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("produk");
+    const h = params.get("harga");
+    const t = params.get("target");
+    if (p) setProduk(p);
+    else if (campaign.produk) setProduk(campaign.produk);
+    if (h) setHarga(h);
+    else if (campaign.harga) setHarga(campaign.harga);
+    if (t) setTarget(t);
+    else if (campaign.target) setTarget(campaign.target);
+    if (campaign.usp) setDeskripsiProduk(campaign.usp);
+  }, []);
 
   const handleGenerate = async () => {
     if (!produk.trim()) {
@@ -68,6 +87,8 @@ export default function CsBotScript() {
       if (!res.ok) throw new Error();
       const data = await res.json();
       setResult(data);
+      markToolUsed("cs-bot-script");
+      save({ produk, harga, target, usp: deskripsiProduk });
     } catch {
       toast({ title: "Error", description: "Gagal generate CS bot script", variant: "destructive" });
     } finally {
@@ -130,6 +151,18 @@ export default function CsBotScript() {
           Terinspirasi Cekat.AI
         </Badge>
       </div>
+
+      <CampaignContextBar
+        toolId="cs-bot-script"
+        onAutoFill={(c) => {
+          if (c.produk) setProduk(c.produk);
+          if (c.harga) setHarga(c.harga);
+          if (c.target) setTarget(c.target);
+          if (c.usp) setDeskripsiProduk(c.usp);
+        }}
+        currentValues={{ produk, harga, target, usp: deskripsiProduk }}
+        onSave={() => save({ produk, harga, target, usp: deskripsiProduk })}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 h-fit">
@@ -434,6 +467,45 @@ export default function CsBotScript() {
                         </li>
                       ))}
                     </ul>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-blue-500/5">
+                  <CardHeader className="pb-2 pt-3 px-4 space-y-0">
+                    <CardTitle className="text-sm text-primary flex items-center gap-1.5">
+                      <ArrowRight className="h-4 w-4" />
+                      Lanjutkan ke Fitur Berikutnya
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Button variant="outline" size="sm"
+                        className="border-green-300 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/20 justify-start h-auto py-2.5 px-3"
+                        onClick={() => navigate(`/wa-broadcast?produk=${encodeURIComponent(produk)}&harga=${encodeURIComponent(harga)}&target=${encodeURIComponent(target)}`)}
+                        data-testid="btn-csbot-to-broadcast">
+                        <div className="flex flex-col items-start text-left gap-0.5">
+                          <span className="font-semibold text-xs flex items-center gap-1">WA Broadcast <ArrowRight className="h-3 w-3" /></span>
+                          <span className="text-xs opacity-70 font-normal">Follow-up dari Q&A CS</span>
+                        </div>
+                      </Button>
+                      <Button variant="outline" size="sm"
+                        className="border-purple-300 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/20 justify-start h-auto py-2.5 px-3"
+                        onClick={() => navigate(`/customer-journey?produk=${encodeURIComponent(produk)}&target=${encodeURIComponent(target)}&harga=${encodeURIComponent(harga)}`)}
+                        data-testid="btn-csbot-to-journey">
+                        <div className="flex flex-col items-start text-left gap-0.5">
+                          <span className="font-semibold text-xs flex items-center gap-1">Customer Journey <ArrowRight className="h-3 w-3" /></span>
+                          <span className="text-xs opacity-70 font-normal">Petakan touchpoint customer</span>
+                        </div>
+                      </Button>
+                      <Button variant="outline" size="sm"
+                        className="border-orange-300 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20 justify-start h-auto py-2.5 px-3"
+                        onClick={() => navigate(`/interest-finder?niche=${encodeURIComponent(produk)}&target=${encodeURIComponent(target)}`)}
+                        data-testid="btn-csbot-to-interests">
+                        <div className="flex flex-col items-start text-left gap-0.5">
+                          <span className="font-semibold text-xs flex items-center gap-1">Interest Finder <ArrowRight className="h-3 w-3" /></span>
+                          <span className="text-xs opacity-70 font-normal">Temukan targeting FB/IG</span>
+                        </div>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

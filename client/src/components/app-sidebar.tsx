@@ -73,6 +73,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useCampaignStore } from "@/hooks/use-campaign-store";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -276,6 +277,47 @@ function MainNav() {
   );
 }
 
+function CampaignIndicator() {
+  const { campaign, clear } = useCampaignStore();
+  if (!campaign.produk && !campaign.niche) return null;
+  const name = campaign.produk || campaign.niche || "";
+  const toolCount = campaign.usedTools?.length || 0;
+
+  return (
+    <Link href="/dashboard">
+      <div
+        className="px-2 py-2 rounded-lg bg-green-500/10 border border-green-300/40 dark:border-green-700/40 cursor-pointer hover:bg-green-500/15 transition-colors group"
+        data-testid="sidebar-campaign-indicator"
+      >
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Package className="h-3 w-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+            <span className="text-xs font-semibold text-green-700 dark:text-green-400 truncate">{name}</span>
+          </div>
+          <button
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive text-xs ml-1 flex-shrink-0"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); clear(); }}
+            title="Hapus campaign aktif"
+            data-testid="btn-clear-campaign"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className="text-xs text-muted-foreground">
+            {toolCount > 0 ? `${toolCount} tools digunakan` : "Campaign aktif"}
+          </span>
+          {toolCount > 0 && (
+            <Badge className="text-xs px-1 py-0 h-3.5 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 border-0 font-medium">
+              {toolCount}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function ExecutionPlanProgress() {
   const { context } = useMarketingContext();
   if (context.daysCompleted === 0) return null;
@@ -322,6 +364,11 @@ export function AppSidebar() {
         {/* Execution Plan Progress */}
         <div className="px-2 pb-1">
           <ExecutionPlanProgress />
+        </div>
+
+        {/* Active Campaign Indicator */}
+        <div className="px-2 pb-1">
+          <CampaignIndicator />
         </div>
 
         <NavGroup label="Winning Campaign" items={winningItems} badge="10" badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" />

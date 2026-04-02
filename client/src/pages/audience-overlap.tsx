@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Sparkles, Users, Loader2, Plus, X, AlertTriangle,
-  CheckCircle2, Copy, Layers, ArrowRight, Info,
+  CheckCircle2, Copy, Layers, ArrowRight, Info, Package,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCampaignStore } from "@/hooks/use-campaign-store";
+import { CampaignContextBar } from "@/components/campaign-context-bar";
 
 interface OverlapPair {
   interest1: string;
@@ -40,10 +43,27 @@ interface OverlapResult {
 export default function AudienceOverlap() {
   const [interests, setInterests] = useState<string[]>(["", ""]);
   const [negara, setNegara] = useState("ID");
+  const [niche, setNiche] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<OverlapResult | null>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { campaign, save, markToolUsed } = useCampaignStore();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const interestsParam = params.get("interests");
+    const nicheParam = params.get("niche");
+    if (interestsParam) {
+      const list = interestsParam.split(",").map((i) => i.trim()).filter(Boolean);
+      if (list.length >= 2) setInterests([...list, ""]);
+    } else if (campaign.savedInterests?.length >= 2) {
+      setInterests([...campaign.savedInterests.slice(0, 8), ""]);
+    }
+    if (nicheParam) setNiche(nicheParam);
+    else if (campaign.niche) setNiche(campaign.niche);
+  }, []);
 
   const addInterest = () => {
     if (interests.length < 10) setInterests([...interests, ""]);
@@ -76,6 +96,8 @@ export default function AudienceOverlap() {
       if (!res.ok) throw new Error();
       const data = await res.json();
       setResult(data);
+      markToolUsed("audience-overlap");
+      save({ savedInterests: filled, niche: niche || campaign.niche });
     } catch {
       toast({ title: "Error", description: "Gagal analisis overlap", variant: "destructive" });
     } finally {
@@ -120,6 +142,16 @@ export default function AudienceOverlap() {
           Terinspirasi Adsumo
         </Badge>
       </div>
+
+      <CampaignContextBar
+        toolId="audience-overlap"
+        onAutoFill={(c) => {
+          if (c.savedInterests?.length >= 2) setInterests([...c.savedInterests.slice(0, 8), ""]);
+          if (c.niche) setNiche(c.niche);
+        }}
+        currentValues={{ niche }}
+        onSave={() => save({ savedInterests: interests.filter(Boolean), niche })}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 h-fit">
@@ -359,6 +391,59 @@ export default function AudienceOverlap() {
                   </CardContent>
                 </Card>
               )}
+
+              <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-green-500/5">
+                <CardHeader className="pb-2 pt-3 px-4 space-y-0">
+                  <CardTitle className="text-sm text-primary flex items-center gap-1.5">
+                    <ArrowRight className="h-4 w-4" />
+                    Lanjutkan ke Fitur Berikutnya
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="py-2 px-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-green-300 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/20 justify-start h-auto py-2.5 px-3"
+                      onClick={() => {
+                        save({ savedInterests: interests.filter(Boolean) });
+                        const q = `produk=${encodeURIComponent(campaign.produk || niche)}&niche=${encodeURIComponent(niche || campaign.niche)}&target=${encodeURIComponent(campaign.target)}`;
+                        navigate(`/wa-broadcast?${q}`);
+                      }}
+                      data-testid="btn-overlap-to-broadcast"
+                    >
+                      <div className="flex flex-col items-start text-left gap-0.5">
+                        <span className="font-semibold text-xs flex items-center gap-1">WA Broadcast <ArrowRight className="h-3 w-3" /></span>
+                        <span className="text-xs opacity-70 font-normal">Generate follow-up sequence</span>
+                      </div>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-purple-300 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/20 justify-start h-auto py-2.5 px-3"
+                      onClick={() => navigate(`/customer-journey?produk=${encodeURIComponent(campaign.produk || niche)}&target=${encodeURIComponent(campaign.target)}`)}
+                      data-testid="btn-overlap-to-journey"
+                    >
+                      <div className="flex flex-col items-start text-left gap-0.5">
+                        <span className="font-semibold text-xs flex items-center gap-1">Customer Journey <ArrowRight className="h-3 w-3" /></span>
+                        <span className="text-xs opacity-70 font-normal">Petakan perjalanan customer</span>
+                      </div>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 justify-start h-auto py-2.5 px-3"
+                      onClick={() => navigate(`/auto-rule?produk=${encodeURIComponent(campaign.produk || niche)}`)}
+                      data-testid="btn-overlap-to-autorule"
+                    >
+                      <div className="flex flex-col items-start text-left gap-0.5">
+                        <span className="font-semibold text-xs flex items-center gap-1">Auto Rule Builder <ArrowRight className="h-3 w-3" /></span>
+                        <span className="text-xs opacity-70 font-normal">Rules otomatis Meta Ads</span>
+                      </div>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
         </div>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sparkles, Search, Copy, Star, TrendingUp, Loader2,
-  CheckCircle2, Download, Info,
+  CheckCircle2, Download, Info, ArrowRight, Package,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCampaignStore } from "@/hooks/use-campaign-store";
+import { CampaignContextBar } from "@/components/campaign-context-bar";
 
 interface Interest {
   name: string;
@@ -46,6 +49,16 @@ export default function InterestFinder() {
   const [copied, setCopied] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const { campaign, save, addInterests, markToolUsed } = useCampaignStore();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const niche = params.get("niche");
+    const target = params.get("target");
+    if (niche) setKeyword(niche);
+    if (target) setDeskripsiAudience(target);
+  }, []);
 
   const handleGenerate = async () => {
     if (!keyword.trim()) {
@@ -63,11 +76,30 @@ export default function InterestFinder() {
       if (!res.ok) throw new Error();
       const data = await res.json();
       setResult(data);
+      markToolUsed("interest-finder");
     } catch {
       toast({ title: "Error", description: "Gagal generate interests", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveAndSendToOverlap = () => {
+    if (!result) return;
+    const allInterests = result.topPicks.slice(0, 10).map((i) => i.name);
+    addInterests(allInterests);
+    save({ niche: keyword, target: deskripsiAudience });
+    navigate(`/audience-overlap?interests=${encodeURIComponent(allInterests.join(","))}&niche=${encodeURIComponent(keyword)}`);
+    toast({ title: "Menuju Audience Overlap Analyzer →", description: `${allInterests.length} top interests dikirim` });
+  };
+
+  const handleSendToWaBroadcast = () => {
+    save({ niche: keyword, target: deskripsiAudience });
+    navigate(`/wa-broadcast?niche=${encodeURIComponent(keyword)}&target=${encodeURIComponent(deskripsiAudience)}`);
+  };
+
+  const handleSendToLpHtml = () => {
+    navigate(`/lp-html-generator?niche=${encodeURIComponent(keyword)}`);
   };
 
   const copyInterests = (interests: Interest[], label: string) => {
@@ -138,6 +170,16 @@ export default function InterestFinder() {
           Powered by AI
         </Badge>
       </div>
+
+      <CampaignContextBar
+        toolId="interest-finder"
+        onAutoFill={(c) => {
+          if (c.niche) setKeyword(c.niche);
+          if (c.target) setDeskripsiAudience(c.target);
+        }}
+        currentValues={{ niche: keyword, target: deskripsiAudience }}
+        onSave={() => save({ niche: keyword, target: deskripsiAudience })}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 h-fit">
@@ -507,6 +549,65 @@ export default function InterestFinder() {
                   </CardContent>
                 </Card>
               )}
+
+              <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-blue-500/5">
+                <CardHeader className="pb-2 pt-3 px-4 space-y-0">
+                  <CardTitle className="text-sm text-primary flex items-center gap-1.5">
+                    <ArrowRight className="h-4 w-4" />
+                    Lanjutkan ke Fitur Berikutnya — Data Otomatis Terisi
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="py-2 px-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 justify-start h-auto py-2.5 px-3"
+                      onClick={handleSaveAndSendToOverlap}
+                      data-testid="btn-send-to-overlap"
+                    >
+                      <div className="flex flex-col items-start text-left gap-0.5">
+                        <span className="font-semibold text-xs flex items-center gap-1">
+                          Audience Overlap <ArrowRight className="h-3 w-3" />
+                        </span>
+                        <span className="text-xs opacity-70 font-normal">Analisis overlap Top Picks</span>
+                      </div>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-green-300 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/20 justify-start h-auto py-2.5 px-3"
+                      onClick={handleSendToWaBroadcast}
+                      data-testid="btn-send-to-broadcast"
+                    >
+                      <div className="flex flex-col items-start text-left gap-0.5">
+                        <span className="font-semibold text-xs flex items-center gap-1">
+                          WA Broadcast <ArrowRight className="h-3 w-3" />
+                        </span>
+                        <span className="text-xs opacity-70 font-normal">Generate follow-up sequence</span>
+                      </div>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-orange-300 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20 justify-start h-auto py-2.5 px-3"
+                      onClick={handleSendToLpHtml}
+                      data-testid="btn-send-to-lp"
+                    >
+                      <div className="flex flex-col items-start text-left gap-0.5">
+                        <span className="font-semibold text-xs flex items-center gap-1">
+                          LP HTML Builder <ArrowRight className="h-3 w-3" />
+                        </span>
+                        <span className="text-xs opacity-70 font-normal">Buat landing page niche ini</span>
+                      </div>
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    Niche "{keyword}" akan otomatis terisi di semua halaman tujuan
+                  </p>
+                </CardContent>
+              </Card>
             </>
           )}
         </div>

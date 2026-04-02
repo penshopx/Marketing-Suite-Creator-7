@@ -34,6 +34,18 @@ A comprehensive AI-powered marketing tools application built with React, Express
 - **Affiliate Content** - AI-powered content generator for affiliate marketing (4 template types, 30-day content calendar, platform tips)
 - **Prompt Framework** - 10+ proven ChatGPT prompts for marketing, copywriting, research, and sales
 
+### Cekat.AI-Inspired Tools (Sistem Sales)
+- **WA Broadcast Sequence** (`/wa-broadcast`) - Generate 7-30 day WhatsApp follow-up sequences by segment. API: `/api/generate-wa-broadcast`. **Sinkronisasi**: reads produk/harga/usp from campaign store + URL params; writes back on generate; cross-tool buttons → CS Bot, Customer Journey, Interest Finder
+- **CS Bot Script Builder** (`/cs-bot-script`) - Generate knowledge base Q&A + conversation flows for CS bots (Respond.io, Qontak). API: `/api/generate-cs-bot-script`. **Sinkronisasi**: reads produk/harga/target/usp; cross-tool buttons → WA Broadcast, Customer Journey, Interest Finder
+- **Customer Journey Mapper** (`/customer-journey`) - Map full customer journey from awareness to advocacy with stage tactics, KPIs, content ideas. API: `/api/generate-customer-journey`. **Sinkronisasi**: reads produk/harga/target/kompetitor; cross-tool buttons → CS Bot, WA Broadcast, Interest Finder
+
+### Sinkronisasi System (Cross-Tool Data Flow)
+- **Campaign Store** (`client/src/hooks/use-campaign-store.ts`) - Global localStorage state: produk, harga, niche, target, usp, kompetitor, savedInterests[], usedTools[]
+- **CampaignContextBar** (`client/src/components/campaign-context-bar.tsx`) - Auto-fill + save bar shown at top of each tool page when campaign is active
+- **Sidebar Campaign Indicator** - Green widget in sidebar showing active campaign name + tools used count; hover to clear
+- **Cross-tool buttons**: Every tool shows a "Lanjutkan ke Fitur Berikutnya" card at bottom of results with 3 next-tool buttons that pre-populate URL params
+- Tools connected: Interest Finder ↔ Audience Overlap ↔ WA Broadcast ↔ CS Bot ↔ Customer Journey ↔ LP Builder ↔ Auto Rule Builder
+
 ### Otomasi AI
 - **Campaign Launcher** - Automate campaign launch workflows
 - **Content Repurposer** - Transform content across formats
