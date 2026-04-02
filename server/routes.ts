@@ -403,51 +403,111 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
         productName,
         tagline,
         description = "",
-        features = "",
-        style = "modern",
+        benefits = "",
+        productType = "general",
+        targetMarket = "",
+        category = "",
+        framework = "PAS",
+        objective = "Penjualan Langsung (Direct Sales)",
+        ctaType = "Beli Sekarang",
+        pricingModel = "Sekali Bayar (One-time Payment)",
+        productPrice = "",
+        socialProof = "Testimoni pelanggan (teks)",
+        urgency = "Batas waktu penawaran",
+        uiTheme = "bold_modern",
       } = req.body;
 
-      const styleGuides: Record<string, string> = {
-        modern: "Clean lines, lots of white space, gradient accents, sans-serif fonts",
-        startup: "Bold colors, dynamic layouts, energetic feel, tech-forward",
-        corporate: "Professional, structured, trust-building, muted colors",
-        creative: "Unique layouts, artistic elements, vibrant colors",
-        ecommerce: "Product-focused, clear CTAs, trust badges, clean grid",
+      const productTypeLabels: Record<string, string> = {
+        digital: "Produk Digital (ebook/course/template/software)",
+        physical: "Produk Fisik (barang/merchandise)",
+        service: "Jasa/Layanan (konsultasi/freelance/agency)",
+        general: "Produk/Layanan Umum",
       };
 
-      const featureList = features.split("\n").filter((f: string) => f.trim());
+      const themeGuides: Record<string, string> = {
+        bold_modern: "Bold, strong colors with high contrast. Large impactful headlines. Dynamic sections with accent colors. Modern sans-serif fonts.",
+        clean_minimal: "Clean white space, minimal design. Subtle borders. Light gray accents. Premium feel through simplicity.",
+        dark_premium: "Dark background (#0f0f0f or #111827). Gold or electric blue accents. Premium, luxury feel. High contrast text.",
+        warm_earthy: "Warm earth tones (cream, terracotta, warm brown). Organic feel. Rounded corners. Friendly and approachable.",
+        tech_startup: "Gradient backgrounds (purple to blue). Glassmorphism effects. Futuristic feel. Tech-forward typography.",
+        trust_corporate: "Navy blue and white. Professional and structured. Trust-building elements. Corporate but approachable.",
+      };
 
-      const prompt = `Generate a complete, self-contained HTML landing page for "${productName}".
+      const frameworkGuides: Record<string, string> = {
+        AIDA: "Structure: 1) Attention-grabbing headline, 2) Build Interest with benefits, 3) Create Desire with proof/results, 4) Strong Action CTA",
+        PAS: "Structure: 1) Problem - identify pain points of target market, 2) Agitate - amplify the pain, 3) Solution - present product as the answer",
+        BAB: "Structure: 1) Before - current painful state, 2) After - desired transformed state, 3) Bridge - how product gets them there",
+        FAB: "Structure: 1) Features of the product, 2) Advantages over alternatives, 3) Benefits/transformation for the buyer",
+        PASTOR: "Structure: 1) Problem, 2) Amplify pain, 3) Story/testimonial, 4) Transformation shown, 5) Offer details, 6) Response/CTA",
+        "4U": "Every headline follows: Useful (practical value), Urgent (time pressure), Unique (different from alternatives), Ultra-specific (exact numbers/results)",
+        SPIN: "Structure: 1) Situation (context), 2) Problem (pain), 3) Implication (consequences of not solving), 4) Need-payoff (value of solution)",
+        storytelling: "Lead with an emotional story about transformation. Use narrative arc. Make reader the hero. Product is the guide/tool.",
+        social_proof: "Lead with real results and proof. Number-heavy. Case studies first. Then offer. Trust before pitch.",
+      };
 
-Tagline: ${tagline}
-${description ? `Description: ${description}` : ""}
-${featureList.length > 0 ? `Features: ${featureList.join(", ")}` : ""}
-Style: ${styleGuides[style] || "modern, professional"}
+      const benefitList = benefits.split("\n").filter((b: string) => b.trim());
 
-Requirements:
-1. Complete, valid HTML5 document
-2. Inline CSS (no external stylesheets)
-3. Responsive design
-4. Hero section with headline and CTA
-5. Features section if features provided
-6. Testimonial placeholder section
-7. Footer with call-to-action
-8. Professional color scheme matching the style
-9. Modern, clean typography
+      const prompt = `Kamu adalah expert copywriter dan web developer Indonesia yang membuat landing page high-converting.
 
-Return ONLY the HTML code, no explanations.`;
+Buat landing page LENGKAP dalam bahasa Indonesia untuk:
+
+PRODUK: "${productName}"
+JENIS: ${productTypeLabels[productType] || productType}
+${category ? `KATEGORI: ${category}` : ""}
+TAGLINE: "${tagline}"
+${description ? `DESKRIPSI: ${description}` : ""}
+${benefitList.length > 0 ? `MANFAAT UTAMA:\n${benefitList.map((b: string, i: number) => `${i + 1}. ${b}`).join("\n")}` : ""}
+${targetMarket ? `TARGET MARKET: ${targetMarket}` : ""}
+${productPrice ? `HARGA: ${productPrice}` : ""}
+
+STRATEGI COPYWRITING:
+- Framework: ${framework} — ${frameworkGuides[framework] || ""}
+- Tujuan LP: ${objective}
+- CTA Utama: "${ctaType}"
+- Model Harga: ${pricingModel}
+- Social Proof: ${socialProof}
+- Urgency: ${urgency}
+
+VISUAL THEME: ${themeGuides[uiTheme] || "Modern, professional"}
+
+STRUKTUR LANDING PAGE yang WAJIB ada (dalam bahasa Indonesia):
+1. Navigation bar minimalis (nama produk + 1 CTA button)
+2. HERO SECTION: Headline utama yang powerful (sesuai framework ${framework}), subheadline, 2 CTA buttons, social proof kecil (misal: "1.500+ seller sudah pakai")
+3. MASALAH section: 3-4 pain point target market yang relatable
+4. SOLUSI / PRODUK section: Apa yang didapat, dengan visual yang menarik
+5. MANFAAT / FITUR section: List benefit dengan icon emoji, detail per manfaat
+6. SOCIAL PROOF section: 3 testimoni placeholder (nama, role, quote yang relevan), ${socialProof}
+7. CARA KERJA / HOW IT WORKS: 3 langkah mudah
+8. PENAWARAN / PRICING section: Harga, model ${pricingModel}, apa yang didapat, ${urgency}
+9. FAQ section: 4-5 pertanyaan yang mungkin ada di benak target market
+10. FINAL CTA section: Kuat dan urgency, CTA button "${ctaType}"
+11. Footer
+
+TEKNIS:
+- HTML5 valid, self-contained, semua CSS inline/internal <style>
+- FULLY responsive (mobile-first)
+- Font: Google Fonts (load dari CDN: Inter atau Poppins)
+- Smooth scroll, hover effects pada buttons dan cards
+- CTA button: gradient, shadow, hover animation
+- Section spacing yang nyaman
+- Warna dan desain sesuai tema: ${uiTheme}
+
+Tuliskan HANYA kode HTML lengkap. Tanpa penjelasan.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are an expert web developer who creates beautiful, conversion-optimized landing pages. Return only valid HTML code." },
+          {
+            role: "system",
+            content: "Kamu adalah expert web developer dan copywriter Indonesia yang membuat landing page high-converting. Selalu gunakan bahasa Indonesia yang natural dan persuasif. Return HANYA kode HTML valid dan lengkap, tanpa markdown, tanpa penjelasan.",
+          },
           { role: "user", content: prompt },
         ],
-        max_completion_tokens: 8192,
+        max_completion_tokens: 12000,
       });
 
       let html = response.choices[0]?.message?.content || "";
-      
+
       // Extract HTML if wrapped in code blocks
       const htmlMatch = html.match(/```(?:html)?\s*([\s\S]*?)```/);
       if (htmlMatch) {
@@ -457,7 +517,7 @@ Return ONLY the HTML code, no explanations.`;
       res.json({ html: html.trim() });
     } catch (error) {
       console.error("Landing page generation error:", error);
-      res.status(500).json({ error: "Failed to generate landing page" });
+      res.status(500).json({ error: "Gagal generate landing page" });
     }
   });
 
