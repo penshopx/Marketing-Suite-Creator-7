@@ -50,6 +50,8 @@ import VideoScript from "@/pages/video-script";
 import HashtagGenerator from "@/pages/hashtag-generator";
 import KeywordMarketplace from "@/pages/keyword-marketplace";
 import SpyKompetitor from "@/pages/spy-kompetitor";
+import GoogleAds from "@/pages/google-ads";
+import CampaignReport from "@/pages/campaign-report";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -95,6 +97,8 @@ function Router() {
       <Route path="/hashtag-generator" component={HashtagGenerator} />
       <Route path="/keyword-marketplace" component={KeywordMarketplace} />
       <Route path="/spy-kompetitor" component={SpyKompetitor} />
+      <Route path="/google-ads" component={GoogleAds} />
+      <Route path="/campaign-report" component={CampaignReport} />
       <Route component={NotFound} />
     </Switch>
   );

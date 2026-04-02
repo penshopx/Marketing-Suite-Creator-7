@@ -1488,6 +1488,254 @@ PENTING: Semua konten dalam Bahasa Indonesia. Sesuaikan tone dan style untuk set
     }
   });
 
+  // ─── Google Ads Creator ───────────────────────────────────────────────────
+  app.post("/api/generate-google-ads", async (req, res) => {
+    try {
+      const { campaignType, objective, produk, url, keywords, targetAudience, usp, budget } = req.body;
+      if (!produk) return res.status(400).json({ error: "Produk wajib diisi" });
+
+      const typeGuides: Record<string, string> = {
+        search: "Google Search Ads — RSA format, muncul di hasil pencarian, berbasis keyword intent",
+        performance_max: "Performance Max — AI-driven, tampil di semua channel Google (Search, Display, YouTube, Gmail, Shopping)",
+        display: "Google Display — banner visual di jutaan website Google Display Network",
+        shopping: "Google Shopping — tampilkan produk dengan gambar, harga, dan nama toko di Google Search",
+      };
+      const objGuides: Record<string, string> = {
+        sales: "Penjualan langsung — fokus pada strong CTA dan value proposition yang clear",
+        leads: "Lead generation — fokus pada benefit dan low-friction CTA seperti 'Konsultasi Gratis'",
+        traffic: "Website traffic — fokus pada curiosity dan informational angle",
+        awareness: "Brand awareness — fokus pada memorable messaging dan brand nilai",
+        app: "App downloads — fokus pada fitur unggulan dan benefit langsung",
+      };
+
+      const prompt = `Kamu adalah Google Ads specialist berpengalaman Indonesia yang ahli membuat iklan dengan Quality Score tinggi.
+
+DETAIL KAMPANYE:
+- Produk/Bisnis: ${produk}
+- Tipe Kampanye: ${typeGuides[campaignType] || campaignType}
+- Tujuan: ${objGuides[objective] || objective}
+- URL: ${url || "tidak diisi"}
+- Keyword utama: ${keywords || "belum ditentukan"}
+- USP/Keunggulan: ${usp || "tidak disebutkan"}
+- Target Audiens: ${targetAudience || "umum"}
+- Budget harian: ${budget || "belum ditentukan"}
+
+Buat kampanye Google Ads yang LENGKAP dan siap upload. PENTING: Headlines WAJIB max 30 karakter, descriptions WAJIB max 90 karakter. Hitung karakter dengan teliti!
+
+KEMBALIKAN JSON dengan struktur TEPAT ini:
+{
+  "judulKampanye": "Nama kampanye yang deskriptif",
+  "campaignType": "${campaignType}",
+  "tujuan": "${objective}",
+  "qualityScore": {
+    "score": 8,
+    "label": "Sangat Baik",
+    "tips": [
+      "Tip QS 1: pastikan keyword ada di headline",
+      "Tip QS 2: landing page harus relevan dengan keyword",
+      "Tip QS 3: gunakan ad extensions untuk boost CTR",
+      "Tip QS 4: CTR yang tinggi meningkatkan Quality Score"
+    ]
+  },
+  "adGroups": [
+    {
+      "nama": "Ad Group 1 — nama yang deskriptif",
+      "keywords": [
+        { "keyword": "keyword utama", "matchType": "Exact", "estimasiBid": "Rp 500–1.200/klik" },
+        { "keyword": "keyword broad", "matchType": "Phrase", "estimasiBid": "Rp 300–800/klik" },
+        { "keyword": "keyword lain", "matchType": "Broad", "estimasiBid": "Rp 200–600/klik" }
+      ],
+      "headlines": [
+        { "teks": "Headline max 30 char", "karakter": 20, "pinned": "Posisi 1", "qsTip": "Mengandung keyword utama" },
+        { "teks": "Headline 2", "karakter": 12, "qsTip": "Benefit statement" },
+        { "teks": "Headline 3", "karakter": 10, "qsTip": "CTA yang jelas" }
+      ],
+      "descriptions": [
+        { "teks": "Deskripsi pertama max 90 karakter dengan benefit utama dan CTA yang kuat", "karakter": 72, "qsTip": "Mengandung keyword dan CTA" },
+        { "teks": "Deskripsi kedua max 90 karakter dengan social proof atau urgency element", "karakter": 73, "qsTip": "Menambah konteks dan urgensi" }
+      ]
+    }
+  ],
+  "extensions": [
+    {
+      "type": "Sitelinks",
+      "items": ["Halaman 1 | URL sitelink 1", "Halaman 2 | URL sitelink 2", "Halaman 3 | URL sitelink 3", "Halaman 4 | URL sitelink 4"]
+    },
+    {
+      "type": "Callouts",
+      "items": ["Callout benefit 1", "Callout benefit 2", "Callout benefit 3", "Callout benefit 4", "Callout benefit 5"]
+    },
+    {
+      "type": "Structured Snippets",
+      "items": ["Header: Service", "Value 1", "Value 2", "Value 3"]
+    }
+  ],
+  "negativeKeywords": ["negatif1", "negatif2", "negatif3", "negatif4", "negatif5", "negatif6", "negatif7", "negatif8"],
+  "budgetStrategy": "Penjelasan strategi budget untuk ${budget || 'yang ditentukan'}: berapa budget recommended, distribusi waktu, dan cara scale up.",
+  "biddingStrategy": "Penjelasan strategi bidding yang tepat: apakah Target CPA, Target ROAS, Maximize Conversions, atau Manual CPC — beserta alasannya untuk tujuan ${objective}.",
+  "tips": [
+    "Tip optimasi 1 spesifik untuk ${campaignType}",
+    "Tip 2 tentang Quality Score dan Ad Rank",
+    "Tip 3 tentang A/B testing headlines",
+    "Tip 4 tentang monitoring dan negative keyword",
+    "Tip 5 tentang koneksi dengan landing page"
+  ]
+}
+
+ATURAN KERAS:
+- SETIAP headline WAJIB ≤ 30 karakter (hitung ketat, tidak boleh lebih!)
+- SETIAP description WAJIB ≤ 90 karakter (hitung ketat!)
+- Buat minimal 2 ad groups dengan minimal 10 headlines dan 3 descriptions masing-masing
+- "karakter" field harus sesuai dengan panjang teks sebenarnya
+- Semua teks dalam Bahasa Indonesia yang natural dan persuasif`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.75,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      // Fix character counts server-side
+      if (data.adGroups) {
+        data.adGroups.forEach((group: any) => {
+          group.headlines?.forEach((h: any) => { h.karakter = h.teks?.length || 0; });
+          group.descriptions?.forEach((d: any) => { d.karakter = d.teks?.length || 0; });
+        });
+      }
+      res.json(data);
+    } catch (error) {
+      console.error("Google ads error:", error);
+      res.status(500).json({ error: "Gagal generate Google Ads" });
+    }
+  });
+
+  // ─── Campaign Report Generator ────────────────────────────────────────────
+  app.post("/api/generate-campaign-report", async (req, res) => {
+    try {
+      const { platform, period, namaBisnis, spend, revenue, impressions, clicks, conversions, ctr, cpc, cpa, roas, targetRoas, prevSpend, prevRevenue } = req.body;
+      if (!spend && !revenue) return res.status(400).json({ error: "Minimal isi spend atau revenue" });
+
+      const platformLabels: Record<string, string> = {
+        meta: "Meta Ads (Facebook/Instagram)", google: "Google Ads",
+        tiktok: "TikTok Ads", shopee: "Shopee Ads", multi: "Multi-Platform",
+      };
+      const periodLabels: Record<string, string> = {
+        "7days": "7 Hari Terakhir", "14days": "14 Hari Terakhir",
+        "30days": "30 Hari Terakhir", "90days": "90 Hari (1 Kuartal)",
+      };
+
+      const metrics = [
+        spend && `Total Spend: Rp ${spend}`,
+        revenue && `Total Revenue/Omset: Rp ${revenue}`,
+        impressions && `Impressions: ${impressions}`,
+        clicks && `Clicks: ${clicks}`,
+        conversions && `Konversi/Order: ${conversions}`,
+        ctr && `CTR: ${ctr}%`,
+        cpc && `CPC: Rp ${cpc}`,
+        cpa && `CPA: Rp ${cpa}`,
+        roas && `ROAS Aktual: ${roas}x`,
+        targetRoas && `Target ROAS: ${targetRoas}x`,
+        prevSpend && `Spend Periode Sebelumnya: Rp ${prevSpend}`,
+        prevRevenue && `Revenue Periode Sebelumnya: Rp ${prevRevenue}`,
+      ].filter(Boolean).join("\n");
+
+      const prompt = `Kamu adalah digital advertising analyst senior Indonesia yang ahli membuat laporan performa kampanye yang insightful dan actionable.
+
+LAPORAN UNTUK:
+- Bisnis/Brand: ${namaBisnis || "Tidak disebutkan"}
+- Platform: ${platformLabels[platform] || platform}
+- Periode Analisis: ${periodLabels[period] || period}
+
+DATA METRIK:
+${metrics}
+
+Analisis data di atas secara mendalam dan hasilkan laporan performa kampanye yang komprehensif. Hitung semua turunan metrik yang bisa dihitung (misal: kalau ada spend dan revenue, hitung ROAS; kalau ada spend dan klik, hitung CPC; dll).
+
+KEMBALIKAN JSON dengan struktur TEPAT ini:
+{
+  "judul": "Laporan Performa ${platformLabels[platform] || platform} — ${namaBisnis || 'Kampanye'}",
+  "platform": "${platformLabels[platform] || platform}",
+  "periode": "${periodLabels[period] || period}",
+  "ringkasan": "Ringkasan eksekutif 3-4 kalimat yang menjelaskan performa keseluruhan, apa yang berjalan baik, dan apa yang perlu diperbaiki",
+  "skor": {
+    "total": 72,
+    "label": "Cukup Baik",
+    "keterangan": "Penjelasan singkat kenapa skor ini — apa yang mendorong dan menurunkan skor"
+  },
+  "kpis": [
+    {
+      "label": "ROAS",
+      "nilai": "4.2x",
+      "target": "5.0x",
+      "perubahan": "+12% vs periode sebelumnya",
+      "trend": "up",
+      "status": "warning",
+      "insight": "ROAS di bawah target tapi ada perbaikan. Perlu optimasi audience targeting."
+    }
+  ],
+  "highlights": [
+    { "tipe": "positive", "poin": "Hal positif yang terjadi dalam kampanye ini" },
+    { "tipe": "negative", "poin": "Masalah atau area yang membutuhkan perhatian segera" },
+    { "tipe": "neutral", "poin": "Insight informatif yang perlu diketahui" }
+  ],
+  "recommendations": [
+    {
+      "prioritas": "high",
+      "kategori": "Bidding",
+      "tindakan": "Tindakan konkret yang harus dilakukan",
+      "dampak": "Estimasi dampak jika tindakan ini dilakukan",
+      "cara": "Cara spesifik mengeksekusi tindakan ini di ${platformLabels[platform] || platform}"
+    }
+  ],
+  "budgetAnalysis": {
+    "total": "Rp ${spend || '0'}",
+    "efisiensi": "Analisis seberapa efisien budget digunakan",
+    "alokasi": "Saran alokasi budget yang lebih optimal",
+    "rekomendasi": "Rekomendasi budget untuk periode berikutnya"
+  },
+  "nextSteps": [
+    "Langkah prioritas 1 yang harus dilakukan dalam 1 minggu ke depan",
+    "Langkah 2 untuk 2 minggu ke depan",
+    "Langkah 3 untuk bulan depan",
+    "Langkah 4 jangka menengah",
+    "Langkah 5 strategis"
+  ],
+  "benchmarks": [
+    {
+      "metric": "ROAS",
+      "nilaiKamu": "4.2x",
+      "benchmark": "3.5-5x (${platformLabels[platform] || platform} e-commerce)",
+      "status": "on"
+    }
+  ]
+}
+
+PANDUAN:
+- Skor: 0-40 = Buruk, 41-60 = Perlu Perbaikan, 61-75 = Cukup Baik, 76-85 = Baik, 86-100 = Sangat Baik
+- Trend: "up", "down", atau "flat"
+- Status KPI: "good" (di atas target), "warning" (mendekati target/bisa lebih baik), "bad" (jauh dari target/bermasalah)
+- Minimal 5 KPIs, 6 highlights (campuran positif/negatif/netral), 5 rekomendasi, 8 benchmarks
+- Benchmark harus spesifik untuk ${platformLabels[platform] || platform} dan industri Indonesia
+- Semua dalam Bahasa Indonesia yang profesional namun mudah dipahami
+- Rekomendasi HARUS actionable, bukan sekedar saran umum`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Campaign report error:", error);
+      res.status(500).json({ error: "Gagal generate laporan" });
+    }
+  });
+
   // ─── Riset Keyword Marketplace ────────────────────────────────────────────
   app.post("/api/riset-keyword-marketplace", async (req, res) => {
     try {
