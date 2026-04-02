@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Globe, Loader2, Copy, Download, Sparkles, Eye, Code,
   BookOpen, Package, Wrench, Target, Zap, Star, Clock,
-  DollarSign, Users, ChevronRight, LayoutTemplate,
+  DollarSign, Users, ChevronRight, LayoutTemplate, MessageSquare,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -111,6 +111,23 @@ const uiThemes = [
   { id: "trust_corporate", label: "Trust & Corporate", desc: "Biru, profesional, struktural" },
 ];
 
+const gayaBahasaOptions = [
+  { id: "santai", label: "😊 Santai", desc: "Friendly, relatable, mudah dipahami" },
+  { id: "formal", label: "🎩 Formal", desc: "Profesional, sopan, terstruktur" },
+  { id: "gaul", label: "🔥 Gaul", desc: "Kasual, slang Gen Z, anak muda" },
+  { id: "provokatif", label: "⚡ Provokatif", desc: "Bold, FOMO tinggi, hard-selling" },
+  { id: "inspiratif", label: "🌟 Inspiratif", desc: "Motivasional, emosional, transformatif" },
+];
+
+const optionalSectionsList = [
+  { id: "faq", label: "FAQ Section", desc: "Jawab pertanyaan umum calon pembeli" },
+  { id: "bonus", label: "Bonus / Hadiah", desc: "Tampilkan bonus eksklusif penawaran" },
+  { id: "comparison", label: "Tabel Perbandingan", desc: "Bandingkan vs cara lain / kompetitor" },
+  { id: "countdown", label: "Countdown Timer", desc: "Timer berjalan untuk urgency penawaran" },
+  { id: "guarantee", label: "Garansi / Jaminan", desc: "Badge garansi untuk tingkatkan trust" },
+  { id: "whatsapp", label: "Tombol WhatsApp", desc: "Floating WA button untuk direct chat" },
+];
+
 interface GeneratedLP {
   id: string;
   title: string;
@@ -135,11 +152,17 @@ export default function LandingPageCreator() {
   const [socialProof, setSocialProof] = useState("Testimoni pelanggan (teks)");
   const [urgency, setUrgency] = useState("Batas waktu penawaran");
   const [uiTheme, setUiTheme] = useState("bold_modern");
+  const [gayaBahasa, setGayaBahasa] = useState("santai");
+  const [optionalSections, setOptionalSections] = useState<Record<string, boolean>>({
+    faq: true, bonus: false, comparison: false, countdown: false, guarantee: true, whatsapp: true,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [generatedLP, setGeneratedLP] = useState<GeneratedLP | null>(null);
   const [lpHistory, setLpHistory] = useState<GeneratedLP[]>([]);
   const [viewMode, setViewMode] = useState<"preview" | "code">("preview");
   const [activeTab, setActiveTab] = useState("create");
+
+  const toggleSection = (id: string) => setOptionalSections((prev) => ({ ...prev, [id]: !prev[id] }));
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -169,6 +192,8 @@ export default function LandingPageCreator() {
           socialProof,
           urgency,
           uiTheme,
+          gayaBahasa,
+          optionalSections,
         }),
       });
 
@@ -499,6 +524,38 @@ export default function LandingPageCreator() {
                   </CardContent>
                 </Card>
 
+                {/* Gaya Bahasa */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      Gaya Bahasa
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-2">
+                      {gayaBahasaOptions.map((g) => (
+                        <button
+                          key={g.id}
+                          onClick={() => setGayaBahasa(g.id)}
+                          data-testid={`button-gaya-${g.id}`}
+                          className={`flex items-center gap-3 p-2.5 rounded-lg border text-left transition-all ${
+                            gayaBahasa === g.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <span className="text-base">{g.label.split(" ")[0]}</span>
+                          <div>
+                            <div className={`font-medium text-xs ${gayaBahasa === g.id ? "text-primary" : ""}`}>{g.label.split(" ").slice(1).join(" ")}</div>
+                            <div className="text-xs text-muted-foreground">{g.desc}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Visual Theme */}
                 <Card>
                   <CardHeader className="pb-3">
@@ -525,6 +582,45 @@ export default function LandingPageCreator() {
                         </button>
                       ))}
                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Optional Sections */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Star className="h-4 w-4 text-primary" />
+                      Section Tambahan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-xs text-muted-foreground mb-1">Centang section yang ingin ditambahkan ke LP kamu</p>
+                    {optionalSectionsList.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => toggleSection(s.id)}
+                        data-testid={`toggle-section-${s.id}`}
+                        className={`w-full flex items-center gap-3 p-2.5 rounded-lg border text-left transition-all ${
+                          optionalSections[s.id]
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/20 opacity-60"
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          optionalSections[s.id] ? "bg-primary border-primary" : "border-muted-foreground"
+                        }`}>
+                          {optionalSections[s.id] && (
+                            <svg viewBox="0 0 10 8" className="w-2.5 h-2.5 fill-white">
+                              <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <p className={`text-xs font-medium ${optionalSections[s.id] ? "text-primary" : ""}`}>{s.label}</p>
+                          <p className="text-xs text-muted-foreground">{s.desc}</p>
+                        </div>
+                      </button>
+                    ))}
                   </CardContent>
                 </Card>
 

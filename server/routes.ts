@@ -415,6 +415,8 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
         socialProof = "Testimoni pelanggan (teks)",
         urgency = "Batas waktu penawaran",
         uiTheme = "bold_modern",
+        gayaBahasa = "santai",
+        optionalSections = {},
       } = req.body;
 
       const productTypeLabels: Record<string, string> = {
@@ -460,6 +462,17 @@ ${benefitList.length > 0 ? `MANFAAT UTAMA:\n${benefitList.map((b: string, i: num
 ${targetMarket ? `TARGET MARKET: ${targetMarket}` : ""}
 ${productPrice ? `HARGA: ${productPrice}` : ""}
 
+GAYA BAHASA: ${(() => {
+        const g: Record<string, string> = {
+          santai: "Santai & friendly. Gunakan kata 'kamu', 'aku', sapaan yang akrab. Mudah dipahami semua kalangan.",
+          formal: "Formal & profesional. Gunakan kata 'Anda'. Kalimat terstruktur, sopan, dan terpercaya.",
+          gaul: "Gaul & kasual. Boleh pakai slang anak muda (misal: 'wajib banget', 'langsung gaskeun', 'gak bakal nyesel'). Energik.",
+          provokatif: "Provokatif & bold. Gunakan kalimat yang memancing emosi, FOMO tinggi, hard-selling. Berani dan percaya diri.",
+          inspiratif: "Inspiratif & motivasional. Gunakan bahasa yang membangkitkan semangat, cerita transformasi, harapan.",
+        };
+        return g[gayaBahasa] || g.santai;
+      })()}
+
 STRATEGI COPYWRITING:
 - Framework: ${framework} — ${frameworkGuides[framework] || ""}
 - Tujuan LP: ${objective}
@@ -479,9 +492,14 @@ STRUKTUR LANDING PAGE yang WAJIB ada (dalam bahasa Indonesia):
 6. SOCIAL PROOF section: 3 testimoni placeholder (nama, role, quote yang relevan), ${socialProof}
 7. CARA KERJA / HOW IT WORKS: 3 langkah mudah
 8. PENAWARAN / PRICING section: Harga, model ${pricingModel}, apa yang didapat, ${urgency}
-9. FAQ section: 4-5 pertanyaan yang mungkin ada di benak target market
-10. FINAL CTA section: Kuat dan urgency, CTA button "${ctaType}"
-11. Footer
+${(optionalSections as Record<string, boolean>).faq !== false ? "9. FAQ section: 4-5 pertanyaan yang mungkin ada di benak target market" : ""}
+${(optionalSections as Record<string, boolean>).bonus ? "BONUS SECTION: Tampilkan 3-5 bonus eksklusif dengan nilai/harga masing-masing, desain menarik dengan badge" : ""}
+${(optionalSections as Record<string, boolean>).comparison ? "COMPARISON TABLE: Tabel perbandingan vs cara lain (minimal 4 fitur), dengan checkmark visual" : ""}
+${(optionalSections as Record<string, boolean>).countdown ? "COUNTDOWN TIMER: Tambahkan timer JavaScript aktif (countdown 24 jam) dengan visual urgency" : ""}
+${(optionalSections as Record<string, boolean>).guarantee ? "GUARANTEE SECTION: Badge garansi uang kembali dengan desain yang meyakinkan dan trust-building" : ""}
+${(optionalSections as Record<string, boolean>).whatsapp ? "WHATSAPP BUTTON: Floating WhatsApp button di kanan bawah yang selalu terlihat saat scroll" : ""}
+${!(optionalSections as Record<string, boolean>).faq ? "" : ""}FINAL CTA section: Kuat dan urgency, CTA button "${ctaType}"
+Footer
 
 TEKNIS:
 - HTML5 valid, self-contained, semua CSS inline/internal <style>
