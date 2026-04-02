@@ -43,6 +43,8 @@ import FunnelPlanner from "@/pages/funnel-planner";
 import AdScaleAdvisor from "@/pages/ad-scale-advisor";
 import ProductResearch from "@/pages/product-research";
 import ProductValidator from "@/pages/product-validator";
+import CampaignLauncher from "@/pages/campaign-launcher";
+import ContentRepurposer from "@/pages/content-repurposer";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -81,6 +83,8 @@ function Router() {
       <Route path="/ad-scale-advisor" component={AdScaleAdvisor} />
       <Route path="/product-research" component={ProductResearch} />
       <Route path="/product-validator" component={ProductValidator} />
+      <Route path="/campaign-launcher" component={CampaignLauncher} />
+      <Route path="/content-repurposer" component={ContentRepurposer} />
       <Route component={NotFound} />
     </Switch>
   );

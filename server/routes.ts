@@ -1322,5 +1322,153 @@ ATURAN FORMAT JAWABAN:
     }
   });
 
+  // Campaign Launcher - 1-click full marketing package
+  app.post("/api/launch-campaign", async (req, res) => {
+    try {
+      const { productName, productType, productPrice, targetMarket, productBenefit, objective } = req.body;
+      if (!productName || !productBenefit) {
+        return res.status(400).json({ error: "productName dan productBenefit wajib diisi" });
+      }
+
+      const prompt = `Kamu adalah expert digital marketer Indonesia. Buat FULL CAMPAIGN PACKAGE untuk produk berikut:
+
+Nama Produk: ${productName}
+Jenis Produk: ${productType}
+Harga: ${productPrice || "belum ditentukan"}
+Target Market: ${targetMarket}
+Manfaat/Hasil Utama: ${productBenefit}
+Tujuan Campaign: ${objective}
+
+Buat package lengkap dalam format JSON:
+{
+  "productName": "${productName}",
+  "metaAds": [
+    {
+      "variation": 1,
+      "hook": "Kalimat pembuka yang SANGAT menarik perhatian (1-2 kalimat, bisa pakai emoji)",
+      "body": "Body copy iklan lengkap (3-5 paragraf, gunakan pain point, manfaat, social proof, FOMO)",
+      "cta": "Teks CTA yang kuat + instruksi spesifik"
+    },
+    {
+      "variation": 2,
+      "hook": "Hook berbeda menggunakan pendekatan storytelling atau pertanyaan",
+      "body": "Body dengan angle yang berbeda (fokus pada transformasi/hasil)",
+      "cta": "CTA berbeda"
+    },
+    {
+      "variation": 3,
+      "hook": "Hook dengan social proof atau hasil nyata",
+      "body": "Body dengan fokus pada urgency dan scarcity",
+      "cta": "CTA berbeda"
+    }
+  ],
+  "landingPage": {
+    "headline": "Headline LP yang powerful (max 10 kata, bold promise)",
+    "subheadline": "Sub-headline yang memperkuat headline (1-2 kalimat)",
+    "bullets": ["benefit 1 spesifik", "benefit 2 spesifik", "benefit 3 spesifik", "benefit 4 spesifik", "benefit 5 spesifik"],
+    "ctaText": "Teks tombol CTA",
+    "urgency": "Kalimat urgency/scarcity untuk LP"
+  },
+  "whatsappBroadcast": {
+    "cold": "WA broadcast untuk prospek dingin (yang belum kenal produk) - 150-200 kata, casual, buka dengan pertanyaan",
+    "warm": "WA broadcast untuk prospek warm (sudah pernah interaksi) - 150-200 kata, lebih personal, follow up",
+    "urgency": "WA blast urgency untuk closing - 100-150 kata, FOMO tinggi, deadline jelas"
+  },
+  "closingScript": "Script CS lengkap untuk WhatsApp/DM. Sertakan: greeting, qualifying questions, presentasi produk, handle objection (kemahalan, pikir2 dulu, nanti saja), dan closing hard. Format dialog [CS] dan [Prospek]. Min 400 kata.",
+  "funnelSummary": "Rekomendasi alur funnel lengkap:\n1. Fase Awareness (traffic source & target audience)\n2. Fase Interest (konten yang menarik)\n3. Fase Consideration (nurturing & remarketing)\n4. Fase Conversion (closing strategy)\n5. Fase Retention (upsell & loyalty)\n\nSertakan estimasi budget awal dan KPI yang perlu dipantau.",
+  "campaignTips": [
+    "Tip optimasi spesifik 1 untuk ${objective}",
+    "Tip optimasi spesifik 2 untuk target market ini",
+    "Tip skala iklan setelah ada hasil",
+    "Tip konten yang bekerja untuk produk ini",
+    "Tip tracking & analisis performance"
+  ]
+}
+
+PENTING: Semua konten dalam Bahasa Indonesia. Copy harus natural, persuasif, dan sesuai kultur marketing Indonesia. Gunakan kata-kata yang relate dengan target market.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.8,
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Campaign launcher error:", error);
+      res.status(500).json({ error: "Gagal generate campaign package" });
+    }
+  });
+
+  // Content Repurposer - 1 content → many formats
+  app.post("/api/repurpose-content", async (req, res) => {
+    try {
+      const { originalContent, contentType, selectedFormats } = req.body;
+      if (!originalContent || !selectedFormats || selectedFormats.length === 0) {
+        return res.status(400).json({ error: "originalContent dan selectedFormats wajib diisi" });
+      }
+
+      const formatInstructions: Record<string, string> = {
+        fb_ad: "Facebook/Instagram Ad Copy: Hook kuat (1 kalimat), body 3 paragraf (pain-benefit-proof), CTA yang jelas. Sertakan emoji strategis. Max 300 kata.",
+        ig_caption: "Instagram Caption: Pembuka menarik, storytelling singkat, value, hashtag relevan (10-15 hashtag). Max 150 kata + hashtag.",
+        tiktok_hook: "TikTok/Video Short Script: Hook visual 3 detik pertama, script narasi 30-60 detik, ending dengan CTA. Format: [HOOK], [PROBLEM], [SOLUSI], [CTA]. Max 200 kata.",
+        wa_broadcast: "WhatsApp Broadcast: Casual, personal, ada emoji, tidak terlalu formal. Buka dengan sapaan, sampaikan value, CTA ke link/reply. Max 200 kata.",
+        yt_shorts: "YouTube Shorts Script: Hook verbal kuat (3 detik), konten edukasi/entertainment singkat, CTA subscribe/link. Format narasi dengan petunjuk visual. Max 200 kata.",
+        twitter_thread: "Twitter/X Thread: Tweet 1 sebagai hook (max 280 karakter), lanjut 4-6 tweet sebagai isi, tweet terakhir sebagai CTA dan summary. Format: 1/ 2/ 3/ dst.",
+        linkedin_post: "LinkedIn Post: Profesional tapi relatable, mulai dengan insight/fakta menarik, cerita pengalaman/case study, lesson learned, CTA untuk engage. Max 300 kata.",
+        email_blast: "Email Broadcast: Subject line yang mengundang klik (max 50 karakter), preview text, opening yang personal, body dengan nilai tinggi, CTA jelas, signature. Max 300 kata total.",
+        seo_meta: "SEO Meta Description: Ringkasan konten yang mengandung keyword utama, menarik untuk diklik dari hasil pencarian Google. Max 155 karakter. Sertakan juga 3 rekomendasi judul SEO.",
+      };
+
+      const formatsToGenerate = selectedFormats.filter((f: string) => formatInstructions[f]);
+      const formatsStr = formatsToGenerate.map((f: string) => {
+        return `"${f}": {
+          "content": "${formatInstructions[f]}",
+          "tips": "Tip spesifik untuk performa terbaik di platform ini (1 kalimat)"
+        }`;
+      }).join(",\n");
+
+      const prompt = `Kamu adalah content marketing expert Indonesia yang ahli repurpose konten ke berbagai platform.
+
+KONTEN ASAL (jenis: ${contentType}):
+"""
+${originalContent}
+"""
+
+Tugas: Repurpose konten di atas ke format-format berikut. Pertahankan INTI PESAN yang sama tapi sesuaikan gaya bahasa dan format untuk setiap platform.
+
+Kembalikan dalam format JSON:
+{
+  "originalSummary": "Ringkasan 1 kalimat tentang inti konten asal",
+  "repurposed": [
+    ${formatsToGenerate.map((f: string) => `{
+      "formatId": "${f}",
+      "content": "[konten yang sudah direpurpose untuk ${f} - ${formatInstructions[f]}]",
+      "tips": "[1 tip spesifik penggunaan di platform ini]"
+    }`).join(",\n    ")}
+  ]
+}
+
+PENTING: Semua konten dalam Bahasa Indonesia. Sesuaikan tone dan style untuk setiap platform. Pastikan konten terasa native di masing-masing platform, bukan copy-paste biasa.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.75,
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Content repurposer error:", error);
+      res.status(500).json({ error: "Gagal repurpose konten" });
+    }
+  });
+
   return httpServer;
 }
