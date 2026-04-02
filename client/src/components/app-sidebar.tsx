@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   Rocket,
   Repeat2,
+  FlaskConical,
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
@@ -97,6 +98,7 @@ const salesSystemItems = [
 const automasiItems = [
   { title: "Campaign Launcher", url: "/campaign-launcher", icon: Rocket },
   { title: "Content Repurposer", url: "/content-repurposer", icon: Repeat2 },
+  { title: "Profit Lab", url: "/profit-lab", icon: FlaskConical },
 ];
 
 const aiAssistantItems = [
@@ -302,7 +304,7 @@ export function AppSidebar() {
 
         <NavGroup label="Winning Campaign" items={winningItems} badge="7" badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" />
         <NavGroup label="Sistem Sales" items={salesSystemItems} badge="Baru" badgeColor="bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" defaultOpen={true} />
-        <NavGroup label="Otomasi AI" items={automasiItems} badge="Baru" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={true} />
+        <NavGroup label="Otomasi AI" items={automasiItems} badge="3" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={true} />
         <NavGroup label="Produk Digital" items={digitalProductItems} badge="6" badgeColor="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" defaultOpen={false} />
         <NavGroup label="AI Assistant" items={aiAssistantItems} badge="4" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={false} />
         <NavGroup label="AI Creator" items={aiCreatorItems} badge="7" badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" defaultOpen={false} />

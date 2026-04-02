@@ -45,6 +45,7 @@ import ProductResearch from "@/pages/product-research";
 import ProductValidator from "@/pages/product-validator";
 import CampaignLauncher from "@/pages/campaign-launcher";
 import ContentRepurposer from "@/pages/content-repurposer";
+import ProfitLab from "@/pages/profit-lab";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -85,6 +86,7 @@ function Router() {
       <Route path="/product-validator" component={ProductValidator} />
       <Route path="/campaign-launcher" component={CampaignLauncher} />
       <Route path="/content-repurposer" component={ContentRepurposer} />
+      <Route path="/profit-lab" component={ProfitLab} />
       <Route component={NotFound} />
     </Switch>
   );
