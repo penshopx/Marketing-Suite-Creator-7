@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NextSteps } from "@/components/next-steps";
 import { 
   Globe, Copy, Star, TrendingUp, Users, CheckCircle2,
   MessageSquare, Lightbulb, DollarSign, Calendar, 
@@ -661,6 +662,12 @@ Kalau belum waktu yang tepat, tidak apa-apa — saya tetap di sini kalau mau tan
           </Card>
         </TabsContent>
       </Tabs>
+
+      <NextSteps steps={[
+        { title: "Prompt Framework", description: "Gunakan 15 prompt AI untuk buat konten affiliate lebih cepat", href: "/prompt-framework", badge: "15 Prompts", badgeColor: "bg-yellow-100 text-yellow-700" },
+        { title: "Story Telling", description: "Buat narasi review produk yang engaging dan tingkatkan konversi", href: "/story-telling", badge: "Konversi", badgeColor: "bg-orange-100 text-orange-700" },
+        { title: "Katalog Produk Digital", description: "Temukan produk digital yang layak dipromosikan sebagai affiliate", href: "/digital-products", badge: "Produk", badgeColor: "bg-green-100 text-green-700" },
+      ]} />
     </div>
   );
 }

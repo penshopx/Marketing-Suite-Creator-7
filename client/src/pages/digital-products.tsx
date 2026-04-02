@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NextSteps } from "@/components/next-steps";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -633,6 +634,12 @@ export default function DigitalProducts() {
           )}
         </DialogContent>
       </Dialog>
+
+      <NextSteps steps={[
+        { title: "Ad Creator", description: "Buat copy iklan yang menjual untuk produk digital yang sudah kamu buat", href: "/ad-creator", badge: "Lanjutkan", badgeColor: "bg-green-100 text-green-700" },
+        { title: "TikTok Ads", description: "Strategi promosi produk digital lewat TikTok — viral dan konversi tinggi", href: "/tiktok-ads", badge: "Viral", badgeColor: "bg-pink-100 text-pink-700" },
+        { title: "Landing Page", description: "Buat halaman penjualan yang mengkonversi pengunjung jadi pembeli", href: "/landing-page", badge: "Konversi", badgeColor: "bg-orange-100 text-orange-700" },
+      ]} />
     </div>
   );
 }

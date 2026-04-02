@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NextSteps } from "@/components/next-steps";
 import { 
   BarChart3, Target, DollarSign, CheckCircle2, 
   AlertTriangle, TrendingUp, Users, Lightbulb, 
@@ -586,6 +587,12 @@ export default function MetaAds() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <NextSteps steps={[
+        { title: "Audience Builder", description: "Buat buyer persona detail untuk targeting Meta Ads yang lebih akurat", href: "/audience-builder", badge: "Penting", badgeColor: "bg-orange-100 text-orange-700" },
+        { title: "Ad Creator", description: "Generate copy iklan Facebook, Instagram, dan platform lain dengan AI", href: "/ad-creator", badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+        { title: "Ad Analyzer", description: "Analisis dan scoring copy iklan yang sudah kamu buat", href: "/campaign-analyzer", badge: "Optimalkan", badgeColor: "bg-green-100 text-green-700" },
+      ]} />
     </div>
   );
 }

@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Target, CheckCircle2, Clock, Zap, TrendingUp, 
   Star, AlertTriangle, ChevronDown, ChevronUp, 
-  Lightbulb, Calendar, BarChart3, Trophy, BookOpen
+  Lightbulb, Calendar, BarChart3, Trophy, BookOpen,
+  DollarSign
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { NextSteps } from "@/components/next-steps";
 
 const days = [
   {
@@ -304,22 +306,36 @@ const phaseColors: Record<string, string> = {
   "Scale": "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 };
 
+const DAYS_KEY = "execution_completed_days";
+const TASKS_KEY = "execution_completed_tasks";
+const NOTES_KEY = "execution_notes";
+
+function loadLS<T>(key: string, fallback: T): T {
+  try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; } catch { return fallback; }
+}
+
 export default function ExecutionPlan() {
-  const [completedDays, setCompletedDays] = useState<Record<number, boolean>>({});
-  const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
+  const [completedDays, setCompletedDays] = useState<Record<number, boolean>>(() => loadLS(DAYS_KEY, {}));
+  const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>(() => loadLS(TASKS_KEY, {}));
   const [expandedDay, setExpandedDay] = useState<number | null>(1);
-  const [notes, setNotes] = useState<Record<number, string>>({});
+  const [notes, setNotes] = useState<Record<number, string>>(() => loadLS(NOTES_KEY, {}));
   const { toast } = useToast();
 
   const toggleDay = (dayNum: number) => {
     setCompletedDays(prev => {
       const newVal = !prev[dayNum];
+      const next = { ...prev, [dayNum]: newVal };
+      localStorage.setItem(DAYS_KEY, JSON.stringify(next));
       if (newVal) toast({ title: `Hari ${dayNum} selesai! 🎉`, description: "Lanjut ke hari berikutnya, konsisten adalah kuncinya." });
-      return { ...prev, [dayNum]: newVal };
+      return next;
     });
   };
 
-  const toggleTask = (key: string) => setCompletedTasks(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleTask = (key: string) => setCompletedTasks(prev => {
+    const next = { ...prev, [key]: !prev[key] };
+    localStorage.setItem(TASKS_KEY, JSON.stringify(next));
+    return next;
+  });
 
   const doneCount = Object.values(completedDays).filter(Boolean).length;
   const overallProgress = (doneCount / 14) * 100;
@@ -481,7 +497,11 @@ export default function ExecutionPlan() {
                       <Textarea
                         placeholder="Apa yang kamu pelajari, hambatan yang ditemui, ide yang muncul..."
                         value={notes[dayData.day] || ""}
-                        onChange={e => setNotes(prev => ({ ...prev, [dayData.day]: e.target.value }))}
+                        onChange={e => setNotes(prev => {
+                          const next = { ...prev, [dayData.day]: e.target.value };
+                          localStorage.setItem(NOTES_KEY, JSON.stringify(next));
+                          return next;
+                        })}
                         className="min-h-[80px] text-xs resize-none"
                         data-testid={`textarea-notes-${dayData.day}`}
                       />
@@ -647,6 +667,12 @@ export default function ExecutionPlan() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <NextSteps steps={[
+        { title: "Ad Creator", description: "Generate copy iklan untuk semua platform berdasarkan produk yang sudah kamu buat", href: "/ad-creator", badge: "Langkah berikutnya", badgeColor: "bg-green-100 text-green-700" },
+        { title: "Audience Builder", description: "Bangun buyer persona detail sebelum jalankan iklan berbayar", href: "/audience-builder", badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+        { title: "Meta Ads Advanced", description: "Panduan lengkap jalankan iklan di Facebook & Instagram", href: "/meta-ads", badge: "Platform", badgeColor: "bg-blue-100 text-blue-700" },
+      ]} />
     </div>
   );
 }

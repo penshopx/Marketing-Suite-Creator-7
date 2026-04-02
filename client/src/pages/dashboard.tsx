@@ -1,234 +1,411 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import {
-  MessageSquare,
-  Image,
-  FileText,
-  Volume2,
-  Megaphone,
-  BookOpen,
-  Sparkles,
-  ArrowRight,
-  TrendingUp,
-  Users,
-  Target,
-  BarChart3,
-  Trophy,
-  Rocket,
+  MessageSquare, Image, FileText, Volume2, Megaphone,
+  BookOpen, Sparkles, ArrowRight, TrendingUp, Users,
+  Target, BarChart3, Trophy, Rocket, Zap, Globe,
+  Calendar, Package, GraduationCap, Play, Mic,
+  Palette, Video, BookMarked, Search, ChevronRight,
+  LayoutDashboard, Star, CheckCircle2, Link2,
 } from "lucide-react";
+import { SiTiktok } from "react-icons/si";
+import { useAuth } from "@/hooks/use-auth";
+import { useMarketingContext } from "@/hooks/use-marketing-context";
 
-const quickActions = [
+const WORKFLOW_STEPS = [
   {
-    title: "AI Chat",
-    description: "Chat with AI assistant for marketing advice",
-    icon: MessageSquare,
-    href: "/ai-chat",
-    color: "bg-blue-500/10 text-blue-500",
+    step: 1,
+    title: "Strategi",
+    desc: "Riset, validasi, dan rencanakan kampanye",
+    icon: Target,
+    color: "from-blue-500 to-blue-600",
+    tools: [
+      { label: "Roadmap Winning", href: "/winning-dashboard" },
+      { label: "Campaign Wizard", href: "/campaign-wizard" },
+      { label: "Audience Builder", href: "/audience-builder" },
+      { label: "Panduan Praktis", href: "/winning-guide" },
+    ],
   },
   {
-    title: "Image Creator",
-    description: "Generate stunning images with AI",
-    icon: Image,
-    href: "/ai-images",
-    color: "bg-purple-500/10 text-purple-500",
+    step: 2,
+    title: "Konten & Creative",
+    desc: "Buat copy, gambar, dan materi iklan",
+    icon: Sparkles,
+    color: "from-purple-500 to-purple-600",
+    tools: [
+      { label: "Ad Creator", href: "/ad-creator" },
+      { label: "Image Creator", href: "/ai-images" },
+      { label: "Story Telling", href: "/story-telling" },
+      { label: "Article Creator", href: "/ai-articles" },
+    ],
   },
   {
-    title: "Article Creator",
-    description: "Create SEO-optimized articles automatically",
-    icon: FileText,
-    href: "/ai-articles",
-    color: "bg-green-500/10 text-green-500",
+    step: 3,
+    title: "Launch & Promosi",
+    desc: "Jalankan iklan di semua platform",
+    icon: Rocket,
+    color: "from-orange-500 to-orange-600",
+    tools: [
+      { label: "Meta Ads Advanced", href: "/meta-ads" },
+      { label: "TikTok Ads", href: "/tiktok-ads" },
+      { label: "Affiliate Content", href: "/affiliate-content" },
+      { label: "Landing Page", href: "/landing-page" },
+    ],
   },
   {
-    title: "Ad Creator",
-    description: "Create winning ads for all platforms",
-    icon: Megaphone,
-    href: "/ad-creator",
-    color: "bg-orange-500/10 text-orange-500",
-  },
-  {
-    title: "Story Telling",
-    description: "Create compelling promotional stories",
-    icon: BookOpen,
-    href: "/story-telling",
-    color: "bg-pink-500/10 text-pink-500",
-  },
-  {
-    title: "Text to Speech",
-    description: "Convert text to natural voice",
-    icon: Volume2,
-    href: "/ai-tts",
-    color: "bg-cyan-500/10 text-cyan-500",
+    step: 4,
+    title: "Analisa & Scale",
+    desc: "Ukur hasil dan optimalkan campaign",
+    icon: BarChart3,
+    color: "from-green-500 to-green-600",
+    tools: [
+      { label: "Ad Analyzer", href: "/campaign-analyzer" },
+      { label: "Simulasi Beriklan", href: "/ad-simulation" },
+      { label: "Prompt Framework", href: "/prompt-framework" },
+      { label: "AI Templates", href: "/ai-templates" },
+    ],
   },
 ];
 
-const stats = [
-  { label: "AI Generations", value: "2,456", change: "+12%", icon: Sparkles },
-  { label: "Ads Created", value: "156", change: "+8%", icon: Target },
-  { label: "Articles Written", value: "89", change: "+24%", icon: FileText },
-  { label: "Images Generated", value: "432", change: "+18%", icon: Image },
+const ALL_TOOLS = [
+  {
+    category: "Strategi & Riset",
+    emoji: "🎯",
+    bgColor: "bg-blue-50 dark:bg-blue-950",
+    borderColor: "border-blue-200/60 dark:border-blue-800/60",
+    items: [
+      { title: "Roadmap Winning", desc: "Peta jalan kampanye winning", href: "/winning-dashboard", icon: Trophy, badge: "Mulai di sini", badgeColor: "bg-yellow-100 text-yellow-700" },
+      { title: "Panduan Praktis", desc: "8 prinsip iklan yang efektif", href: "/winning-guide", icon: GraduationCap, badge: null, badgeColor: "" },
+      { title: "Sistem 14 Hari", desc: "Tracker harian dari riset ke penjualan", href: "/execution-plan", icon: Calendar, badge: "Interaktif", badgeColor: "bg-green-100 text-green-700" },
+      { title: "Campaign Wizard", desc: "5 langkah bangun strategi kampanye", href: "/campaign-wizard", icon: Target, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Audience Builder", desc: "Buat buyer persona detail dengan AI", href: "/audience-builder", icon: Users, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Ad Analyzer", desc: "Scoring dan analisis copy iklan", href: "/campaign-analyzer", icon: BarChart3, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Simulasi Beriklan", desc: "Latihan iklan tanpa biaya nyata", href: "/ad-simulation", icon: Play, badge: null, badgeColor: "" },
+    ],
+  },
+  {
+    category: "AI Creator",
+    emoji: "✨",
+    bgColor: "bg-purple-50 dark:bg-purple-950",
+    borderColor: "border-purple-200/60 dark:border-purple-800/60",
+    items: [
+      { title: "Ad Creator", desc: "Generate copy iklan semua platform", href: "/ad-creator", icon: Megaphone, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Story Telling", desc: "Narasi promosi yang engaging", href: "/story-telling", icon: BookOpen, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Image Creator", desc: "Generate gambar marketing dengan AI", href: "/ai-images", icon: Image, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Article Creator", desc: "Artikel SEO-optimized otomatis", href: "/ai-articles", icon: FileText, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Banner Creator", desc: "Desain banner dan visual promosi", href: "/ai-banners", icon: Palette, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Video Creator", desc: "Script dan konsep video marketing", href: "/ai-video", icon: Video, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Landing Page", desc: "Generator halaman penjualan", href: "/landing-page", icon: Globe, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+    ],
+  },
+  {
+    category: "Produk Digital & Monetisasi",
+    emoji: "💰",
+    bgColor: "bg-green-50 dark:bg-green-950",
+    borderColor: "border-green-200/60 dark:border-green-800/60",
+    items: [
+      { title: "Katalog Produk Digital", desc: "Copywriting, platform jual, kalkulator profit", href: "/digital-products", icon: Package, badge: "Lengkap", badgeColor: "bg-green-100 text-green-700" },
+      { title: "TikTok Ads", desc: "Strategi & formula konten TikTok", href: "/tiktok-ads", icon: SiTiktok, badge: "Viral", badgeColor: "bg-pink-100 text-pink-700" },
+      { title: "Meta Ads Advanced", desc: "Facebook & Instagram Ads dari setup ke scale", href: "/meta-ads", icon: BarChart3, badge: "Advanced", badgeColor: "bg-blue-100 text-blue-700" },
+      { title: "Affiliate Content", desc: "6 template + kalender 30 hari + kalkulator", href: "/affiliate-content", icon: Link2, badge: "Sistem", badgeColor: "bg-orange-100 text-orange-700" },
+    ],
+  },
+  {
+    category: "AI Assistant & Template",
+    emoji: "🤖",
+    bgColor: "bg-orange-50 dark:bg-orange-950",
+    borderColor: "border-orange-200/60 dark:border-orange-800/60",
+    items: [
+      { title: "AI Chat", desc: "Konsultasi marketing general dengan AI", href: "/ai-chat", icon: MessageSquare, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "AI Expert Chat", desc: "Pilih persona expert: SEO, Copywriting, dll", href: "/ai-expert", icon: Sparkles, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Prompt Framework", desc: "15 prompt + RISEN builder + cheat sheet", href: "/prompt-framework", icon: Zap, badge: "15 Prompts", badgeColor: "bg-yellow-100 text-yellow-700" },
+      { title: "AI Templates", desc: "Library template marketing siap pakai", href: "/ai-templates", icon: BookMarked, badge: null, badgeColor: "" },
+      { title: "Text to Speech", desc: "Konversi teks ke suara untuk voiceover", href: "/ai-tts", icon: Volume2, badge: null, badgeColor: "" },
+      { title: "Speech to Text", desc: "Transkripsi audio ke teks otomatis", href: "/ai-stt", icon: Mic, badge: null, badgeColor: "" },
+    ],
+  },
+];
+
+const BEGINNER_PATH = [
+  { step: 1, label: "Baca Roadmap", href: "/winning-dashboard", desc: "Pahami gambaran besarnya dulu" },
+  { step: 2, label: "Ikuti Sistem 14 Hari", href: "/execution-plan", desc: "Panduan harian dari nol ke penjualan" },
+  { step: 3, label: "Bangun Audience Persona", href: "/audience-builder", desc: "Kenali siapa yang akan membeli" },
+  { step: 4, label: "Buat Konten Pertama", href: "/ad-creator", desc: "Generate copy iklan untuk platform kamu" },
 ];
 
 export default function Dashboard() {
+  const [search, setSearch] = useState("");
+  const { user } = useAuth();
+  const { context } = useMarketingContext();
+
+  const userName = user?.firstName || "Marketer";
+  const planProgress = (context.daysCompleted / 14) * 100;
+
+  const filteredCategories = ALL_TOOLS.map(cat => ({
+    ...cat,
+    items: cat.items.filter(
+      item =>
+        !search ||
+        item.title.toLowerCase().includes(search.toLowerCase()) ||
+        item.desc.toLowerCase().includes(search.toLowerCase())
+    ),
+  })).filter(cat => cat.items.length > 0);
+
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="flex-1 overflow-auto p-4 md:p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">
+              Halo, {userName}! 👋
+            </h1>
             <p className="text-muted-foreground mt-1">
-              Welcome to your AI-powered marketing suite
+              Marketing Tools AI — semua yang kamu butuhkan untuk jual produk digital
             </p>
           </div>
-          <Button asChild data-testid="button-new-project">
-            <Link href="/ad-creator">
-              <Sparkles className="mr-2 h-4 w-4" />
-              New Project
+          <Button asChild data-testid="button-start-plan">
+            <Link href="/execution-plan">
+              <Calendar className="mr-2 h-4 w-4" />
+              Sistem 14 Hari
             </Link>
           </Button>
         </div>
 
-        <Card className="bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 border-yellow-500/20">
-          <CardContent className="py-6">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
-                <Trophy className="h-7 w-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-lg">Mau Winning di Iklan?</h3>
-                <p className="text-sm text-muted-foreground">
-                  Ikuti panduan langkah demi langkah untuk membuat kampanye iklan yang winning
-                </p>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <Button asChild variant="outline" data-testid="button-winning-guide">
-                  <Link href="/winning-dashboard">
-                    <Target className="h-4 w-4 mr-2" />
-                    Winning Guide
-                  </Link>
-                </Button>
-                <Button asChild data-testid="button-start-wizard">
-                  <Link href="/campaign-wizard">
-                    <Rocket className="h-4 w-4 mr-2" />
-                    Mulai Sekarang
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <Card key={stat.label}>
-              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="flex items-center gap-1 text-xs text-green-500">
-                  <TrendingUp className="h-3 w-3" />
-                  {stat.change} from last month
+        {/* Execution Plan Progress */}
+        {context.daysCompleted > 0 && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Sistem 14 Hari — Sedang Berjalan</p>
+                    <p className="text-xs text-muted-foreground">
+                      {context.daysCompleted} dari 14 hari selesai · {context.completedTasksCount} total task
+                    </p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                  <Progress value={planProgress} className="flex-1 h-2" />
+                  <span className="text-sm font-bold text-primary">{Math.round(planProgress)}%</span>
+                  <Button asChild size="sm" variant="outline" data-testid="button-continue-plan">
+                    <Link href="/execution-plan">Lanjut →</Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
+        {/* Workflow Journey */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Quick Actions</h2>
-            <Badge variant="secondary">AI Powered</Badge>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {quickActions.map((action) => (
-              <Link key={action.title} href={action.href}>
-                <Card className="hover-elevate cursor-pointer h-full transition-all">
-                  <CardHeader className="flex flex-row items-start gap-4">
-                    <div className={`p-2 rounded-md ${action.color}`}>
-                      <action.icon className="h-5 w-5" />
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
+            <Rocket className="h-4 w-4 text-primary" />
+            Alur Kerja Marketing yang Terintegrasi
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {WORKFLOW_STEPS.map((ws, i) => (
+              <Card key={i} className="relative overflow-hidden group hover:shadow-md transition-all">
+                <div className={`h-1.5 w-full bg-gradient-to-r ${ws.color}`} />
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${ws.color} text-white flex-shrink-0`}>
+                      <ws.icon className="h-4 w-4" />
                     </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-base">{action.title}</CardTitle>
-                      <CardDescription className="mt-1">
-                        {action.description}
-                      </CardDescription>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground font-medium">Step {ws.step}</span>
+                      </div>
+                      <p className="font-semibold text-sm">{ws.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{ws.desc}</p>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                </Card>
-              </Link>
+                  </div>
+                  <div className="mt-3 space-y-1">
+                    {ws.tools.map((t, ti) => (
+                      <Link key={ti} href={t.href}>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors py-0.5 cursor-pointer" data-testid={`link-workflow-${i}-${ti}`}>
+                          <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                          {t.label}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
 
+        {/* Untuk Pemula Banner */}
+        {context.daysCompleted === 0 && (
+          <Card className="bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 border-yellow-500/20">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-4 flex-wrap">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                  <Star className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold">Baru mulai? Ikuti jalur ini:</h3>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {BEGINNER_PATH.map((p, i) => (
+                      <Link key={i} href={p.href}>
+                        <div className="flex items-center gap-1.5 text-xs bg-background border rounded-full px-3 py-1.5 hover:border-primary/50 transition-colors cursor-pointer" data-testid={`link-beginner-${i}`}>
+                          <span className="font-bold text-primary">{p.step}.</span>
+                          <span>{p.label}</span>
+                          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Search + All Tools */}
+        <div>
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4 text-primary" />
+              Semua Tools ({ALL_TOOLS.reduce((s, c) => s + c.items.length, 0)} fitur)
+            </h2>
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari fitur..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 text-sm"
+                data-testid="input-search-tools"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            {filteredCategories.map((cat, ci) => (
+              <div key={ci}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base">{cat.emoji}</span>
+                  <h3 className="font-semibold text-sm text-muted-foreground">{cat.category}</h3>
+                  <Badge variant="outline" className="text-xs">{cat.items.length} tools</Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                  {cat.items.map((tool, ti) => (
+                    <Link key={ti} href={tool.href}>
+                      <Card className={`h-full cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group ${cat.borderColor}`} data-testid={`card-tool-${ci}-${ti}`}>
+                        <CardContent className="pt-3 pb-3 px-3">
+                          <div className="flex items-start gap-2.5">
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-md ${cat.bgColor} flex-shrink-0`}>
+                              <tool.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <p className="text-xs font-semibold group-hover:text-primary transition-colors leading-tight">{tool.title}</p>
+                                {tool.badge && (
+                                  <Badge className={`text-xs px-1 py-0 ${tool.badgeColor}`} variant="secondary">
+                                    {tool.badge}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">{tool.desc}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Platform Performance (tetap ada) */}
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Platform Performance
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Platform Iklan — ROI Potensial
               </CardTitle>
-              <CardDescription>Ad performance across platforms</CardDescription>
+              <CardDescription className="text-xs">Estimasi performa berdasarkan benchmark industri Indonesia</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[
-                  { name: "Meta Ads", value: 85, color: "bg-blue-500" },
-                  { name: "Google Ads", value: 72, color: "bg-green-500" },
-                  { name: "TikTok", value: 68, color: "bg-pink-500" },
-                  { name: "YouTube", value: 56, color: "bg-red-500" },
-                ].map((platform) => (
-                  <div key={platform.name} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>{platform.name}</span>
-                      <span className="text-muted-foreground">{platform.value}%</span>
+                  { name: "Meta Ads (FB + IG)", value: 85, href: "/meta-ads", color: "bg-blue-500" },
+                  { name: "TikTok Ads", value: 78, href: "/tiktok-ads", color: "bg-pink-500" },
+                  { name: "Google Ads", value: 72, href: "/ad-creator", color: "bg-green-500" },
+                  { name: "Organic (Konten)", value: 65, href: "/affiliate-content", color: "bg-orange-500" },
+                ].map((p, i) => (
+                  <Link key={i} href={p.href}>
+                    <div className="flex items-center gap-3 group cursor-pointer py-1">
+                      <span className="text-xs w-32 text-muted-foreground group-hover:text-primary transition-colors">{p.name}</span>
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full ${p.color} transition-all`} style={{ width: `${p.value}%` }} />
+                      </div>
+                      <span className="text-xs font-bold w-8 text-right">{p.value}%</span>
                     </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={`h-full ${platform.color} transition-all`}
-                        style={{ width: `${platform.value}%` }}
-                      />
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Recent Activity
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                Status Fitur
               </CardTitle>
-              <CardDescription>Your latest AI generations</CardDescription>
+              <CardDescription className="text-xs">Ringkasan semua tools yang tersedia untukmu</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {[
-                  { type: "Image", title: "Product Banner", time: "2 min ago" },
-                  { type: "Article", title: "SEO Blog Post", time: "15 min ago" },
-                  { type: "Ad", title: "Meta Campaign", time: "1 hour ago" },
-                  { type: "Story", title: "Brand Story", time: "2 hours ago" },
-                ].map((activity, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.title}</p>
-                      <p className="text-xs text-muted-foreground">{activity.type}</p>
+                  { cat: "Strategi & Riset", count: 7, active: true, href: "/winning-dashboard", color: "bg-blue-500" },
+                  { cat: "AI Creator", count: 7, active: true, href: "/ad-creator", color: "bg-purple-500" },
+                  { cat: "Produk Digital & Monetisasi", count: 4, active: true, href: "/digital-products", color: "bg-green-500" },
+                  { cat: "AI Assistant & Template", count: 6, active: true, href: "/ai-chat", color: "bg-orange-500" },
+                ].map((s, i) => (
+                  <Link key={i} href={s.href}>
+                    <div className="flex items-center gap-3 cursor-pointer group py-0.5">
+                      <div className={`h-2 w-2 rounded-full ${s.color} flex-shrink-0`} />
+                      <span className="text-xs flex-1 group-hover:text-primary transition-colors">{s.cat}</span>
+                      <Badge variant="secondary" className="text-xs">{s.count} tools</Badge>
+                      <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Aktif</Badge>
                     </div>
-                    <span className="text-xs text-muted-foreground">{activity.time}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Footer quick links */}
+        <div className="flex flex-wrap gap-2 justify-center pb-4">
+          {[
+            { label: "Panduan Fitur", href: "/guide-chatbot" },
+            { label: "Prompt Framework", href: "/prompt-framework" },
+            { label: "AI Templates", href: "/ai-templates" },
+            { label: "Ad Analyzer", href: "/campaign-analyzer" },
+          ].map((l, i) => (
+            <Link key={i} href={l.href}>
+              <Button variant="ghost" size="sm" className="text-xs" data-testid={`button-footer-link-${i}`}>
+                {l.label} <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
+            </Link>
+          ))}
         </div>
       </div>
     </div>

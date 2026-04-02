@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NextSteps } from "@/components/next-steps";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -1050,6 +1051,12 @@ export default function PromptFramework() {
           )}
         </DialogContent>
       </Dialog>
+
+      <NextSteps steps={[
+        { title: "AI Chat", description: "Gunakan prompt RISEN yang sudah kamu buat langsung dengan AI Chat", href: "/ai-chat", badge: "Langsung coba", badgeColor: "bg-green-100 text-green-700" },
+        { title: "Ad Creator", description: "Generate copy iklan lengkap untuk semua platform dengan AI", href: "/ad-creator", badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+        { title: "Affiliate Content", description: "Buat 6 jenis konten affiliate menggunakan prompt yang sudah dipelajari", href: "/affiliate-content", badge: "Template", badgeColor: "bg-blue-100 text-blue-700" },
+      ]} />
     </div>
   );
 }

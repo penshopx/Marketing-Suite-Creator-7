@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NextSteps } from "@/components/next-steps";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -575,6 +576,12 @@ export default function TikTokAds() {
           ))}
         </TabsContent>
       </Tabs>
+
+      <NextSteps steps={[
+        { title: "Ad Creator", description: "Generate script dan copy iklan TikTok yang menarik dengan AI", href: "/ad-creator", badge: "Lanjut", badgeColor: "bg-green-100 text-green-700" },
+        { title: "Affiliate Content", description: "Buat konten affiliate TikTok dengan 6 template siap pakai", href: "/affiliate-content", badge: "Template", badgeColor: "bg-blue-100 text-blue-700" },
+        { title: "Prompt Framework", description: "Gunakan 15 prompt AI terbaik untuk caption dan skrip TikTok", href: "/prompt-framework", badge: "15 Prompts", badgeColor: "bg-yellow-100 text-yellow-700" },
+      ]} />
     </div>
   );
 }
