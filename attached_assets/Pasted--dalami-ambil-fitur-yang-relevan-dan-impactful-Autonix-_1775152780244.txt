@@ -1,0 +1,41 @@
+
+dalami. ambil fitur yang relevan dan impactful
+
+Autonix adalah platform AI Content + Multi-Platform Distribution. Yang paling impactful dan belum ada di app kita:
+
+AI Video Script Generator — script lengkap TikTok/Reels/Shorts dengan hook 3 detik, storyboard visual, voice narasi, text overlay
+Hashtag Generator — paket hashtag tiered (viral/medium/niche) per platform
+Cek dulu yang sudah ada:
+
+Existing Video Creator hanya placeholder simulasi. Dua fitur baru dari Autonix yang akan saya tambahkan:
+
+Video Script Generator — script lengkap TikTok/Reels/Shorts dengan hook 3 detik + storyboard + hashtag
+Hashtag Generator — paket hashtag tiered (viral/medium/niche) per platform
+Sekarang daftarkan routes, sidebar, dan API endpoints sekaligus:
+
+Now add the Route entries in App.tsx and sidebar items:
+
+Update badge dan tambah API endpoints:
+
+Sekarang tambahkan dua API endpoints di server/routes.ts:
+
+Berjalan bersih tanpa error. Berikut ringkasan lengkap apa yang ditambahkan berdasarkan analisis Autonix:
+
+Fitur baru yang diambil dari Autonix:
+
+1. Video Script Generator (/video-script)
+Inspirasinya dari fitur "AI Script & Storyboard Assistant" Autonix — tapi lebih detail dan production-ready:
+
+Pilih platform: TikTok / Instagram Reels / YouTube Shorts
+Input: topik, produk, target audiens, tujuan, style video, durasi (15/30/45/60 detik)
+Output: Hook 3 detik (+ 3 alternatif hook), storyboard scene-by-scene dengan timestamp, arahan visual, narasi, text overlay, B-roll per scene, CTA, caption siap posting, dan hashtag pack
+2. Hashtag Generator (/hashtag-generator)
+Berdasarkan fitur "caption & hashtag optimal" Autonix — dibuat lebih strategis dengan sistem 3 tier:
+
+Pilih 6 platform: TikTok, Instagram, YouTube, Facebook, X, LinkedIn
+Input: niche, jenis konten, keyword tambahan
+Output: paket hashtag viral/medium/niche yang terpisah, paket rekomendasi campuran terbaik, caption siap posting, plus penjelasan strategi
+Keduanya sudah masuk ke sidebar Otomasi AI (badge diupdate jadi 5) dan terhubung ke API dengan prompt yang dirancang untuk menghasilkan output yang benar-benar bisa langsung dipakai.
+
+
+Scroll to 

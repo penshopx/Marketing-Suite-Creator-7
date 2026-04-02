@@ -1488,6 +1488,216 @@ PENTING: Semua konten dalam Bahasa Indonesia. Sesuaikan tone dan style untuk set
     }
   });
 
+  // ─── Riset Keyword Marketplace ────────────────────────────────────────────
+  app.post("/api/riset-keyword-marketplace", async (req, res) => {
+    try {
+      const { marketplace, produk, kategori, targetBuyer, budget } = req.body;
+      if (!produk) return res.status(400).json({ error: "Nama produk wajib diisi" });
+
+      const mpLabel: Record<string, string> = { shopee: "Shopee", tokopedia: "Tokopedia", both: "Shopee dan Tokopedia" };
+      const budgetGuide: Record<string, string> = {
+        low: "budget hemat <Rp 50.000/hari — prioritaskan keyword low & medium competition dengan long-tail",
+        medium: "budget sedang Rp 50.000–200.000/hari — campuran medium dan beberapa high competition keyword",
+        high: "budget besar >Rp 200.000/hari — bisa agresif bidding keyword high competition dan broad match",
+      };
+
+      const prompt = `Kamu adalah pakar iklan marketplace Indonesia yang sangat berpengalaman di ${mpLabel[marketplace] || marketplace}, Shopee Ads, dan Tokopedia Ads.
+
+DETAIL PRODUK:
+- Produk: ${produk}
+- Kategori: ${kategori}
+- Target Pembeli: ${targetBuyer || "umum"}
+- Budget Iklan: ${budgetGuide[budget] || budgetGuide.medium}
+
+Lakukan riset keyword yang komprehensif untuk produk ini. Buat keyword yang BENAR-BENAR dipakai orang Indonesia saat search di marketplace.
+
+KEMBALIKAN JSON dengan struktur TEPAT ini:
+{
+  "produk": "${produk}",
+  "marketplace": "${mpLabel[marketplace] || marketplace}",
+  "kategori": "${kategori}",
+  "summary": {
+    "totalKeyword": 35,
+    "estimasiBudgetMin": "Rp 30.000",
+    "estimasiBudgetMax": "Rp 150.000",
+    "strategi": "Penjelasan 2 kalimat strategi utama yang direkomendasikan untuk produk ini"
+  },
+  "groups": [
+    {
+      "label": "🎯 Keyword Utama (Generic)",
+      "keywords": [
+        {
+          "keyword": "contoh keyword pendek umum",
+          "tier": "high",
+          "volume": "Sangat Tinggi (>100K/bln)",
+          "competition": "Tinggi",
+          "bidRange": "Rp 500–1.500/klik",
+          "intent": "Browse / Discovery",
+          "matchType": "Broad"
+        }
+      ]
+    },
+    {
+      "label": "💡 Keyword Spesifik Produk",
+      "keywords": []
+    },
+    {
+      "label": "🔥 Keyword Branded / Varian",
+      "keywords": []
+    },
+    {
+      "label": "📍 Keyword Lokal / Geoterms",
+      "keywords": []
+    }
+  ],
+  "longTail": [
+    "keyword long tail 1 yang spesifik dan intent beli",
+    "keyword long tail 2",
+    "minimal 12 keyword long tail"
+  ],
+  "negative": [
+    "kata yang harus dihindari 1",
+    "kata atau frasa negatif 2",
+    "minimal 10 negative keyword"
+  ],
+  "bidStrategy": "Penjelasan lengkap strategi bidding yang direkomendasikan untuk budget ${budget}: kapan pakai manual bid vs auto bid, kapan naikkan bid, dan bagaimana struktur kampanye yang ideal. 3-4 kalimat.",
+  "tips": [
+    "Tip optimasi kampanye 1 spesifik untuk ${mpLabel[marketplace] || marketplace}",
+    "Tip 2 tentang jadwal iklan (jam & hari terbaik)",
+    "Tip 3 tentang struktur ad group",
+    "Tip 4 tentang monitoring dan optimasi",
+    "Tip 5 tentang A/B testing keyword"
+  ]
+}
+
+PENTING:
+- Setiap grup harus punya 5-10 keyword
+- Tier: "high" = kompetisi tinggi bid mahal, "medium" = sweet spot, "low" = niche murah
+- Keyword harus dalam Bahasa Indonesia yang natural, sesuai cara orang Indonesia search di marketplace
+- bidRange dalam format Rupiah
+- Total keyword groups + longTail harus sesuai totalKeyword
+- Negative keyword harus spesifik dan relevan (hindari traffic tidak tertarget)`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Keyword marketplace error:", error);
+      res.status(500).json({ error: "Gagal generate keyword" });
+    }
+  });
+
+  // ─── Spy Kompetitor ────────────────────────────────────────────────────────
+  app.post("/api/spy-kompetitor", async (req, res) => {
+    try {
+      const { marketplace, produkKamu, kategori, infoKompetitor, keunggulanKamu, hargaKamu } = req.body;
+      if (!produkKamu || !infoKompetitor) return res.status(400).json({ error: "Produk dan info kompetitor wajib diisi" });
+
+      const mpLabel: Record<string, string> = {
+        shopee: "Shopee", tokopedia: "Tokopedia", tiktokshop: "TikTok Shop",
+        instagram: "Instagram/Facebook", umum: "marketplace umum",
+      };
+
+      const prompt = `Kamu adalah business intelligence analyst dan competitive strategy expert yang sangat berpengalaman di marketplace Indonesia.
+
+PRODUK/BISNIS KAMU:
+- Produk: ${produkKamu}
+- Kategori: ${kategori}
+- Harga: ${hargaKamu || "belum ditentukan"}
+- Keunggulan/USP: ${keunggulanKamu || "belum disebutkan"}
+- Platform: ${mpLabel[marketplace] || marketplace}
+
+INFO KOMPETITOR YANG DIOBSERVASI:
+"""
+${infoKompetitor}
+"""
+
+Lakukan analisis kompetitor yang mendalam dan berikan competitive intelligence yang actionable.
+
+KEMBALIKAN JSON dengan struktur TEPAT ini:
+{
+  "ringkasan": "Ringkasan eksekutif 2 kalimat tentang posisi kompetitor dan peluang untuk produk kamu",
+  "positioningKompetitor": "Deskripsi positioning kompetitor: siapa target mereka, value prop utama, dan strategi jualan yang terlihat",
+  "kekuatan": [
+    {
+      "poin": "Nama kekuatan singkat",
+      "detail": "Penjelasan detail kenapa ini jadi kekuatan dan bagaimana dampaknya ke market"
+    }
+  ],
+  "kelemahan": [
+    {
+      "poin": "Nama kelemahan singkat — ini celah untuk kamu!",
+      "detail": "Penjelasan detail kelemahannya dan bagaimana kamu bisa manfaatkan celah ini"
+    }
+  ],
+  "pricePositioning": {
+    "label": "Posisi harga kompetitor (misal: Premium / Mid-range / Budget)",
+    "rentang": "Estimasi atau info rentang harga berdasarkan data yang diberikan",
+    "rekomendasi": "Rekomendasi strategi harga untuk produk kamu relative terhadap kompetitor, dengan penjelasan taktik (misal: price anchor, value bundling, dll)"
+  },
+  "differentiators": [
+    {
+      "angle": "Angle diferensiasi yang bisa digunakan (singkat, max 5 kata)",
+      "taktik": "Cara konkret mengeksekusi angle ini di produk/toko kamu",
+      "alasan": "Kenapa angle ini akan efektif vs kompetitor ini",
+      "effort": "rendah"
+    }
+  ],
+  "targetMarketInsight": "Analisis tentang target market kompetitor vs target market yang sebaiknya kamu bidik untuk menghindari head-to-head competition",
+  "keywordKompetitor": [
+    {
+      "keyword": "keyword yang kemungkinan dipakai kompetitor",
+      "context": "Kenapa keyword ini kemungkinan dipakai dan bagaimana kamu bisa pakai juga atau bidik versi long-tailnya"
+    }
+  ],
+  "rekomendasi": [
+    "Rekomendasi strategis jangka menengah 1",
+    "Rekomendasi 2",
+    "Rekomendasi 3",
+    "Rekomendasi 4"
+  ],
+  "quickWins": [
+    "Aksi konkret yang bisa dilakukan minggu ini untuk mulai mengungguli kompetitor",
+    "Quick win 2",
+    "Quick win 3",
+    "Quick win 4",
+    "Quick win 5"
+  ],
+  "warningFlags": [
+    "Hal yang perlu diwaspadai dari kompetitor ini",
+    "Warning flag 2 jika relevan"
+  ]
+}
+
+PENTING:
+- Minimal 4 kekuatan dan 4 kelemahan
+- Minimal 5 differentiators dengan effort level: "rendah", "sedang", atau "tinggi"
+- Minimal 8 keyword kompetitor
+- Minimal 5 quick wins yang benar-benar actionable
+- Semua analisis dalam Bahasa Indonesia yang natural
+- Fokus pada insight yang ACTIONABLE, bukan sekadar deskriptif`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.75,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Spy kompetitor error:", error);
+      res.status(500).json({ error: "Gagal analisis kompetitor" });
+    }
+  });
+
   // ─── Video Script Generator ───────────────────────────────────────────────
   app.post("/api/generate-video-script", async (req, res) => {
     try {

@@ -48,6 +48,8 @@ import ContentRepurposer from "@/pages/content-repurposer";
 import ProfitLab from "@/pages/profit-lab";
 import VideoScript from "@/pages/video-script";
 import HashtagGenerator from "@/pages/hashtag-generator";
+import KeywordMarketplace from "@/pages/keyword-marketplace";
+import SpyKompetitor from "@/pages/spy-kompetitor";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -91,6 +93,8 @@ function Router() {
       <Route path="/profit-lab" component={ProfitLab} />
       <Route path="/video-script" component={VideoScript} />
       <Route path="/hashtag-generator" component={HashtagGenerator} />
+      <Route path="/keyword-marketplace" component={KeywordMarketplace} />
+      <Route path="/spy-kompetitor" component={SpyKompetitor} />
       <Route component={NotFound} />
     </Switch>
   );
