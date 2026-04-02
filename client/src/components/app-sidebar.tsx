@@ -29,6 +29,9 @@ import {
   Link2,
   Search,
   Crown,
+  MessageCircle,
+  GitBranch,
+  TrendingUp,
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
@@ -78,6 +81,12 @@ const digitalProductItems = [
   { title: "TikTok Ads", url: "/tiktok-ads", icon: SiTiktok },
   { title: "Meta Ads Advanced", url: "/meta-ads", icon: Megaphone },
   { title: "Affiliate Content", url: "/affiliate-content", icon: Link2 },
+];
+
+const salesSystemItems = [
+  { title: "CS Closing Script", url: "/cs-closing", icon: MessageCircle },
+  { title: "Funnel Planner", url: "/funnel-planner", icon: GitBranch },
+  { title: "Ad Scale Advisor", url: "/ad-scale-advisor", icon: TrendingUp },
 ];
 
 const aiAssistantItems = [
@@ -282,6 +291,7 @@ export function AppSidebar() {
         </div>
 
         <NavGroup label="Winning Campaign" items={winningItems} badge="7" badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" />
+        <NavGroup label="Sistem Sales" items={salesSystemItems} badge="Baru" badgeColor="bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" defaultOpen={true} />
         <NavGroup label="Produk Digital" items={digitalProductItems} badge="4" badgeColor="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" defaultOpen={false} />
         <NavGroup label="AI Assistant" items={aiAssistantItems} badge="4" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={false} />
         <NavGroup label="AI Creator" items={aiCreatorItems} badge="7" badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" defaultOpen={false} />

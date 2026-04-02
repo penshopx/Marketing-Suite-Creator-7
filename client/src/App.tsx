@@ -38,6 +38,9 @@ import MetaAds from "@/pages/meta-ads";
 import AffiliateContent from "@/pages/affiliate-content";
 import PromptFramework from "@/pages/prompt-framework";
 import Pricing from "@/pages/pricing";
+import CSClosing from "@/pages/cs-closing";
+import FunnelPlanner from "@/pages/funnel-planner";
+import AdScaleAdvisor from "@/pages/ad-scale-advisor";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -71,6 +74,9 @@ function Router() {
       <Route path="/affiliate-content" component={AffiliateContent} />
       <Route path="/prompt-framework" component={PromptFramework} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/cs-closing" component={CSClosing} />
+      <Route path="/funnel-planner" component={FunnelPlanner} />
+      <Route path="/ad-scale-advisor" component={AdScaleAdvisor} />
       <Route component={NotFound} />
     </Switch>
   );

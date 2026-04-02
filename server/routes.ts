@@ -521,6 +521,302 @@ Tuliskan HANYA kode HTML lengkap. Tanpa penjelasan.`;
     }
   });
 
+  // CS Closing Script Generator
+  app.post("/api/generate-closing-script", async (req, res) => {
+    try {
+      const {
+        productName,
+        productPrice = "",
+        productBenefit = "",
+        stage = "warm",
+        objection = "Harga terlalu mahal",
+        technique = "fomo",
+        funnelType = "full",
+        platform = "whatsapp",
+      } = req.body;
+
+      const stageLabels: Record<string, string> = {
+        cold: "Cold Prospect (belum kenal produk)",
+        warm: "Warm Prospect (sudah tahu, belum beli)",
+        hot: "Hot Prospect (sudah minat, tinggal closing)",
+      };
+
+      const techniqueGuides: Record<string, string> = {
+        fomo: "FOMO: Gunakan batas waktu, stok terbatas, harga akan naik. Ciptakan rasa takut ketinggalan.",
+        testimonial: "Testimonial: Ceritakan hasil nyata pembeli lain. Pakai nama, angka spesifik, dan transformasi.",
+        guarantee: "Garansi: Hilangkan risiko dengan garansi uang kembali. Buat prospect merasa aman.",
+        value_stack: "Value Stack: Tumpuk semua yang didapat vs harga yang dibayar. Buat terasa sangat worth it.",
+        empathy: "Empati: Pahami pain point prospect, validasi perasaan mereka, lalu tawarkan solusi.",
+        comparison: "Perbandingan: Bandingkan dengan biaya/cara lain yang lebih mahal atau tidak efektif.",
+        question: "Question: Ajukan pertanyaan yang mengarahkan prospect untuk sendiri menyimpulkan harus beli.",
+        story: "Story: Cerita yang relatable tentang seseorang dengan situasi serupa yang berhasil.",
+      };
+
+      const platformName: Record<string, string> = {
+        whatsapp: "WhatsApp",
+        instagram_dm: "Instagram DM",
+        tiktok_dm: "TikTok DM",
+        email: "Email",
+      };
+
+      const prompt = `Kamu adalah CS (Customer Service) jago closing yang sudah pengalaman bertahun-tahun jualan produk digital di Indonesia.
+
+Buatkan SCRIPT CLOSING LENGKAP untuk:
+- Produk: "${productName}"
+${productPrice ? `- Harga: ${productPrice}` : ""}
+${productBenefit ? `- Manfaat/Hasil: ${productBenefit}` : ""}
+- Status Prospect: ${stageLabels[stage] || stage}
+- Objeksi yang sering muncul: "${objection}"
+- Teknik Closing: ${techniqueGuides[technique] || technique}
+- Tipe Funnel: ${funnelType === "short" ? "Short Form (prospect dari iklan langsung ke WA)" : "Full Form (prospect dari LP → WA)"}
+- Platform: ${platformName[platform] || platform}
+
+Buatkan 5 script dalam BAHASA INDONESIA yang natural, tidak kaku, dan sesuai gaya ngobrol orang Indonesia:
+
+1. OPENING MESSAGE - Pesan pertama untuk menyambut prospect yang baru masuk/menghubungi. Hangat, tidak langsung jualan, buat nyaman dulu.
+
+2. CLOSING SCRIPT - Script closing utama menggunakan teknik ${technique}. Handle objeksi "${objection}". Persuasif tapi tidak memaksa. Sertakan semua elemen: masalah → solusi → bukti → penawaran → CTA.
+
+3. FOLLOW-UP 1 (hari ke-1 setelah tidak ada respons) - Reminder yang ringan, tidak terkesan ngejar-ngejar. Tambahkan value baru.
+
+4. FOLLOW-UP 2 (hari ke-2 atau ke-3) - Lebih direct, tampilkan urgency/benefit tambahan, ajak ambil keputusan.
+
+5. FOLLOW-UP FINAL (hari ke-4 atau ke-5) - Final push. Bisa pakai urgency stok/harga naik atau cukup pamit dengan sopan.
+
+Format respons: JSON dengan structure:
+{
+  "scripts": {
+    "opening": "...",
+    "closing": "...",
+    "followUp1": "...",
+    "followUp2": "...",
+    "followUp3": "..."
+  }
+}
+
+PENTING:
+- Gunakan bahasa Indonesia yang natural, santai tapi tetap profesional
+- Pakai sapaan "Kak" atau "Bro/Sis" sesuai konteks
+- Sertakan emoji secukupnya (tidak berlebihan)
+- Setiap script harus standalone (bisa dipahami tanpa konteks lain)
+- Jangan template yang terlalu formal atau kaku`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "Kamu adalah CS expert yang ahli closing produk digital di Indonesia. Selalu respond dengan JSON valid.",
+          },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 4000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Closing script error:", error);
+      res.status(500).json({ error: "Gagal generate closing script" });
+    }
+  });
+
+  // Funnel Planner endpoint
+  app.post("/api/generate-funnel", async (req, res) => {
+    try {
+      const {
+        productName,
+        productType = "digital",
+        productPrice = "",
+        targetMarket,
+        productBenefit = "",
+        funnelModel = "ads_lp_wa",
+        trafficSource = "Meta Ads (FB/IG)",
+      } = req.body;
+
+      const productTypeLabels: Record<string, string> = {
+        digital: "Produk Digital (ebook/course/template/software)",
+        physical: "Produk Fisik",
+        service: "Jasa/Layanan",
+        saas: "SaaS/Subscription",
+      };
+
+      const funnelModelLabels: Record<string, string> = {
+        ads_lp_wa: "Ads → Landing Page → WhatsApp → Order",
+        ads_lp_direct: "Ads → Landing Page → Checkout Langsung",
+        ads_wa_direct: "Ads → WhatsApp Langsung",
+        content_bio_lp: "Konten Organik → Bio Link → Landing Page",
+        email_funnel: "Lead Magnet → Email Sequence → Penawaran",
+        webinar: "Ads → Webinar/Live → Penawaran",
+      };
+
+      const prompt = `Kamu adalah digital marketing strategist Indonesia yang expert dalam merancang sales funnel untuk produk digital.
+
+Rancang SALES FUNNEL LENGKAP untuk:
+- Produk: "${productName}"
+- Jenis: ${productTypeLabels[productType] || productType}
+${productPrice ? `- Harga: ${productPrice}` : ""}
+- Target Market: "${targetMarket}"
+${productBenefit ? `- Manfaat Utama: ${productBenefit}` : ""}
+- Model Funnel: ${funnelModelLabels[funnelModel] || funnelModel}
+- Sumber Traffic: ${trafficSource}
+
+Buat funnel dengan 5 tahap. Untuk setiap tahap, berikan detail dalam bahasa Indonesia:
+
+Tahap-tahap WAJIB:
+1. awareness - Kesadaran (menarik perhatian target market)
+2. interest - Minat (membangun rasa tertarik)
+3. consideration - Pertimbangan (meyakinkan untuk beli)
+4. conversion - Konversi (closing/pembelian)
+5. retention - Retensi (pembeli jadi repeat buyer / referral)
+
+Format JSON:
+{
+  "summary": "Ringkasan strategi funnel 2-3 kalimat",
+  "stages": [
+    {
+      "stage": "awareness",
+      "label": "Nama Stage yang Menarik",
+      "goal": "Tujuan spesifik tahap ini (1 kalimat)",
+      "platform": "Platform/Channel yang digunakan",
+      "message": "Pesan kunci yang ingin disampaikan di tahap ini",
+      "copyExample": "Contoh copy/script nyata untuk tahap ini (bisa multi-line, cukup detail)",
+      "metrics": "2-3 metrics yang harus dipantau",
+      "tips": "1-2 tips praktis untuk optimasi tahap ini"
+    }
+  ]
+}
+
+Buat setiap stage SANGAT PRAKTIS dan ACTIONABLE. Copy example harus bisa langsung dipakai.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "Kamu adalah sales funnel expert Indonesia. Selalu respond dengan JSON valid sesuai format yang diminta.",
+          },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 4000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Funnel planner error:", error);
+      res.status(500).json({ error: "Gagal generate funnel" });
+    }
+  });
+
+  // Ad Scale Advisor endpoint
+  app.post("/api/ad-scale-advisor", async (req, res) => {
+    try {
+      const {
+        platform = "meta",
+        objective = "Konversi / Pembelian",
+        status = "active_stable",
+        dailyBudget,
+        daysRunning,
+        cpm = "",
+        cpc = "",
+        ctr = "",
+        cpa = "",
+        roas = "",
+        conversionRate = "",
+        totalSpend = "",
+        totalConversions = "",
+        productPrice = "",
+        additionalContext = "",
+      } = req.body;
+
+      const platformNames: Record<string, string> = {
+        meta: "Meta Ads (Facebook/Instagram)",
+        tiktok: "TikTok Ads",
+        google: "Google Ads",
+      };
+
+      const statusLabels: Record<string, string> = {
+        learning: "Learning Phase",
+        active_stable: "Aktif & Stabil",
+        declining: "Performa Menurun",
+        winning: "Winning (ROAS Tinggi)",
+        new: "Baru Diluncurkan",
+      };
+
+      const prompt = `Kamu adalah expert digital advertising Indonesia yang sudah manage ratusan campaign Meta Ads, TikTok Ads, dan Google Ads dengan total budget miliaran rupiah.
+
+Analisis data iklan berikut dan berikan rekomendasi SCALING:
+
+PLATFORM: ${platformNames[platform] || platform}
+TUJUAN: ${objective}
+STATUS: ${statusLabels[status] || status}
+BUDGET HARIAN: Rp ${dailyBudget}
+SUDAH BERJALAN: ${daysRunning} hari
+${productPrice ? `HARGA PRODUK: Rp ${productPrice}` : ""}
+
+METRICS:
+${cpm ? `• CPM: Rp ${cpm}` : ""}
+${cpc ? `• CPC: Rp ${cpc}` : ""}
+${ctr ? `• CTR: ${ctr}%` : ""}
+${cpa ? `• CPA: Rp ${cpa}` : ""}
+${roas ? `• ROAS: ${roas}x` : ""}
+${conversionRate ? `• Conversion Rate: ${conversionRate}%` : ""}
+${totalSpend ? `• Total Spend: Rp ${totalSpend}` : ""}
+${totalConversions ? `• Total Konversi: ${totalConversions}` : ""}
+${additionalContext ? `\nKONTEKS TAMBAHAN: ${additionalContext}` : ""}
+
+Berikan analisis mendalam dan rekomendasi. Pilih SATU dari: scale_up (naikkan budget), scale_out (duplikasi/ekspansi), optimize (perbaiki dulu), kill (hentikan), wait (tunggu lebih lama).
+
+Format respons JSON:
+{
+  "recommendation": "scale_up|scale_out|optimize|kill|wait",
+  "confidence": 85,
+  "summary": "Penjelasan singkat 2-3 kalimat kenapa rekomendasi ini",
+  "reasons": [
+    "Alasan 1 berdasarkan data",
+    "Alasan 2 berdasarkan data",
+    "Alasan 3 berdasarkan data"
+  ],
+  "actions": [
+    {
+      "priority": "high|medium|low",
+      "action": "Judul action yang jelas",
+      "detail": "Detail langkah spesifik yang harus dilakukan"
+    }
+  ],
+  "scalingPlan": "Rencana scaling detail dan spesifik, step by step dengan angka konkret jika memungkinkan",
+  "warningFlags": ["warning jika ada hal yang perlu diwaspadai, atau kosong array jika tidak ada"]
+}
+
+Berikan analisis yang JUJUR dan AKURAT berdasarkan data yang ada. Jika data kurang, tetap beri rekomendasi terbaik dengan asumsi yang logis.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "Kamu adalah ads scaling expert Indonesia. Selalu respond dengan JSON valid dan analisis yang akurat.",
+          },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 3000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Ad scale advisor error:", error);
+      res.status(500).json({ error: "Gagal analisis scaling" });
+    }
+  });
+
   // Ad analyzer endpoint (Pro+ only)
   app.post("/api/analyze-ad", async (req, res) => {
     try {
