@@ -46,6 +46,8 @@ import ProductValidator from "@/pages/product-validator";
 import CampaignLauncher from "@/pages/campaign-launcher";
 import ContentRepurposer from "@/pages/content-repurposer";
 import ProfitLab from "@/pages/profit-lab";
+import VideoScript from "@/pages/video-script";
+import HashtagGenerator from "@/pages/hashtag-generator";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -87,6 +89,8 @@ function Router() {
       <Route path="/campaign-launcher" component={CampaignLauncher} />
       <Route path="/content-repurposer" component={ContentRepurposer} />
       <Route path="/profit-lab" component={ProfitLab} />
+      <Route path="/video-script" component={VideoScript} />
+      <Route path="/hashtag-generator" component={HashtagGenerator} />
       <Route component={NotFound} />
     </Switch>
   );

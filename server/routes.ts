@@ -1488,5 +1488,186 @@ PENTING: Semua konten dalam Bahasa Indonesia. Sesuaikan tone dan style untuk set
     }
   });
 
+  // ─── Video Script Generator ───────────────────────────────────────────────
+  app.post("/api/generate-video-script", async (req, res) => {
+    try {
+      const { platform, topik, produk, objective, videoStyle, duration, targetAudience } = req.body;
+      if (!topik) return res.status(400).json({ error: "Topik wajib diisi" });
+
+      const platformLabels: Record<string, string> = { tiktok: "TikTok", reels: "Instagram Reels", shorts: "YouTube Shorts" };
+      const objectiveGuides: Record<string, string> = {
+        viral: "konten hiburan mengejutkan / relatable yang memancing share dan comment",
+        edukasi: "tips praktis yang memberikan value nyata, listicle atau step-by-step",
+        jualan: "promosi produk dengan soft-selling yang natural, tidak terkesan pushy",
+        awareness: "perkenalan brand dengan cerita yang memorable",
+        review: "ulasan jujur dengan Pro dan Con yang balans",
+        challenge: "ikut trend atau buat challenge yang mengundang partisipasi",
+        story: "storytelling emosional dengan arc: masalah → titik balik → transformasi",
+      };
+      const styleGuides: Record<string, string> = {
+        talking_head: "presenter berbicara langsung ke kamera, ekspresif, eye contact",
+        voiceover: "narasi suara di atas footage/gambar, tanpa tampil di frame",
+        text_visual: "teks berjalan di atas visual/footage, minimal atau tanpa suara vokal",
+        tutorial: "screen recording atau demo langsung, show don't tell",
+        pov: "sudut pandang orang pertama, casual, immersive",
+      };
+
+      const prompt = `Kamu adalah video content strategist dan scriptwriter viral Indonesia yang ahli bikin konten short-form untuk ${platformLabels[platform] || platform}.
+
+BRIEF:
+- Topik: ${topik}
+- Produk/Brand: ${produk || "tidak ada"}
+- Target Audiens: ${targetAudience || "umum"}
+- Tujuan: ${objectiveGuides[objective] || objective}
+- Style: ${styleGuides[videoStyle] || videoStyle}
+- Durasi target: ${duration} detik
+
+Buat script video yang SIAP PRODUKSI dengan struktur scene by scene. Bayangkan durasi ${duration} detik dibagi menjadi scene yang proporsional.
+
+KEMBALIKAN JSON dengan struktur TEPAT ini:
+{
+  "judul": "Judul konten yang catchy (max 60 karakter)",
+  "platform": "${platformLabels[platform] || platform}",
+  "durasi": "${duration} detik",
+  "hook": {
+    "teks": "Kalimat/narasi hook 0-3 detik yang WAJIB buat orang stop scroll",
+    "visual": "Deskripsi visual/aksi yang dilakukan di scene hook ini",
+    "alasan": "Penjelasan singkat kenapa hook ini efektif secara psikologis"
+  },
+  "hookAlternatives": [
+    "Alternatif hook versi 1 — format pertanyaan provokatif",
+    "Alternatif hook versi 2 — format pernyataan shocking/bold",
+    "Alternatif hook versi 3 — format POV atau relatable scenario"
+  ],
+  "scenes": [
+    {
+      "timestamp": "0-3 detik",
+      "narasi": "Teks narasi/dialog yang diucapkan",
+      "visual": "Arahan visual: framing, angle, aksi yang dilakukan",
+      "textOverlay": "Teks yang muncul di layar (atau kosong jika tidak ada)",
+      "broll": "Footage/gambar B-roll yang diperlukan (atau kosong)"
+    }
+  ],
+  "cta": {
+    "teks": "Narasi CTA di detik terakhir (maks 2 kalimat)",
+    "visual": "Visual/gesture untuk CTA",
+    "action": "Tindakan spesifik yang diinginkan dari penonton"
+  },
+  "caption": "Caption lengkap untuk posting di ${platformLabels[platform] || platform}, termasuk emoji, line break yang pas, dan hashtag di bagian bawah (10-15 hashtag)",
+  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"],
+  "tips": [
+    "Tip produksi 1 untuk style ${videoStyle}",
+    "Tip 2 tentang lighting/audio/editing untuk konten ini",
+    "Tip 3 tentang waktu terbaik posting di ${platformLabels[platform] || platform}",
+    "Tip 4 tentang cara meningkatkan engagement konten ini",
+    "Tip 5 tentang optimasi algoritma ${platformLabels[platform] || platform}"
+  ]
+}
+
+PENTING:
+- Scenes harus total ~${duration} detik, bagi secara proporsional (biasanya 4-8 scenes untuk 30 detik)
+- Narasi harus natural, bukan kaku
+- Text overlay harus singkat dan impactful (max 5 kata per overlay)
+- B-roll harus spesifik dan mudah dicari/dibuat
+- Semua dalam Bahasa Indonesia yang sesuai dengan target audiens
+- Hashtag harus mix antara trending dan niche`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.8,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Video script error:", error);
+      res.status(500).json({ error: "Gagal generate script" });
+    }
+  });
+
+  // ─── Hashtag Generator ─────────────────────────────────────────────────────
+  app.post("/api/generate-hashtags", async (req, res) => {
+    try {
+      const { platform, niche, contentType, keywords } = req.body;
+
+      const platformGuides: Record<string, string> = {
+        tiktok: "TikTok: optimal 3-5 hashtag viral + 5-8 medium + 5-10 niche. Max 30. Gunakan mix bahasa Indonesia dan Inggris sesuai tren.",
+        instagram: "Instagram: optimal 5-8 hashtag viral + 8-10 medium + 7-12 niche. Max 30. Lebih banyak niche untuk reach tertarget.",
+        youtube: "YouTube Shorts: 3-5 hashtag saja, fokus pada discoverability dan SEO. Gunakan tag yang spesifik dan relevan.",
+        facebook: "Facebook: 3-5 hashtag, tidak terlalu banyak. Fokus pada komunitas lokal Indonesia.",
+        twitter: "X/Twitter: 1-3 hashtag yang trending, singkat dan tepat. Prioritaskan yang sedang viral.",
+        linkedin: "LinkedIn: 3-5 hashtag profesional yang relevan dengan industri dan karir.",
+      };
+
+      const prompt = `Kamu adalah social media expert Indonesia yang sangat paham algoritma dan tren hashtag di berbagai platform.
+
+BRIEF:
+- Platform: ${platform}
+- Niche/Industri: ${niche}
+- Jenis Konten: ${contentType}
+- Keyword tambahan: ${keywords || "tidak ada"}
+- Panduan platform: ${platformGuides[platform] || "gunakan best practices umum"}
+
+Generate paket hashtag yang dioptimalkan dengan strategi 3 tier:
+- VIRAL: hashtag dengan jutaan post, jangkauan luas tapi kompetisi tinggi
+- MEDIUM: hashtag 100rb-5jt post, sweet spot engagement
+- NICHE: hashtag <100rb post, audiens spesifik dan tertarget
+
+KEMBALIKAN JSON persis seperti ini:
+{
+  "platform": "${platform}",
+  "niche": "${niche}",
+  "tiers": [
+    {
+      "tier": "viral",
+      "label": "Viral / Trending",
+      "desc": "Jangkauan luas, banyak konten yang bersaing",
+      "avgReach": "50M–500M+ post",
+      "tags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5", "#Tag6", "#Tag7", "#Tag8"]
+    },
+    {
+      "tier": "medium",
+      "label": "Medium",
+      "desc": "Sweet spot antara jangkauan dan relevansi",
+      "avgReach": "1M–50M post",
+      "tags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5", "#Tag6", "#Tag7", "#Tag8", "#Tag9", "#Tag10"]
+    },
+    {
+      "tier": "niche",
+      "label": "Niche / Spesifik",
+      "desc": "Audiens tertarget, kompetisi rendah",
+      "avgReach": "10K–1M post",
+      "tags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5", "#Tag6", "#Tag7", "#Tag8", "#Tag9", "#Tag10", "#Tag11", "#Tag12"]
+    }
+  ],
+  "recommended": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5", "#Tag6", "#Tag7", "#Tag8", "#Tag9", "#Tag10", "#Tag11", "#Tag12", "#Tag13", "#Tag14", "#Tag15", "#Tag16", "#Tag17", "#Tag18", "#Tag19", "#Tag20"],
+  "caption": "Contoh caption singkat untuk ${contentType} di ${platform} dengan hashtag recommended di bawahnya. Tulis caption yang natural dan engaging, diakhiri dengan hashtag (pisahkan dengan line break).",
+  "strategy": "Penjelasan 1-2 kalimat kenapa kombinasi hashtag ini optimal untuk ${platform} dan konten ${contentType}"
+}
+
+PENTING:
+- Hashtag dalam Bahasa Indonesia DAN Inggris, disesuaikan dengan yang trending di Indonesia
+- Semua hashtag harus relevan dengan niche ${niche} dan jenis konten ${contentType}
+- recommended = campuran terbaik dari ketiga tier (balance antara reach dan konversi)
+- Tidak ada hashtag duplikat antar tier
+- Pastikan hashtag real dan lazim digunakan (bukan rekaan)`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Hashtag generator error:", error);
+      res.status(500).json({ error: "Gagal generate hashtag" });
+    }
+  });
+
   return httpServer;
 }
