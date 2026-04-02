@@ -20,7 +20,10 @@ A comprehensive AI-powered marketing tools application built with React, Express
 4. **Simulasi Beriklan** - Interactive step-by-step simulation untuk Meta Ads, Instagram, TikTok, LinkedIn, YouTube, Google Ads
 5. **Campaign Wizard** - 5-step guided process (Research > Audience > Competitors > Creative > Launch)
 6. **Audience Builder** - Create detailed buyer personas with AI
-7. **Ad Analyzer** - Score and analyze your ad copy for improvements
+7. **Interest Finder AI** (`/interest-finder`) - Generate 80+ hidden FB/IG interests per niche, grouped by 5 categories (Direct/Adjacent/Behavioral/Competitor/Demographic), with competition level, audience size estimate, Top Picks, bookmark, CSV export. API: `/api/find-interests`
+8. **Audience Overlap Analyzer** (`/audience-overlap`) - Analyze audience overlap between multiple interests, overlap matrix with percentage bars, recommended adset structure, exclude suggestions. API: `/api/audience-overlap`
+9. **Ad Analyzer** - Score and analyze your ad copy for improvements
+10. **Laporan Kampanye** - AI campaign performance report with Share WA tab (ringkas/detail format, WA bubble preview)
 
 ### Produk Digital (NEW)
 1. **Katalog Produk** - 4 winning digital products with resell rights (100% profit), complete with sales angles and copywriting templates
@@ -30,6 +33,14 @@ A comprehensive AI-powered marketing tools application built with React, Express
 ### Marketing (Enhanced)
 - **Affiliate Content** - AI-powered content generator for affiliate marketing (4 template types, 30-day content calendar, platform tips)
 - **Prompt Framework** - 10+ proven ChatGPT prompts for marketing, copywriting, research, and sales
+
+### Otomasi AI
+- **Campaign Launcher** - Automate campaign launch workflows
+- **Content Repurposer** - Transform content across formats
+- **Auto Rule Builder** (`/auto-rule`) - AI generates 5 ready-to-implement Meta Ads Manager automation rules (Stop Loss, Scale Winner, Budget Protector, Frequency Cap, Saturation Detector) with step-by-step implementation instructions. API: `/api/generate-auto-rules`
+- **Profit Lab** - Profit analysis and projections
+- **Video Script** - Marketing video scripts
+- **Hashtag Generator** - Social media hashtag generation
 
 ### Attentive Agentic AI (Guide Chatbot)
 - **Attentive AI Guide** - Floating chatbot AI proaktif di pojok kanan bawah layar (tersedia di semua halaman termasuk landing page)

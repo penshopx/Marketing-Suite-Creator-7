@@ -41,6 +41,7 @@ import {
   KeySquare,
   Eye,
   BarChart2,
+  Layers,
 } from "lucide-react";
 import { SiTiktok, SiGoogle } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
@@ -82,6 +83,8 @@ const winningItems = [
   { title: "Simulasi Beriklan", url: "/ad-simulation", icon: Play },
   { title: "Campaign Wizard", url: "/campaign-wizard", icon: Target },
   { title: "Audience Builder", url: "/audience-builder", icon: Users },
+  { title: "Interest Finder AI", url: "/interest-finder", icon: Search },
+  { title: "Audience Overlap", url: "/audience-overlap", icon: Layers },
   { title: "Ad Analyzer", url: "/campaign-analyzer", icon: BarChart3 },
   { title: "Laporan Kampanye", url: "/campaign-report", icon: BarChart2 },
 ];
@@ -107,6 +110,7 @@ const salesSystemItems = [
 const automasiItems = [
   { title: "Campaign Launcher", url: "/campaign-launcher", icon: Rocket },
   { title: "Content Repurposer", url: "/content-repurposer", icon: Repeat2 },
+  { title: "Auto Rule Builder", url: "/auto-rule", icon: Zap },
   { title: "Profit Lab", url: "/profit-lab", icon: FlaskConical },
   { title: "Video Script", url: "/video-script", icon: Clapperboard },
   { title: "Hashtag Generator", url: "/hashtag-generator", icon: Hash },
@@ -314,9 +318,9 @@ export function AppSidebar() {
           <ExecutionPlanProgress />
         </div>
 
-        <NavGroup label="Winning Campaign" items={winningItems} badge="8" badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" />
+        <NavGroup label="Winning Campaign" items={winningItems} badge="10" badgeColor="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" />
         <NavGroup label="Sistem Sales" items={salesSystemItems} badge="Baru" badgeColor="bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" defaultOpen={true} />
-        <NavGroup label="Otomasi AI" items={automasiItems} badge="5" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={true} />
+        <NavGroup label="Otomasi AI" items={automasiItems} badge="6" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={true} />
         <NavGroup label="Produk Digital" items={digitalProductItems} badge="9" badgeColor="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" defaultOpen={false} />
         <NavGroup label="AI Assistant" items={aiAssistantItems} badge="4" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={false} />
         <NavGroup label="AI Creator" items={aiCreatorItems} badge="8" badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" defaultOpen={false} />

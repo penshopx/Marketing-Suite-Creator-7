@@ -53,6 +53,9 @@ import SpyKompetitor from "@/pages/spy-kompetitor";
 import GoogleAds from "@/pages/google-ads";
 import CampaignReport from "@/pages/campaign-report";
 import LpHtmlGenerator from "@/pages/lp-html-generator";
+import InterestFinder from "@/pages/interest-finder";
+import AudienceOverlap from "@/pages/audience-overlap";
+import AutoRule from "@/pages/auto-rule";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -101,6 +104,9 @@ function Router() {
       <Route path="/google-ads" component={GoogleAds} />
       <Route path="/campaign-report" component={CampaignReport} />
       <Route path="/lp-html-generator" component={LpHtmlGenerator} />
+      <Route path="/interest-finder" component={InterestFinder} />
+      <Route path="/audience-overlap" component={AudienceOverlap} />
+      <Route path="/auto-rule" component={AutoRule} />
       <Route component={NotFound} />
     </Switch>
   );

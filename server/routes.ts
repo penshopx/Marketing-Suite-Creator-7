@@ -1612,6 +1612,227 @@ RETURN: Hanya return raw HTML yang langsung bisa dipakai — dimulai dari <!DOCT
     }
   });
 
+  // ─── Interest Finder AI ───────────────────────────────────────────────────
+  app.post("/api/find-interests", async (req, res) => {
+    try {
+      const { keyword, deskripsiAudience, platform, tipe } = req.body;
+      if (!keyword) return res.status(400).json({ error: "Keyword wajib diisi" });
+
+      const prompt = `Kamu adalah pakar Facebook & Instagram Ads targeting untuk pasar Indonesia.
+
+Produk/Niche: ${keyword}
+Target audience: ${deskripsiAudience || "umum"}
+Platform: ${platform || "Facebook & Instagram"}
+Tipe bisnis: ${tipe || "produk"}
+
+Tugas: Generate DAFTAR LENGKAP interest tersembunyi yang bisa digunakan untuk targeting iklan FB/IG.
+
+Kategorikan dalam 5 kelompok:
+1. direct — Interest langsung terkait produk (kata kunci eksak, brand kompetitor, nama produk)
+2. adjacent — Interest yang adjacent/relevan (hobi, kebiasaan, lifestyle target audience)
+3. behavioral — Behavioral & purchase behavior (online shopper, engaged shoppers, dll)
+4. competitor — Brand kompetitor dan tokoh di niche tersebut
+5. demographic — Interest demografis (pendidikan, pekerjaan, status, dll yang relevan)
+
+Untuk setiap interest berikan:
+- name: nama interest persis seperti di Meta Ads Manager (bahasa Indonesia atau Inggris)
+- estimatedSize: estimasi ukuran audience Indonesia (e.g. "500K - 2M", "100K - 500K")
+- competition: "Rendah" / "Sedang" / "Tinggi" (tinggi = banyak advertiser target ini)
+- relevansi: angka 1-100 (seberapa relevan untuk produk ini)
+- tip: (untuk top picks saja) kenapa interest ini potensial (1 kalimat)
+
+Pilih juga 10 "topPicks" — interest dengan kombinasi relevansi tinggi + kompetisi rendah/sedang.
+
+Berikan minimum 15 interest per kategori (total minimum 75 interests).
+
+Sertakan juga 4-5 strategi targeting di "strategyNotes" dalam Bahasa Indonesia.
+
+Format JSON:
+{
+  "totalCount": number,
+  "topPicks": [{ "name": "...", "estimatedSize": "...", "competition": "...", "relevansi": number, "tip": "..." }],
+  "categories": [
+    {
+      "id": "direct",
+      "label": "Interest Langsung",
+      "emoji": "🎯",
+      "desc": "Interest eksak terkait produk/niche",
+      "interests": [{ "name": "...", "estimatedSize": "...", "competition": "...", "relevansi": number }]
+    },
+    ... (4 kategori lain)
+  ],
+  "strategyNotes": ["...", "..."]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        response_format: { type: "json_object" },
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Interest finder error:", error);
+      res.status(500).json({ error: "Gagal generate interests" });
+    }
+  });
+
+  // ─── Audience Overlap Analyzer ────────────────────────────────────────────
+  app.post("/api/audience-overlap", async (req, res) => {
+    try {
+      const { interests, negara } = req.body;
+      if (!interests || interests.length < 2) return res.status(400).json({ error: "Minimal 2 interest" });
+
+      const prompt = `Kamu adalah pakar Meta Ads targeting dan audience research untuk pasar Indonesia.
+
+Daftar interests yang akan dianalisis:
+${interests.map((i: string, idx: number) => `${idx + 1}. ${i}`).join("\n")}
+
+Negara target: ${negara || "Indonesia"}
+
+Analisis AUDIENCE OVERLAP antar interest-interest ini. Untuk setiap pasangan (pair) berikan:
+- overlapPercent: estimasi persentase overlap (0-100)
+- overlapSize: estimasi ukuran audience yang overlap
+- risk: "Rendah" (<30%), "Sedang" (30-70%), "Tinggi" (>70%)
+- action: rekomendasi tindakan (gabung / pisah / exclude)
+
+Kemudian berikan:
+1. Summary keseluruhan analisis (1-2 kalimat)
+2. overallRisk: tingkat risiko keseluruhan
+3. recommendedAdsets: rekomendasi struktur adset (bagaimana mengelompokkan interests ini)
+4. interestsToExclude: interests yang sebaiknya di-exclude dari adset tertentu
+5. optimizationTips: 4-5 tips optimasi budget iklan
+
+Format JSON:
+{
+  "summary": "...",
+  "overallRisk": "Rendah/Sedang/Tinggi",
+  "pairs": [
+    {
+      "interest1": "...",
+      "interest2": "...",
+      "overlapPercent": number,
+      "overlapSize": "...",
+      "risk": "...",
+      "action": "..."
+    }
+  ],
+  "recommendedAdsets": [
+    {
+      "name": "...",
+      "interests": ["...", "..."],
+      "reason": "...",
+      "estimatedReach": "...",
+      "strategy": "..."
+    }
+  ],
+  "interestsToExclude": [
+    { "interest": "...", "from": "nama adset", "reason": "..." }
+  ],
+  "optimizationTips": ["...", "..."]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.6,
+        response_format: { type: "json_object" },
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Audience overlap error:", error);
+      res.status(500).json({ error: "Gagal analisis overlap" });
+    }
+  });
+
+  // ─── Auto Rule Builder ────────────────────────────────────────────────────
+  app.post("/api/generate-auto-rules", async (req, res) => {
+    try {
+      const { objective, budget, targetCpa, targetRoas, platform, agresivitas, niche } = req.body;
+      if (!budget) return res.status(400).json({ error: "Budget wajib diisi" });
+
+      const prompt = `Kamu adalah pakar Facebook & Instagram Ads automation dan campaign optimization.
+
+Parameter campaign:
+- Niche/Produk: ${niche || "umum"}
+- Objective: ${objective}
+- Budget harian: Rp ${budget}
+- Target ROAS: ${targetRoas || "tidak ditentukan"}
+- Target CPA: Rp ${targetCpa || "tidak ditentukan"}
+- Platform: ${platform}
+- Agresivitas: ${agresivitas}
+
+Generate 5 AUTOMATED RULES yang siap diimplementasikan di Meta Ads Manager untuk campaign ini.
+
+Rules yang harus ada:
+1. Stop Loss Rule — pause saat iklan boncos
+2. Scale Winner Rule — naikkan budget saat ROAS/hasil bagus
+3. Budget Protector Rule — lindungi budget dari pengeluaran berlebih
+4. Frequency Cap Rule — pause saat frekuensi terlalu tinggi (audience fatigue)
+5. Saturation Detector — duplicate atau adjust saat iklan mulai jenuh
+
+Untuk setiap rule berikan detail yang SANGAT SPESIFIK dengan angka yang realistis sesuai budget dan objective.
+
+Format JSON:
+{
+  "summary": "Ringkasan 5 rules yang dihasilkan untuk campaign ini",
+  "rules": [
+    {
+      "id": "stop-loss",
+      "name": "nama rule",
+      "emoji": "emoji",
+      "type": "stop-loss",
+      "level": "Diterapkan di level: Campaign/Adset/Ad",
+      "condition": "Kondisi lengkap dengan angka spesifik (IF CPA > Rp X DAN spend > Rp Y ...)",
+      "action": "Aksi yang dilakukan (THEN: pause adset / kurangi budget X% / dll)",
+      "why": "Penjelasan kenapa rule ini penting untuk campaign ini (2-3 kalimat)",
+      "steps": [
+        "Langkah 1: Buka Meta Ads Manager...",
+        "Langkah 2: Klik tombol Automated Rules...",
+        "... (5-7 langkah implementasi di UI Meta Ads Manager)"
+      ],
+      "metaConfig": {
+        "applyTo": "All active adsets / specific campaign",
+        "time": "Last 3 days / Last 7 days / etc",
+        "conditions": [
+          { "metric": "Cost per Result", "operator": "is greater than", "value": "Rp X", "window": "Last 3 days" }
+        ],
+        "actionType": "Turn off / Increase budget / Decrease budget",
+        "actionValue": "20% / Rp 50000 / etc (jika applicable)",
+        "notif": true
+      }
+    },
+    ... (4 rules lainnya dengan type: "scale", "protector", "frequency", "saturation")
+  ],
+  "implementationOrder": [
+    "Aktifkan rule X dulu karena...",
+    ... (5 langkah urutan implementasi)
+  ],
+  "generalTips": [
+    "Tips penting 1...",
+    ... (5 tips)
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.6,
+        response_format: { type: "json_object" },
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Auto rule builder error:", error);
+      res.status(500).json({ error: "Gagal generate automation rules" });
+    }
+  });
+
   // ─── LP HTML Improve ──────────────────────────────────────────────────────
   app.post("/api/improve-lp-html", async (req, res) => {
     try {
