@@ -56,6 +56,9 @@ import LpHtmlGenerator from "@/pages/lp-html-generator";
 import InterestFinder from "@/pages/interest-finder";
 import AudienceOverlap from "@/pages/audience-overlap";
 import AutoRule from "@/pages/auto-rule";
+import WaBroadcast from "@/pages/wa-broadcast";
+import CsBotScript from "@/pages/cs-bot-script";
+import CustomerJourney from "@/pages/customer-journey";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -107,6 +110,9 @@ function Router() {
       <Route path="/interest-finder" component={InterestFinder} />
       <Route path="/audience-overlap" component={AudienceOverlap} />
       <Route path="/auto-rule" component={AutoRule} />
+      <Route path="/wa-broadcast" component={WaBroadcast} />
+      <Route path="/cs-bot-script" component={CsBotScript} />
+      <Route path="/customer-journey" component={CustomerJourney} />
       <Route component={NotFound} />
     </Switch>
   );

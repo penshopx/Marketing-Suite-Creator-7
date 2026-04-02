@@ -2525,5 +2525,203 @@ PENTING:
     }
   });
 
+  // WA Broadcast Sequence Generator
+  app.post("/api/generate-wa-broadcast", async (req, res) => {
+    try {
+      const { produk, harga, segmen, durasi, usp, tone } = req.body;
+      const segmenDesc: Record<string, string> = {
+        new_lead: "lead baru yang baru masuk dari iklan, belum tahu banyak tentang produk",
+        warm_lead: "lead hangat yang sudah tanya-tanya tapi belum memutuskan beli",
+        hot_lead: "lead panas yang hampir deal, perlu sedikit dorongan untuk closing",
+        past_buyer: "pembeli lama yang sudah pernah beli, potensi repeat order atau upsell",
+        inactive: "pelanggan yang dulu aktif tapi sekarang sudah lama tidak berinteraksi",
+        cart_abandon: "calon pembeli yang sudah tambah ke keranjang/cart tapi tidak checkout",
+      };
+      const prompt = `Kamu adalah pakar WhatsApp Marketing di Indonesia. Buat broadcast sequence lengkap untuk:
+- Produk: ${produk}
+- Harga: ${harga || "tidak disebutkan"}
+- USP: ${usp || "tidak disebutkan"}
+- Segmen: ${segmenDesc[segmen] || segmen}
+- Durasi: ${durasi} hari
+- Tone: ${tone}
+
+Buat pesan follow-up yang natural, tidak spam, dan efektif untuk closing.
+
+Balas dalam JSON PERSIS:
+{
+  "segmen": "nama segmen dalam Bahasa Indonesia yang deskriptif",
+  "totalHari": ${durasi},
+  "ringkasan": "strategi 1-2 kalimat untuk segmen ini",
+  "sequence": [
+    {
+      "day": 1,
+      "timing": "waktu optimal kirim, e.g. Senin pagi 09.00",
+      "label": "nama fase, e.g. Perkenalan / Follow Up 1 / Last Chance",
+      "tujuan": "tujuan pesan ini dalam 1 kalimat",
+      "emoji": "1 emoji relevan",
+      "pesan": "teks lengkap pesan WA, termasuk emoji, line break, dan CTA. Jangan lebih dari 200 kata. Tulis seperti pesan WA asli.",
+      "catatan": "catatan opsional untuk pengirim (bisa null)"
+    }
+  ],
+  "tipsUmum": ["tip 1", "tip 2", "tip 3", "tip 4"],
+  "bestPractice": ["best practice 1", "best practice 2", "best practice 3"]
+}
+
+Buat ${Math.ceil(parseInt(durasi) / 2)} pesan dengan interval yang strategis (tidak setiap hari, ada jeda). Pastikan arc narasi: kenalan → nilai → sosial proof → urgensi → follow up terakhir.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.75,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("WA Broadcast error:", error);
+      res.status(500).json({ error: "Gagal generate WA broadcast sequence" });
+    }
+  });
+
+  // CS Bot Script Builder
+  app.post("/api/generate-cs-bot-script", async (req, res) => {
+    try {
+      const { produk, harga, deskripsiProduk, target, platform, tone } = req.body;
+      const prompt = `Kamu adalah pakar CS automation dan chatbot WA terbaik di Indonesia. Buat script lengkap CS bot untuk:
+- Produk/Bisnis: ${produk}
+- Harga: ${harga || "belum disebutkan"}
+- Deskripsi: ${deskripsiProduk || "tidak ada deskripsi tambahan"}
+- Target customer: ${target || "umum"}
+- Platform: ${platform}
+- Kepribadian: ${tone}
+
+Balas dalam JSON PERSIS:
+{
+  "pesanSelamatDatang": "pesan auto-reply pertama saat ada yang DM, 3-5 baris, natural, ada tombol menu (gunakan nomor 1. 2. 3.)",
+  "pesanOffline": "pesan ketika di luar jam kerja, 2-3 baris",
+  "pesanEskalasi": "pesan ketika CS bot tidak bisa jawab dan perlu eskalasi ke human, 2-3 baris",
+  "qna": [
+    {
+      "pertanyaan": "pertanyaan yang sering diajukan",
+      "jawaban": "jawaban lengkap yang bisa langsung dikirim oleh bot",
+      "kategori": "Harga/Produk/Pengiriman/Garansi/Pembayaran/Lainnya",
+      "prioritas": "Tinggi/Sedang/Rendah",
+      "keywords": ["keyword1", "keyword2", "keyword3"]
+    }
+  ],
+  "alurPercakapan": [
+    {
+      "step": 1,
+      "trigger": "kondisi/trigger yang mengaktifkan step ini",
+      "respon": "pesan yang dikirim bot",
+      "nextStep": "nama step selanjutnya atau null",
+      "isEscalation": false
+    }
+  ],
+  "objeksiUmum": [
+    {
+      "objeksi": "keberatan yang sering diucapkan calon pembeli",
+      "respon": "cara bot/CS merespons keberatan ini"
+    }
+  ],
+  "platformRekomendasi": [
+    {
+      "nama": "nama platform",
+      "fitur": "kenapa cocok untuk bisnis ini",
+      "harga": "estimasi harga"
+    }
+  ],
+  "tipsImplementasi": ["tip 1", "tip 2", "tip 3", "tip 4", "tip 5"]
+}
+
+Buat min 12 item Q&A, min 6 alur percakapan (termasuk 1 alur eskalasi), min 5 objeksi umum, 3 rekomendasi platform.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("CS Bot Script error:", error);
+      res.status(500).json({ error: "Gagal generate CS bot script" });
+    }
+  });
+
+  // Customer Journey Mapper
+  app.post("/api/generate-customer-journey", async (req, res) => {
+    try {
+      const { produk, target, harga, model, kompetitor } = req.body;
+      const prompt = `Kamu adalah pakar Customer Experience dan Marketing Strategy terbaik di Indonesia. Buat customer journey map lengkap untuk:
+- Produk/Bisnis: ${produk}
+- Target customer: ${target || "umum"}
+- Harga: ${harga || "tidak disebutkan"}
+- Model bisnis: ${model}
+- Kompetitor: ${kompetitor || "tidak disebutkan"}
+
+Buat 5 tahap journey yang komprehensif dan actionable.
+
+Balas dalam JSON PERSIS:
+{
+  "produk": "${produk}",
+  "ringkasan": "ringkasan strategi customer journey 2-3 kalimat",
+  "stages": [
+    {
+      "id": "aware",
+      "nama": "Aware",
+      "emoji": "👀",
+      "deskripsi": "deskripsi singkat tahap ini",
+      "mindsetCustomer": "apa yang dipikirkan/dirasakan customer di tahap ini",
+      "pertanyaanCustomer": ["pertanyaan 1", "pertanyaan 2", "pertanyaan 3"],
+      "touchpoints": ["touchpoint1", "touchpoint2", "touchpoint3", "touchpoint4"],
+      "konten": [
+        {"tipe": "Video/Post/Story/dll", "contoh": "contoh konten spesifik"},
+        {"tipe": "tipe2", "contoh": "contoh2"},
+        {"tipe": "tipe3", "contoh": "contoh3"}
+      ],
+      "kpi": ["KPI 1", "KPI 2", "KPI 3"],
+      "kesalahan": ["kesalahan 1", "kesalahan 2"],
+      "peluang": "peluang utama di tahap ini yang bisa dioptimalkan"
+    }
+  ],
+  "winningMoments": ["momen kritis 1", "momen kritis 2", "momen kritis 3", "momen kritis 4", "momen kritis 5"],
+  "contentCalendar": [
+    {
+      "tahap": "nama tahap",
+      "kontenIdea": "ide konten spesifik",
+      "frekuensi": "berapa kali/minggu",
+      "platform": "platform terbaik"
+    }
+  ],
+  "bottlenecks": [
+    {
+      "tahap": "nama tahap",
+      "masalah": "masalah umum di tahap ini",
+      "solusi": "cara mengatasinya"
+    }
+  ]
+}
+
+5 stages wajib: aware, consideration, purchase, retention, advocacy. Buat sedetail dan seactionable mungkin, khusus untuk pasar Indonesia.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const data = JSON.parse(response.choices[0]?.message?.content || "{}");
+      res.json(data);
+    } catch (error) {
+      console.error("Customer Journey error:", error);
+      res.status(500).json({ error: "Gagal generate customer journey map" });
+    }
+  });
+
   return httpServer;
 }
