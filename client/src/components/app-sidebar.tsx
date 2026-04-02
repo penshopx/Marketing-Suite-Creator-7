@@ -22,7 +22,11 @@ import {
   LogOut,
   HelpCircle,
   Download,
+  CalendarDays,
+  Package,
+  Zap,
 } from "lucide-react";
+import { SiTiktok } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
 import { Button } from "@/components/ui/button";
@@ -69,6 +73,11 @@ const winningItems = [
     title: "Panduan Praktis",
     url: "/winning-guide",
     icon: GraduationCap,
+  },
+  {
+    title: "Sistem 14 Hari",
+    url: "/execution-plan",
+    icon: CalendarDays,
   },
   {
     title: "Simulasi Beriklan",
@@ -161,6 +170,34 @@ const marketingItems = [
     title: "Landing Page",
     url: "/landing-page",
     icon: Globe,
+  },
+  {
+    title: "Affiliate Content",
+    url: "/affiliate-content",
+    icon: Globe,
+  },
+  {
+    title: "Prompt Framework",
+    url: "/prompt-framework",
+    icon: Zap,
+  },
+];
+
+const digitalProductItems = [
+  {
+    title: "Katalog Produk",
+    url: "/digital-products",
+    icon: Package,
+  },
+  {
+    title: "TikTok Ads",
+    url: "/tiktok-ads",
+    icon: SiTiktok,
+  },
+  {
+    title: "Meta Ads Advanced",
+    url: "/meta-ads",
+    icon: Megaphone,
   },
 ];
 
@@ -284,6 +321,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <NavGroup label="Winning Campaign" items={winningItems} />
+        <NavGroup label="Produk Digital" items={digitalProductItems} />
         <NavGroup label="AI Assistant" items={aiAssistantItems} />
         <NavGroup label="AI Creator" items={aiCreatorItems} />
         <NavGroup label="AI Audio" items={aiAudioItems} />

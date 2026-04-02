@@ -13,13 +13,23 @@ A comprehensive AI-powered marketing tools application built with React, Express
 
 ## Key Features
 
-### Winning Campaign System (NEW)
+### Winning Campaign System
 1. **Roadmap Winning** - Complete roadmap to winning campaigns with progress tracking
 2. **Panduan Praktis** - 8 prinsip fundamental iklan winning (hook, emotional trigger, copywriting formula, dll)
-3. **Simulasi Beriklan** - Interactive step-by-step simulation untuk Meta Ads, Instagram, TikTok, LinkedIn, YouTube, Google Ads
-4. **Campaign Wizard** - 5-step guided process (Research > Audience > Competitors > Creative > Launch)
-5. **Audience Builder** - Create detailed buyer personas with AI
-6. **Ad Analyzer** - Score and analyze your ad copy for improvements
+3. **Sistem 14 Hari** - Interactive 14-day execution plan tracker with daily tasks and progress
+4. **Simulasi Beriklan** - Interactive step-by-step simulation untuk Meta Ads, Instagram, TikTok, LinkedIn, YouTube, Google Ads
+5. **Campaign Wizard** - 5-step guided process (Research > Audience > Competitors > Creative > Launch)
+6. **Audience Builder** - Create detailed buyer personas with AI
+7. **Ad Analyzer** - Score and analyze your ad copy for improvements
+
+### Produk Digital (NEW)
+1. **Katalog Produk** - 4 winning digital products with resell rights (100% profit), complete with sales angles and copywriting templates
+2. **TikTok Ads** - Complete TikTok Ads guide: setup, content formulas, budget tiers, and FAQ
+3. **Meta Ads Advanced** - Advanced Meta Ads settings: campaign types, audience targeting, KPI benchmarks
+
+### Marketing (Enhanced)
+- **Affiliate Content** - AI-powered content generator for affiliate marketing (4 template types, 30-day content calendar, platform tips)
+- **Prompt Framework** - 10+ proven ChatGPT prompts for marketing, copywriting, research, and sales
 
 ### Attentive Agentic AI (Guide Chatbot)
 - **Attentive AI Guide** - Floating chatbot AI proaktif di pojok kanan bawah layar (tersedia di semua halaman termasuk landing page)

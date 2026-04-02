@@ -31,6 +31,12 @@ import WinningGuide from "@/pages/winning-guide";
 import AdSimulation from "@/pages/ad-simulation";
 import Login from "@/pages/login";
 import GuideChatbot from "@/pages/guide-chatbot";
+import ExecutionPlan from "@/pages/execution-plan";
+import DigitalProducts from "@/pages/digital-products";
+import TikTokAds from "@/pages/tiktok-ads";
+import MetaAds from "@/pages/meta-ads";
+import AffiliateContent from "@/pages/affiliate-content";
+import PromptFramework from "@/pages/prompt-framework";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -57,6 +63,12 @@ function Router() {
       <Route path="/ai-templates" component={AITemplates} />
       <Route path="/landing-page" component={LandingPageCreator} />
       <Route path="/guide-chatbot" component={GuideChatbot} />
+      <Route path="/execution-plan" component={ExecutionPlan} />
+      <Route path="/digital-products" component={DigitalProducts} />
+      <Route path="/tiktok-ads" component={TikTokAds} />
+      <Route path="/meta-ads" component={MetaAds} />
+      <Route path="/affiliate-content" component={AffiliateContent} />
+      <Route path="/prompt-framework" component={PromptFramework} />
       <Route component={NotFound} />
     </Switch>
   );
