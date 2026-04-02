@@ -41,6 +41,8 @@ import Pricing from "@/pages/pricing";
 import CSClosing from "@/pages/cs-closing";
 import FunnelPlanner from "@/pages/funnel-planner";
 import AdScaleAdvisor from "@/pages/ad-scale-advisor";
+import ProductResearch from "@/pages/product-research";
+import ProductValidator from "@/pages/product-validator";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -77,6 +79,8 @@ function Router() {
       <Route path="/cs-closing" component={CSClosing} />
       <Route path="/funnel-planner" component={FunnelPlanner} />
       <Route path="/ad-scale-advisor" component={AdScaleAdvisor} />
+      <Route path="/product-research" component={ProductResearch} />
+      <Route path="/product-validator" component={ProductValidator} />
       <Route component={NotFound} />
     </Switch>
   );

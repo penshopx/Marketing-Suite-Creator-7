@@ -521,6 +521,198 @@ Tuliskan HANYA kode HTML lengkap. Tanpa penjelasan.`;
     }
   });
 
+  // Product Research endpoint
+  app.post("/api/research-product", async (req, res) => {
+    try {
+      const { niche, format = "all", priceRange = "any" } = req.body;
+
+      const nicheLabels: Record<string, string> = {
+        bisnis_online: "Bisnis Online & E-Commerce",
+        meta_ads: "Meta Ads & Digital Marketing",
+        desain_grafis: "Desain Grafis & Kreatif",
+        keuangan_pribadi: "Keuangan Pribadi & Investasi",
+        produktivitas: "Produktivitas & Karir",
+        parenting: "Parenting & Keluarga",
+        kesehatan: "Kesehatan & Fitness",
+        memasak: "Resep & Kuliner",
+        konten_kreator: "Content Creator & Influencer",
+        self_improvement: "Self Improvement & Mindset",
+        fashion: "Fashion & Gaya Hidup",
+        edukasi_anak: "Edukasi & Belajar Anak",
+        hobi: "Hobi (Fotografi/Musik/Gaming)",
+        hukum_pajak: "Hukum & Perpajakan UMKM",
+        properti: "Properti & Real Estate",
+        wedding: "Pernikahan & Event",
+        travel: "Travel & Wisata",
+        teknologi: "Teknologi & Programming",
+        pertanian: "Pertanian & Agribisnis",
+        kuliner_bisnis: "Bisnis Kuliner & F&B",
+      };
+
+      const priceGuide: Record<string, string> = {
+        low: "Rp 10.000 - Rp 49.000",
+        mid: "Rp 50.000 - Rp 149.000",
+        high: "Rp 150.000 - Rp 499.000",
+        any: "Fleksibel (sesuai nilai produk)",
+      };
+
+      const formatGuide: Record<string, string> = {
+        ebook: "E-Book atau PDF Guide",
+        template: "Template (Canva/Notion/Excel/Figma)",
+        preset: "Preset, Filter, atau Aset Digital",
+        course: "Mini Course atau Video Tutorial",
+        toolkit: "Toolkit atau Bundle",
+        spreadsheet: "Spreadsheet atau Kalkulator",
+        prompt: "AI Prompt Pack",
+        all: "Semua format (pilihkan yang paling cocok)",
+      };
+
+      const prompt = `Kamu adalah expert riset produk digital Indonesia yang sudah berpengalaman riset di Etsy, Gumroad, Tokopedia Digital, dan marketplace produk digital lainnya.
+
+Lakukan RISET PRODUK DIGITAL untuk niche: "${nicheLabels[niche] || niche}"
+${format !== "all" ? `Format yang diminati: ${formatGuide[format]}` : ""}
+${priceRange !== "any" ? `Range harga: ${priceGuide[priceRange]}` : ""}
+
+Berikan 6 ide produk digital yang:
+1. SUDAH TERBUKTI LAKU di pasar Indonesia atau internasional (diinspirasi dari tren Etsy, bestseller Tokopedia Digital, dll)
+2. Bisa dibuat oleh PEMULA dalam waktu 1-2 minggu
+3. Ada DEMAND yang jelas dari target market Indonesia
+
+Untuk setiap produk, berikan analisis mendalam dalam bahasa Indonesia:
+
+Format JSON:
+{
+  "overview": "Analisis singkat niche ${nicheLabels[niche] || niche} dan peluangnya di pasar Indonesia (2-3 kalimat)",
+  "topRecommendation": 0,
+  "products": [
+    {
+      "name": "Nama produk yang spesifik dan menarik",
+      "format": "Nama format lengkap (contoh: Template Canva, E-Book PDF, dll)",
+      "formatType": "ebook|template|preset|course|toolkit|spreadsheet|prompt",
+      "price": "Harga jual realistis di Indonesia (contoh: Rp 49.000)",
+      "targetMarket": "Deskripsi spesifik target market (usia, profesi, situasi)",
+      "painPoint": "Pain point utama yang diselesaikan produk ini (1-2 kalimat yang compelling)",
+      "uniqueAngle": "Apa yang membedakan dari produk serupa yang sudah ada",
+      "competition": "Rendah|Sedang|Tinggi",
+      "demand": "Sangat Tinggi|Tinggi|Sedang|Rendah",
+      "profitPotential": "Estimasi potensi penghasilan (contoh: 50 penjualan/bulan = Rp 2.450.000)",
+      "quickWin": "Langkah konkret yang bisa dilakukan minggu ini untuk mulai bikin produk ini",
+      "etsyInsight": "Insight dari pasar Etsy/internasional tentang produk sejenis (trend, jumlah penjual, harga di sana, dll)"
+    }
+  ]
+}
+
+PENTING:
+- topRecommendation adalah index (0-5) dari produk yang paling kamu rekomendasikan
+- Buat nama produk yang SPESIFIK, bukan generik (contoh: "Template Notion Weekly Planner untuk Mahasiswa" bukan hanya "Template Planner")
+- Harga harus realistis untuk pasar Indonesia
+- Setiap produk harus BENAR-BENAR BERBEDA satu sama lain`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "Kamu adalah product research expert Indonesia yang memahami pasar digital lokal dan internasional. Selalu respond dengan JSON valid.",
+          },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 4000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Product research error:", error);
+      res.status(500).json({ error: "Gagal riset produk" });
+    }
+  });
+
+  // Product Validator endpoint
+  app.post("/api/validate-product", async (req, res) => {
+    try {
+      const {
+        productName,
+        productDescription,
+        targetMarket = "",
+        platform = "WhatsApp / Telegram",
+        adBudget = "Rp 50rb – 200rb",
+        competitorInfo = "",
+      } = req.body;
+
+      const prompt = `Kamu adalah product validation expert dan digital marketing strategist Indonesia. Kamu sudah bantu ratusan seller digital produk mengevaluasi ide mereka.
+
+Validasi ide produk digital berikut secara JUJUR dan AKURAT:
+
+NAMA PRODUK: "${productName}"
+DESKRIPSI: "${productDescription}"
+${targetMarket ? `TARGET MARKET: ${targetMarket}` : ""}
+PLATFORM JUAL: ${platform}
+BUDGET IKLAN: ${adBudget}
+${competitorInfo ? `INFO KOMPETITOR: ${competitorInfo}` : ""}
+
+Berikan validasi yang JUJUR. Jangan terlalu optimis kalau memang ada masalah serius.
+
+Format JSON:
+{
+  "productName": "${productName}",
+  "overallScore": 72,
+  "verdict": "go|cautious|pivot|no_go",
+  "verdictLabel": "Label singkat verdict dalam bahasa Indonesia",
+  "verdictReason": "Penjelasan 2-3 kalimat kenapa verdict ini, spesifik berdasarkan produk yang dinilai",
+  "scores": {
+    "marketDemand": { "label": "Market Demand", "score": 75, "color": "text-green-600 dark:text-green-400" },
+    "competition": { "label": "Tingkat Kompetisi", "score": 60, "color": "text-yellow-600 dark:text-yellow-400" },
+    "monetization": { "label": "Potensi Monetisasi", "score": 70, "color": "text-blue-600 dark:text-blue-400" },
+    "productionEase": { "label": "Kemudahan Produksi", "score": 80, "color": "text-green-600 dark:text-green-400" },
+    "targetClarity": { "label": "Kejelasan Target Market", "score": 65, "color": "text-yellow-600 dark:text-yellow-400" }
+  },
+  "strengths": ["kekuatan 1", "kekuatan 2", "kekuatan 3"],
+  "weaknesses": ["kelemahan 1", "kelemahan 2"],
+  "opportunities": ["peluang 1", "peluang 2"],
+  "risks": ["risiko 1", "risiko 2"],
+  "pricingRecommendation": "Rekomendasi harga spesifik dengan reasoning (contoh: Rp 49.000-97.000 — karena...)",
+  "targetMarketBreakdown": "Deskripsi target market yang lebih spesifik dan tepat berdasarkan produk ini",
+  "pivotSuggestion": "Saran pivot atau perbaikan jika verdict bukan GO (kosong jika verdict GO)",
+  "actionPlan": [
+    { "step": 1, "action": "Langkah pertama yang harus dilakukan", "timeline": "Hari ini" },
+    { "step": 2, "action": "Langkah kedua", "timeline": "Minggu ini" },
+    { "step": 3, "action": "Langkah ketiga", "timeline": "2 minggu ke depan" },
+    { "step": 4, "action": "Langkah keempat", "timeline": "Bulan ini" }
+  ],
+  "similarProducts": "Produk serupa yang sudah ada di pasar Indonesia dan insight dari sana"
+}
+
+Gunakan skor yang REALISTIS:
+- go: overallScore 75-100 (produk solid, layak dieksekusi)
+- cautious: overallScore 55-74 (ada potensi tapi perlu perbaikan)
+- pivot: overallScore 35-54 (ide ada tapi perlu perombakan besar)
+- no_go: overallScore 0-34 (risiko terlalu tinggi, ganti ide)`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "Kamu adalah product validation expert Indonesia yang memberikan penilaian jujur dan akurat. Selalu respond dengan JSON valid.",
+          },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 3000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Product validator error:", error);
+      res.status(500).json({ error: "Gagal validasi produk" });
+    }
+  });
+
   // CS Closing Script Generator
   app.post("/api/generate-closing-script", async (req, res) => {
     try {
