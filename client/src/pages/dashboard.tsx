@@ -12,23 +12,26 @@ import {
   Calendar, Package, GraduationCap, Play, Mic,
   Palette, Video, BookMarked, Search, ChevronRight,
   LayoutDashboard, Star, CheckCircle2, Link2,
+  Layers, Send, Bot, Map, Repeat2, FlaskConical,
+  Clapperboard, Hash, BarChart2, GitBranch,
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
 import { useMarketingContext } from "@/hooks/use-marketing-context";
+import { useCampaignStore } from "@/hooks/use-campaign-store";
 
 const WORKFLOW_STEPS = [
   {
     step: 1,
-    title: "Strategi",
-    desc: "Riset, validasi, dan rencanakan kampanye",
+    title: "Riset & Targeting",
+    desc: "Temukan audience & interest tersembunyi",
     icon: Target,
     color: "from-blue-500 to-blue-600",
     tools: [
-      { label: "Roadmap Winning", href: "/winning-dashboard" },
+      { label: "Interest Finder AI", href: "/interest-finder" },
+      { label: "Audience Overlap", href: "/audience-overlap" },
       { label: "Campaign Wizard", href: "/campaign-wizard" },
       { label: "Audience Builder", href: "/audience-builder" },
-      { label: "Panduan Praktis", href: "/winning-guide" },
     ],
   },
   {
@@ -39,80 +42,113 @@ const WORKFLOW_STEPS = [
     color: "from-purple-500 to-purple-600",
     tools: [
       { label: "Ad Creator", href: "/ad-creator" },
-      { label: "Image Creator", href: "/ai-images" },
       { label: "Story Telling", href: "/story-telling" },
-      { label: "Article Creator", href: "/ai-articles" },
+      { label: "Image Creator", href: "/ai-images" },
+      { label: "LP HTML Builder", href: "/lp-html-generator" },
     ],
   },
   {
     step: 3,
-    title: "Launch & Promosi",
-    desc: "Jalankan iklan di semua platform",
-    icon: Rocket,
-    color: "from-orange-500 to-orange-600",
+    title: "Sistem Sales",
+    desc: "Follow-up, CS Bot & journey customer",
+    icon: Send,
+    color: "from-green-500 to-green-600",
     tools: [
-      { label: "Meta Ads Advanced", href: "/meta-ads" },
-      { label: "TikTok Ads", href: "/tiktok-ads" },
-      { label: "Affiliate Content", href: "/affiliate-content" },
-      { label: "Landing Page", href: "/landing-page" },
+      { label: "WA Broadcast Sequence", href: "/wa-broadcast" },
+      { label: "CS Bot Script Builder", href: "/cs-bot-script" },
+      { label: "Customer Journey Map", href: "/customer-journey" },
+      { label: "CS Closing Script", href: "/cs-closing" },
     ],
   },
   {
     step: 4,
     title: "Analisa & Scale",
-    desc: "Ukur hasil dan optimalkan campaign",
+    desc: "Ukur hasil, otomasi, dan optimalkan",
     icon: BarChart3,
-    color: "from-green-500 to-green-600",
+    color: "from-orange-500 to-orange-600",
     tools: [
       { label: "Ad Analyzer", href: "/campaign-analyzer" },
-      { label: "Simulasi Beriklan", href: "/ad-simulation" },
-      { label: "Prompt Framework", href: "/prompt-framework" },
-      { label: "AI Templates", href: "/ai-templates" },
+      { label: "Auto Rule Builder", href: "/auto-rule" },
+      { label: "Laporan Kampanye", href: "/campaign-report" },
+      { label: "Profit Lab", href: "/profit-lab" },
     ],
   },
 ];
 
 const ALL_TOOLS = [
   {
-    category: "Strategi & Riset",
-    emoji: "🎯",
+    category: "Winning Campaign",
+    emoji: "🏆",
     bgColor: "bg-blue-50 dark:bg-blue-950",
     borderColor: "border-blue-200/60 dark:border-blue-800/60",
     items: [
-      { title: "Roadmap Winning", desc: "Peta jalan kampanye winning", href: "/winning-dashboard", icon: Trophy, badge: "Mulai di sini", badgeColor: "bg-yellow-100 text-yellow-700" },
+      { title: "Roadmap Winning", desc: "Peta jalan kampanye winning", href: "/winning-dashboard", icon: Trophy, badge: "Mulai di sini", badgeColor: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
+      { title: "Interest Finder AI", desc: "80+ hidden interest FB/IG per niche", href: "/interest-finder", icon: Search, badge: "Adsumo", badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+      { title: "Audience Overlap", desc: "Analisis overlap interest & struktur adset", href: "/audience-overlap", icon: Layers, badge: "Adsumo", badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+      { title: "Campaign Wizard", desc: "5 langkah bangun strategi kampanye", href: "/campaign-wizard", icon: Target, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Audience Builder", desc: "Buat buyer persona detail dengan AI", href: "/audience-builder", icon: Users, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Ad Analyzer", desc: "Scoring dan analisis copy iklan", href: "/campaign-analyzer", icon: BarChart3, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Laporan Kampanye", desc: "AI report performa + share WA", href: "/campaign-report", icon: BarChart2, badge: null, badgeColor: "" },
       { title: "Panduan Praktis", desc: "8 prinsip iklan yang efektif", href: "/winning-guide", icon: GraduationCap, badge: null, badgeColor: "" },
-      { title: "Sistem 14 Hari", desc: "Tracker harian dari riset ke penjualan", href: "/execution-plan", icon: Calendar, badge: "Interaktif", badgeColor: "bg-green-100 text-green-700" },
-      { title: "Campaign Wizard", desc: "5 langkah bangun strategi kampanye", href: "/campaign-wizard", icon: Target, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Audience Builder", desc: "Buat buyer persona detail dengan AI", href: "/audience-builder", icon: Users, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Ad Analyzer", desc: "Scoring dan analisis copy iklan", href: "/campaign-analyzer", icon: BarChart3, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Sistem 14 Hari", desc: "Tracker harian dari riset ke penjualan", href: "/execution-plan", icon: Calendar, badge: "Interaktif", badgeColor: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
       { title: "Simulasi Beriklan", desc: "Latihan iklan tanpa biaya nyata", href: "/ad-simulation", icon: Play, badge: null, badgeColor: "" },
+    ],
+  },
+  {
+    category: "Sistem Sales",
+    emoji: "💬",
+    bgColor: "bg-green-50 dark:bg-green-950",
+    borderColor: "border-green-200/60 dark:border-green-800/60",
+    items: [
+      { title: "WA Broadcast Sequence", desc: "Sequence follow-up 7–30 hari per segmen", href: "/wa-broadcast", icon: Send, badge: "Cekat.AI", badgeColor: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+      { title: "CS Bot Script Builder", desc: "Knowledge base Q&A + alur percakapan CS", href: "/cs-bot-script", icon: Bot, badge: "Cekat.AI", badgeColor: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+      { title: "Customer Journey Map", desc: "Petakan perjalanan customer 6 tahap", href: "/customer-journey", icon: Map, badge: "Cekat.AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "CS Closing Script", desc: "Script closing sales WhatsApp", href: "/cs-closing", icon: MessageSquare, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Funnel Planner", desc: "Rancang funnel marketing lengkap", href: "/funnel-planner", icon: GitBranch, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Ad Scale Advisor", desc: "Rekomendasi kapan scale budget iklan", href: "/ad-scale-advisor", icon: TrendingUp, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+    ],
+  },
+  {
+    category: "Otomasi AI",
+    emoji: "⚡",
+    bgColor: "bg-purple-50 dark:bg-purple-950",
+    borderColor: "border-purple-200/60 dark:border-purple-800/60",
+    items: [
+      { title: "Auto Rule Builder", desc: "5 aturan otomatis Meta Ads Manager", href: "/auto-rule", icon: Zap, badge: "Adsumo", badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+      { title: "Campaign Launcher", desc: "Workflow otomatis launch campaign", href: "/campaign-launcher", icon: Rocket, badge: null, badgeColor: "" },
+      { title: "Content Repurposer", desc: "Transform konten ke berbagai format", href: "/content-repurposer", icon: Repeat2, badge: null, badgeColor: "" },
+      { title: "Profit Lab", desc: "Analisis profit dan proyeksi keuangan", href: "/profit-lab", icon: FlaskConical, badge: null, badgeColor: "" },
+      { title: "Video Script", desc: "Script video marketing berkualitas", href: "/video-script", icon: Clapperboard, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Hashtag Generator", desc: "Hashtag optimal untuk semua platform", href: "/hashtag-generator", icon: Hash, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
     ],
   },
   {
     category: "AI Creator",
     emoji: "✨",
-    bgColor: "bg-purple-50 dark:bg-purple-950",
-    borderColor: "border-purple-200/60 dark:border-purple-800/60",
+    bgColor: "bg-pink-50 dark:bg-pink-950",
+    borderColor: "border-pink-200/60 dark:border-pink-800/60",
     items: [
-      { title: "Ad Creator", desc: "Generate copy iklan semua platform", href: "/ad-creator", icon: Megaphone, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Story Telling", desc: "Narasi promosi yang engaging", href: "/story-telling", icon: BookOpen, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Image Creator", desc: "Generate gambar marketing dengan AI", href: "/ai-images", icon: Image, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Article Creator", desc: "Artikel SEO-optimized otomatis", href: "/ai-articles", icon: FileText, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Banner Creator", desc: "Desain banner dan visual promosi", href: "/ai-banners", icon: Palette, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Video Creator", desc: "Script dan konsep video marketing", href: "/ai-video", icon: Video, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Landing Page", desc: "Generator halaman penjualan", href: "/landing-page", icon: Globe, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
+      { title: "Ad Creator", desc: "Generate copy iklan semua platform", href: "/ad-creator", icon: Megaphone, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "LP HTML Builder", desc: "Landing page HTML siap deploy", href: "/lp-html-generator", icon: Globe, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Story Telling", desc: "Narasi promosi yang engaging", href: "/story-telling", icon: BookOpen, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Image Creator", desc: "Generate gambar marketing dengan AI", href: "/ai-images", icon: Image, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Article Creator", desc: "Artikel SEO-optimized otomatis", href: "/ai-articles", icon: FileText, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Banner Creator", desc: "Desain banner dan visual promosi", href: "/ai-banners", icon: Palette, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Video Creator", desc: "Script dan konsep video marketing", href: "/ai-video", icon: Video, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Landing Page", desc: "Generator halaman penjualan", href: "/landing-page", icon: Globe, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
     ],
   },
   {
     category: "Produk Digital & Monetisasi",
     emoji: "💰",
-    bgColor: "bg-green-50 dark:bg-green-950",
-    borderColor: "border-green-200/60 dark:border-green-800/60",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950",
+    borderColor: "border-emerald-200/60 dark:border-emerald-800/60",
     items: [
-      { title: "Katalog Produk Digital", desc: "Copywriting, platform jual, kalkulator profit", href: "/digital-products", icon: Package, badge: "Lengkap", badgeColor: "bg-green-100 text-green-700" },
-      { title: "TikTok Ads", desc: "Strategi & formula konten TikTok", href: "/tiktok-ads", icon: SiTiktok, badge: "Viral", badgeColor: "bg-pink-100 text-pink-700" },
-      { title: "Meta Ads Advanced", desc: "Facebook & Instagram Ads dari setup ke scale", href: "/meta-ads", icon: BarChart3, badge: "Advanced", badgeColor: "bg-blue-100 text-blue-700" },
-      { title: "Affiliate Content", desc: "6 template + kalender 30 hari + kalkulator", href: "/affiliate-content", icon: Link2, badge: "Sistem", badgeColor: "bg-orange-100 text-orange-700" },
+      { title: "Katalog Produk Digital", desc: "Copywriting, platform jual, kalkulator profit", href: "/digital-products", icon: Package, badge: "Lengkap", badgeColor: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+      { title: "Riset Produk Digital", desc: "Riset niche produk digital terbaik", href: "/product-research", icon: Search, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "TikTok Ads", desc: "Strategi & formula konten TikTok", href: "/tiktok-ads", icon: SiTiktok, badge: "Viral", badgeColor: "bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" },
+      { title: "Meta Ads Advanced", desc: "Facebook & Instagram Ads dari setup ke scale", href: "/meta-ads", icon: BarChart3, badge: "Advanced", badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+      { title: "Affiliate Content", desc: "6 template + kalender 30 hari + kalkulator", href: "/affiliate-content", icon: Link2, badge: "Sistem", badgeColor: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" },
     ],
   },
   {
@@ -121,9 +157,9 @@ const ALL_TOOLS = [
     bgColor: "bg-orange-50 dark:bg-orange-950",
     borderColor: "border-orange-200/60 dark:border-orange-800/60",
     items: [
-      { title: "AI Chat", desc: "Konsultasi marketing general dengan AI", href: "/ai-chat", icon: MessageSquare, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "AI Expert Chat", desc: "Pilih persona expert: SEO, Copywriting, dll", href: "/ai-expert", icon: Sparkles, badge: "AI", badgeColor: "bg-purple-100 text-purple-700" },
-      { title: "Prompt Framework", desc: "15 prompt + RISEN builder + cheat sheet", href: "/prompt-framework", icon: Zap, badge: "15 Prompts", badgeColor: "bg-yellow-100 text-yellow-700" },
+      { title: "AI Chat", desc: "Konsultasi marketing general dengan AI", href: "/ai-chat", icon: MessageSquare, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "AI Expert Chat", desc: "Pilih persona expert: SEO, Copywriting, dll", href: "/ai-expert", icon: Sparkles, badge: "AI", badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+      { title: "Prompt Framework", desc: "15 prompt + RISEN builder + cheat sheet", href: "/prompt-framework", icon: Zap, badge: "15 Prompts", badgeColor: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
       { title: "AI Templates", desc: "Library template marketing siap pakai", href: "/ai-templates", icon: BookMarked, badge: null, badgeColor: "" },
       { title: "Text to Speech", desc: "Konversi teks ke suara untuk voiceover", href: "/ai-tts", icon: Volume2, badge: null, badgeColor: "" },
       { title: "Speech to Text", desc: "Transkripsi audio ke teks otomatis", href: "/ai-stt", icon: Mic, badge: null, badgeColor: "" },
@@ -142,6 +178,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const { user } = useAuth();
   const { context } = useMarketingContext();
+  const { campaign, isActive } = useCampaignStore();
 
   const userName = user?.firstName || "Marketer";
   const planProgress = (context.daysCompleted / 14) * 100;
@@ -177,6 +214,37 @@ export default function Dashboard() {
             </Link>
           </Button>
         </div>
+
+        {/* Campaign Store Widget */}
+        {isActive && (
+          <Card className="border-green-500/30 bg-green-500/5">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <Layers className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-green-700 dark:text-green-400">
+                      Sinkronisasi Aktif — {campaign?.produk || "Campaign"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {campaign.usedTools.length} tool digunakan · {campaign?.niche ? `Niche: ${campaign.niche}` : ""}{campaign?.target ? ` · Target: ${campaign.target}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button asChild size="sm" variant="outline" className="text-xs border-green-500/30 hover:bg-green-500/10" data-testid="button-continue-interest-finder">
+                    <Link href="/interest-finder">Interest Finder →</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="text-xs border-green-500/30 hover:bg-green-500/10" data-testid="button-continue-wa-broadcast">
+                    <Link href="/wa-broadcast">WA Broadcast →</Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Execution Plan Progress */}
         {context.daysCompleted > 0 && (

@@ -227,6 +227,151 @@ const PAGE_INFO: Record<string, PageInfo> = {
       "Pelajari cara pakai",
     ],
   },
+  "/interest-finder": {
+    path: "/interest-finder",
+    title: "Interest Finder AI",
+    description: "Generate 80+ hidden FB/IG interests per niche — grupkan ke 5 kategori (Direct, Adjacent, Behavioral, Competitor, Demographic) dengan skor kompetisi dan ukuran audience",
+    suggestedActions: [
+      "Temukan interest untuk niche kamu",
+      "Kirim Top Picks ke Audience Overlap",
+      "Simpan interest ke Campaign Store",
+    ],
+  },
+  "/audience-overlap": {
+    path: "/audience-overlap",
+    title: "Audience Overlap Analyzer",
+    description: "Analisis overlap antar interest — cegah double-spend budget, dapatkan rekomendasi struktur adset optimal dan daftar interest yang perlu di-exclude",
+    suggestedActions: [
+      "Analisis 2–10 interests sekaligus",
+      "Lihat matriks overlap antar interest",
+      "Kirim ke WA Broadcast atau Customer Journey",
+    ],
+  },
+  "/wa-broadcast": {
+    path: "/wa-broadcast",
+    title: "WA Broadcast Sequence",
+    description: "Generate urutan pesan follow-up WhatsApp 7–30 hari untuk segmen new lead, warm lead, hot lead, past buyer, inactive, cart abandon",
+    suggestedActions: [
+      "Generate sequence untuk new lead",
+      "Buat follow-up untuk past buyer",
+      "Salin semua pesan sekaligus",
+    ],
+  },
+  "/cs-bot-script": {
+    path: "/cs-bot-script",
+    title: "CS Bot Script Builder",
+    description: "Generate knowledge base Q&A + alur percakapan CS siap pakai di Respond.io, Qontak, atau platform chat manapun",
+    suggestedActions: [
+      "Buat script untuk WhatsApp CS Bot",
+      "Generate Q&A knowledge base",
+      "Dapatkan rekomendasi platform bot",
+    ],
+  },
+  "/customer-journey": {
+    path: "/customer-journey",
+    title: "Customer Journey Mapper",
+    description: "Petakan perjalanan customer lengkap 6 tahap (Awareness → Consideration → Purchase → Retention → Advocacy) dengan touchpoint, KPI, dan idea konten tiap tahap",
+    suggestedActions: [
+      "Petakan journey untuk produkmu",
+      "Lihat bottleneck dan cara mengatasinya",
+      "Kirim ke CS Bot Script atau WA Broadcast",
+    ],
+  },
+  "/auto-rule": {
+    path: "/auto-rule",
+    title: "Auto Rule Builder",
+    description: "Generate 5 aturan otomatis Meta Ads Manager siap implementasi — Stop Loss, Scale Winner, Budget Protector, Frequency Cap, Saturation Detector",
+    suggestedActions: [
+      "Generate rules untuk campaign Meta",
+      "Pelajari cara setup di Ads Manager",
+      "Optimalkan berdasarkan ROAS dan CPA",
+    ],
+  },
+  "/campaign-launcher": {
+    path: "/campaign-launcher",
+    title: "Campaign Launcher",
+    description: "Workflow otomatis untuk launch campaign baru",
+    suggestedActions: [
+      "Launch campaign baru",
+      "Setup workflow otomatis",
+    ],
+  },
+  "/content-repurposer": {
+    path: "/content-repurposer",
+    title: "Content Repurposer",
+    description: "Transform konten yang ada ke berbagai format dan platform",
+    suggestedActions: [
+      "Repurpose artikel ke social media",
+      "Transform video script ke teks",
+    ],
+  },
+  "/profit-lab": {
+    path: "/profit-lab",
+    title: "Profit Lab",
+    description: "Analisis profit dan proyeksi keuangan campaign iklan",
+    suggestedActions: [
+      "Hitung profit margin campaign",
+      "Proyeksikan ROAS yang ditargetkan",
+    ],
+  },
+  "/video-script": {
+    path: "/video-script",
+    title: "Video Script",
+    description: "Generate script video marketing berkualitas tinggi",
+    suggestedActions: [
+      "Buat script video iklan",
+      "Generate video script TikTok",
+    ],
+  },
+  "/hashtag-generator": {
+    path: "/hashtag-generator",
+    title: "Hashtag Generator",
+    description: "Generate hashtag optimal untuk Instagram, TikTok, dan platform lainnya",
+    suggestedActions: [
+      "Generate hashtag untuk niche kamu",
+      "Cari trending hashtag",
+    ],
+  },
+  "/execution-plan": {
+    path: "/execution-plan",
+    title: "Sistem 14 Hari",
+    description: "Tracker harian interaktif — dari riset hari pertama hingga penjualan hari ke-14",
+    suggestedActions: [
+      "Cek task hari ini",
+      "Tandai task selesai",
+      "Lihat progress keseluruhan",
+    ],
+  },
+  "/campaign-report": {
+    path: "/campaign-report",
+    title: "Laporan Kampanye",
+    description: "Generate laporan performa kampanye AI dengan format share WhatsApp ringkas atau detail",
+    suggestedActions: [
+      "Generate laporan campaign",
+      "Share laporan ke WA",
+      "Analisis performa iklan",
+    ],
+  },
+  "/lp-html-generator": {
+    path: "/lp-html-generator",
+    title: "LP HTML Builder",
+    description: "Generate landing page HTML lengkap siap deploy — hero, manfaat, testimoni, FAQ, CTA",
+    suggestedActions: [
+      "Buat landing page produk",
+      "Generate LP untuk campaign",
+      "Download HTML siap pakai",
+    ],
+  },
+  "/pricing": {
+    path: "/pricing",
+    title: "Harga & Paket",
+    description: "Pilih paket yang sesuai — Gratis, Pro Marketer (Rp 149.000/bulan), atau Enterprise (Rp 399.000/bulan)",
+    suggestedActions: [
+      "Lihat perbedaan paket",
+      "Upgrade ke Pro",
+      "Tanya tentang Enterprise",
+    ],
+  },
 };
 
 export interface GuideContext {
@@ -266,10 +411,24 @@ export function useGuideContext(): GuideContext {
   }
 
   const allFeatures = [
-    "AI Chat", "AI Expert Chat", "Ad Creator", "Image Creator",
-    "Article Creator", "Banner Creator", "Text to Speech", "Speech to Text",
-    "Story Telling", "AI Templates", "Landing Page Creator",
-    "Campaign Wizard", "Audience Builder", "Ad Analyzer", "Video Creator",
+    "Interest Finder AI (80+ hidden interests)",
+    "Audience Overlap Analyzer",
+    "Auto Rule Builder (Meta Ads)",
+    "WA Broadcast Sequence",
+    "CS Bot Script Builder",
+    "Customer Journey Mapper",
+    "Sinkronisasi Lintas Tools",
+    "Campaign Wizard",
+    "Audience Builder",
+    "Ad Creator (semua platform)",
+    "AI Image & Banner Creator",
+    "Article & Story Telling Creator",
+    "LP HTML Builder",
+    "Ad Analyzer & Laporan Kampanye",
+    "Simulasi Beriklan (6 platform)",
+    "AI Chat & Expert Chat",
+    "Text-to-Speech & Speech-to-Text",
+    "AI Templates (30+ template)",
   ];
 
   return {

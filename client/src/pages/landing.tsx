@@ -4,73 +4,119 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Sparkles, Zap, Target, Users, MessageSquare, Image, FileText, 
   Video, Megaphone, BarChart3, CheckCircle2, ArrowRight, Star,
-  Shield, Clock, TrendingUp, Trophy, LogIn
+  Shield, Clock, TrendingUp, Trophy, LogIn, Search, Layers,
+  Send, Bot, Map, Link2, Package,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const features = [
   {
-    icon: MessageSquare,
-    title: "AI Chat Assistant",
-    description: "Konsultasikan strategi marketing dengan AI yang paham bisnis Anda",
+    icon: Search,
+    title: "Interest Finder AI",
+    description: "Temukan 80+ hidden interest FB/IG untuk kurangi CPA hingga 90% — kompetitor tidak tahu ini",
+    badge: "Adsumo",
+    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  },
+  {
+    icon: Send,
+    title: "WA Broadcast Sequence",
+    description: "Generate urutan follow-up WhatsApp 7–30 hari otomatis per segmen — new lead, warm lead, past buyer",
+    badge: "Cekat.AI",
+    badgeColor: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  },
+  {
+    icon: Bot,
+    title: "CS Bot Script Builder",
+    description: "Buat knowledge base Q&A + alur percakapan CS untuk Respond.io, Qontak dalam menit",
+    badge: "Cekat.AI",
+    badgeColor: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
   },
   {
     icon: Megaphone,
     title: "Ad Copy Generator",
-    description: "Generate iklan untuk Meta, TikTok, Google, YouTube, dan LinkedIn",
+    description: "Generate copy iklan untuk Meta, TikTok, Google, YouTube, dan LinkedIn yang langsung convert",
+    badge: null,
+    badgeColor: "",
   },
   {
     icon: Target,
     title: "Campaign Wizard",
-    description: "Panduan step-by-step untuk membuat campaign yang winning",
-  },
-  {
-    icon: Image,
-    title: "AI Image Creator",
-    description: "Generate gambar marketing berkualitas tinggi dengan AI",
-  },
-  {
-    icon: FileText,
-    title: "Article Generator",
-    description: "Buat artikel SEO-optimized dalam hitungan menit",
+    description: "Panduan 5 langkah dari research, audience, kompetitor, creative, sampai launch",
+    badge: null,
+    badgeColor: "",
   },
   {
     icon: BarChart3,
     title: "Ad Analyzer",
-    description: "Analisis dan scoring iklan Anda untuk performa maksimal",
+    description: "Analisis dan scoring iklan Anda dengan AI — dapat rekomendasi perbaikan spesifik",
+    badge: null,
+    badgeColor: "",
+  },
+  {
+    icon: Map,
+    title: "Customer Journey Mapper",
+    description: "Petakan perjalanan customer dari awareness sampai advocacy lengkap dengan KPI dan touchpoint",
+    badge: "Cekat.AI",
+    badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+  },
+  {
+    icon: Layers,
+    title: "Audience Overlap Analyzer",
+    description: "Analisis overlap antar interest agar budget tidak double-spend — struktur adset optimal",
+    badge: "Adsumo",
+    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  },
+  {
+    icon: Zap,
+    title: "Sinkronisasi Lintas Tools",
+    description: "Data produk, niche, target, dan interest otomatis mengalir dari satu tool ke tool berikutnya",
+    badge: "Eksklusif",
+    badgeColor: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
   },
 ];
 
 const highlightFeatures = [
-  "AI Chat & Expert Consultation",
-  "Ad Creator untuk semua platform",
-  "Image, Article, Banner & Video Creator",
-  "Campaign Wizard & Ad Analyzer",
-  "Audience Builder & Story Telling",
+  "Interest Finder AI — 80+ hidden interests",
+  "Audience Overlap Analyzer",
+  "Auto Rule Builder — aturan Meta Ads otomatis",
+  "WA Broadcast Sequence 7–30 hari",
+  "CS Bot Script Builder (Respond.io, Qontak)",
+  "Customer Journey Mapper 6 tahap",
+  "Sinkronisasi lintas tools otomatis",
+  "Campaign Wizard 5 langkah",
+  "Audience Builder — buyer persona AI",
+  "Ad Creator semua platform (Meta, TikTok, Google)",
+  "AI Image & Banner Creator",
+  "Article & Story Telling Creator",
+  "Landing Page HTML Builder",
+  "Ad Analyzer & Laporan Kampanye",
+  "Simulasi Beriklan 6 platform",
+  "AI Chat & Expert Chat",
   "Text-to-Speech & Speech-to-Text",
-  "Landing Page Creator",
-  "AI Templates Library",
-  "Panduan Praktis & Simulasi Beriklan",
+  "AI Templates Library (30+ template)",
 ];
 
 const testimonials = [
   {
-    name: "Sarah Putri",
-    role: "Digital Marketer",
-    content: "ROAS saya naik 3x setelah pakai tool ini. AI-nya benar-benar paham cara bikin iklan yang convert!",
-    avatar: "SP",
+    name: "Rizky Pratama",
+    role: "Performance Marketer, Jakarta",
+    content: "Interest Finder AI mengubah game saya. CPA turun 60% dalam 2 minggu — niche tersembunyi yang AI temukan itu beneran nggak ketahuan kompetitor.",
+    avatar: "RP",
+    stars: 5,
   },
   {
-    name: "Budi Santoso",
-    role: "E-commerce Owner",
-    content: "Dulu bikin 1 iklan butuh 2 jam. Sekarang dengan AI ini, 10 menit sudah jadi 5 variasi iklan.",
-    avatar: "BS",
+    name: "Dewi Rahayu",
+    role: "Owner Skincare Brand, Surabaya",
+    content: "WA Broadcast Sequence 14 hari bisa diset sekali, terus jalan sendiri. Closing rate dari follow-up naik dari 12% ke 34%.",
+    avatar: "DR",
+    stars: 5,
   },
   {
-    name: "Amanda Lee",
-    role: "Agency Owner",
-    content: "Tim saya jadi 5x lebih produktif. Fitur Campaign Wizard membantu client-client baru juga.",
-    avatar: "AL",
+    name: "Andi Kurniawan",
+    role: "Agency Owner, Bandung",
+    content: "Fitur Sinkronisasi yang bikin saya kagum — data produk isi sekali, otomatis muncul di semua tools. Client-client saya bisa onboard 3x lebih cepat.",
+    avatar: "AK",
+    stars: 5,
   },
 ];
 
@@ -178,12 +224,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-primary">10K+</div>
-              <div className="text-muted-foreground">Pengguna Aktif</div>
+              <div className="text-4xl font-bold text-primary">30+</div>
+              <div className="text-muted-foreground">AI Marketing Tools</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-primary">500K+</div>
-              <div className="text-muted-foreground">Iklan Dibuat</div>
+              <div className="text-4xl font-bold text-primary">10K+</div>
+              <div className="text-muted-foreground">Pengguna Aktif</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary">3x</div>
@@ -209,18 +255,23 @@ export default function Landing() {
               Semua yang Anda Butuhkan untuk Marketing Sukses
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              13+ AI tools yang membantu Anda dari research sampai launch campaign
+              30+ AI tools — dari riset interest, sistem sales WA, hingga sinkronisasi data lintas tools
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="hover-elevate transition-all">
+              <Card key={index} className="hover-elevate transition-all relative overflow-hidden">
                 <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <feature.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    {feature.badge && (
+                      <Badge className={`text-xs ${feature.badgeColor}`}>{feature.badge}</Badge>
+                    )}
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                  <p className="text-muted-foreground text-sm">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -294,6 +345,89 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Sinkronisasi Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-green-500/5 via-blue-500/5 to-purple-500/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+              <Zap className="h-4 w-4 mr-2" />
+              Fitur Eksklusif
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Sistem Sinkronisasi Lintas Tools
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Isi data produk sekali — otomatis terisi di semua 30+ tools. Tidak perlu input ulang.
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                  <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold">Interest Finder → Audience Overlap</h4>
+                  <p className="text-sm text-muted-foreground mt-0.5">80+ interest ditemukan AI, langsung kirim ke Overlap Analyzer untuk analisis struktur adset optimal</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                  <Send className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold">Audience Overlap → WA Broadcast</h4>
+                  <p className="text-sm text-muted-foreground mt-0.5">Setelah adset dioptimasi, langsung generate sequence follow-up WA untuk setiap segmen audience</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900 flex items-center justify-center flex-shrink-0">
+                  <Map className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold">WA Broadcast → Customer Journey</h4>
+                  <p className="text-sm text-muted-foreground mt-0.5">Data produk dan target dari broadcast otomatis masuk ke Journey Mapper — petakan touchpoint tiap tahap</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="h-10 w-10 rounded-xl bg-orange-100 dark:bg-orange-900 flex items-center justify-center flex-shrink-0">
+                  <Bot className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold">Customer Journey → CS Bot Script</h4>
+                  <p className="text-sm text-muted-foreground mt-0.5">Touchpoint dari journey langsung jadi knowledge base Q&A untuk bot CS Anda di semua platform chat</p>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <Card className="border-2 border-primary/20 shadow-xl bg-gradient-to-br from-background to-primary/5">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-base text-green-700 dark:text-green-400">Campaign Aktif — Skincare Vitamin C</CardTitle>
+                  </div>
+                  <p className="text-xs text-muted-foreground">4 tools digunakan hari ini</p>
+                </CardHeader>
+                <CardContent className="space-y-2 pb-4">
+                  {[
+                    { tool: "Interest Finder", status: "✓ Selesai", color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
+                    { tool: "Audience Overlap", status: "✓ Selesai", color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
+                    { tool: "WA Broadcast", status: "✓ Selesai", color: "text-green-600", bg: "bg-green-50 dark:bg-green-950/30" },
+                    { tool: "CS Bot Script", status: "→ Berikutnya", color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+                    { tool: "Customer Journey", status: "Belum dimulai", color: "text-muted-foreground", bg: "bg-muted/50" },
+                  ].map((item, i) => (
+                    <div key={i} className={`flex items-center justify-between p-2.5 rounded-lg ${item.bg}`}>
+                      <span className="text-sm font-medium">{item.tool}</span>
+                      <span className={`text-xs font-semibold ${item.color}`}>{item.status}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* All Features Section */}
       <section id="all-features" className="py-20 px-4">
         <div className="max-w-4xl mx-auto">
@@ -344,21 +478,21 @@ export default function Landing() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index}>
+              <Card key={index} className="hover-elevate transition-all">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
+                    {[...Array(testimonial.stars)].map((_, i) => (
                       <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground mb-6">"{testimonial.content}"</p>
+                  <p className="text-muted-foreground mb-6 text-sm">"{testimonial.content}"</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
                       {testimonial.avatar}
                     </div>
                     <div>
-                      <div className="font-semibold">{testimonial.name}</div>
-                      <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                      <div className="font-semibold text-sm">{testimonial.name}</div>
+                      <div className="text-xs text-muted-foreground">{testimonial.role}</div>
                     </div>
                   </div>
                 </CardContent>
