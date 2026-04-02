@@ -6,6 +6,26 @@ import bcrypt from "bcryptjs";
 export function registerAuthRoutes(app: Express): void {
   app.get("/api/auth/user", async (req: any, res) => {
     if (req.session?.simpleUser) {
+      try {
+        const freshUser = await authStorage.getUser(req.session.simpleUser.id);
+        if (freshUser) {
+          const sessionUser = {
+            id: freshUser.id,
+            email: freshUser.email,
+            firstName: freshUser.firstName,
+            lastName: freshUser.lastName,
+            profileImageUrl: freshUser.profileImageUrl,
+            plan: freshUser.plan || "free",
+            createdAt: freshUser.createdAt,
+            updatedAt: freshUser.updatedAt,
+          };
+          req.session.simpleUser = sessionUser;
+          req.user = sessionUser;
+          return res.json(sessionUser);
+        }
+      } catch (e) {
+        // fallback to session data
+      }
       req.user = req.session.simpleUser;
       return res.json(req.session.simpleUser);
     }
@@ -68,6 +88,7 @@ export function registerAuthRoutes(app: Express): void {
         firstName: user.firstName,
         lastName: user.lastName,
         profileImageUrl: user.profileImageUrl,
+        plan: user.plan || "free",
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       };
@@ -118,6 +139,7 @@ export function registerAuthRoutes(app: Express): void {
         firstName: user.firstName,
         lastName: user.lastName,
         profileImageUrl: user.profileImageUrl,
+        plan: user.plan || "free",
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       };
@@ -135,7 +157,47 @@ export function registerAuthRoutes(app: Express): void {
       res.status(500).json({ error: "Login gagal" });
     }
   });
-  
+
+  app.post("/api/auth/upgrade-plan", async (req: any, res) => {
+    try {
+      const sessionUser = req.session?.simpleUser;
+      if (!sessionUser) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { plan } = req.body;
+      if (!["free", "pro", "enterprise"].includes(plan)) {
+        return res.status(400).json({ error: "Paket tidak valid" });
+      }
+
+      const updatedUser = await authStorage.upsertUser({
+        id: sessionUser.id,
+        email: sessionUser.email,
+        firstName: sessionUser.firstName,
+        lastName: sessionUser.lastName,
+        profileImageUrl: sessionUser.profileImageUrl,
+        plan,
+      });
+
+      const updatedSession = {
+        ...sessionUser,
+        plan: updatedUser.plan || "free",
+        updatedAt: updatedUser.updatedAt,
+      };
+
+      req.session.simpleUser = updatedSession;
+      req.session.save((err: any) => {
+        if (err) {
+          return res.status(500).json({ error: "Gagal menyimpan sesi" });
+        }
+        res.json({ success: true, plan: updatedUser.plan });
+      });
+    } catch (error) {
+      console.error("Upgrade plan error:", error);
+      res.status(500).json({ error: "Gagal upgrade paket" });
+    }
+  });
+
   app.post("/api/auth/simple-logout", (req: any, res) => {
     req.session.simpleUser = null;
     req.session.save(() => {

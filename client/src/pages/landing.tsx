@@ -88,9 +88,13 @@ export default function Landing() {
             <div className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Fitur</a>
               <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">Testimoni</a>
+              <a href="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Harga</a>
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              <Button variant="outline" size="lg" asChild>
+                <a href="/pricing">Lihat Harga</a>
+              </Button>
               <Button size="lg" asChild data-testid="button-login">
                 <a href="/login">
                   <LogIn className="h-4 w-4 mr-2" />

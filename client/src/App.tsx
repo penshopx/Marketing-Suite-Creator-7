@@ -37,6 +37,7 @@ import TikTokAds from "@/pages/tiktok-ads";
 import MetaAds from "@/pages/meta-ads";
 import AffiliateContent from "@/pages/affiliate-content";
 import PromptFramework from "@/pages/prompt-framework";
+import Pricing from "@/pages/pricing";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
@@ -69,6 +70,7 @@ function Router() {
       <Route path="/meta-ads" component={MetaAds} />
       <Route path="/affiliate-content" component={AffiliateContent} />
       <Route path="/prompt-framework" component={PromptFramework} />
+      <Route path="/pricing" component={Pricing} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -118,6 +120,16 @@ function AppContent() {
     return (
       <>
         <Login />
+        <FloatingChatbot />
+        <PWAInstallBanner />
+      </>
+    );
+  }
+
+  if (location === "/pricing") {
+    return (
+      <>
+        <Pricing />
         <FloatingChatbot />
         <PWAInstallBanner />
       </>

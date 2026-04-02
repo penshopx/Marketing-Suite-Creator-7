@@ -28,9 +28,11 @@ import {
   Mic,
   Link2,
   Search,
+  Crown,
 } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useMarketingContext } from "@/hooks/use-marketing-context";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
 import { Button } from "@/components/ui/button";
@@ -155,6 +157,7 @@ function NavGroup({ label, items, defaultOpen = true, badge, badgeColor }: NavGr
 
 function UserProfile() {
   const { user, logout } = useAuth();
+  const { tier, isPro } = useSubscription();
   if (!user) return null;
 
   const initials = (user.firstName?.[0] || "") + (user.lastName?.[0] || user.email?.[0] || "U");
@@ -162,21 +165,45 @@ function UserProfile() {
     ? `${user.firstName} ${user.lastName || ""}`.trim()
     : user.email || "User";
 
+  const planLabel = tier === "enterprise" ? "Enterprise" : tier === "pro" ? "Pro" : "Gratis";
+  const planColor = tier === "enterprise"
+    ? "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300"
+    : tier === "pro"
+    ? "bg-primary/10 text-primary"
+    : "bg-muted text-muted-foreground";
+
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
-          <AvatarFallback className="text-xs">{initials.toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col">
-          <span className="text-xs font-medium truncate max-w-[100px]" data-testid="text-username">{displayName}</span>
-          <span className="text-xs text-muted-foreground truncate max-w-[100px]" data-testid="text-user-email">{user.email}</span>
+    <div className="space-y-2">
+      {!isPro && (
+        <Link href="/pricing">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-xs border-orange-400/60 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+            data-testid="button-upgrade-plan"
+          >
+            <Crown className="h-3.5 w-3.5" />
+            Upgrade ke Pro
+          </Button>
+        </Link>
+      )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.profileImageUrl || undefined} alt={displayName} />
+            <AvatarFallback className="text-xs">{initials.toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="text-xs font-medium truncate max-w-[80px]" data-testid="text-username">{displayName}</span>
+            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 border-0 ${planColor}`} data-testid="badge-plan">
+              {planLabel}
+            </Badge>
+          </div>
         </div>
+        <Button variant="ghost" size="icon" onClick={() => logout()} data-testid="button-logout">
+          <LogOut className="h-4 w-4" />
+        </Button>
       </div>
-      <Button variant="ghost" size="icon" onClick={() => logout()} data-testid="button-logout">
-        <LogOut className="h-4 w-4" />
-      </Button>
     </div>
   );
 }
