@@ -14,6 +14,7 @@ import {
   CheckCircle2, AlertCircle, Download, Zap,
   DollarSign, Target, Eye, MousePointer, ShoppingCart,
   ArrowUp, ArrowDown, Calendar, FileText,
+  MessageCircle, Send,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -104,7 +105,89 @@ export default function CampaignReport() {
   const [prevRevenue, setPrevRevenue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ReportResult | null>(null);
+  const [waCopied, setWaCopied] = useState(false);
+  const [waFmt, setWaFmt] = useState<"ringkas" | "detail">("ringkas");
   const { toast } = useToast();
+
+  const buildWaText = (r: ReportResult, format: "ringkas" | "detail") => {
+    const score = r.skor;
+    const emoji = score.total >= 75 ? "🟢" : score.total >= 50 ? "🟡" : "🔴";
+    const topRecs = r.recommendations.slice(0, 3);
+    const topKpis = r.kpis.slice(0, 5);
+    const trendEmoji = (t: string, s: string) =>
+      t === "up" && s === "good" ? "📈" : t === "down" && s === "bad" ? "📉" : t === "up" ? "↗️" : t === "down" ? "↘️" : "➡️";
+
+    if (format === "ringkas") {
+      return [
+        `📊 *LAPORAN PERFORMA KAMPANYE*`,
+        `${r.judul}`,
+        `Platform: ${r.platform}`,
+        `Periode: ${r.periode}`,
+        ``,
+        `${emoji} *SKOR: ${score.total}/100 — ${score.label}*`,
+        `_${score.keterangan}_`,
+        ``,
+        `📈 *KPI UTAMA*`,
+        ...topKpis.map((k) => `• *${k.label}:* ${k.nilai} (${k.perubahan}) ${trendEmoji(k.trend, k.status)}`),
+        ``,
+        `⚡ *TOP 3 AKSI PRIORITAS*`,
+        ...topRecs.map((r, i) => `${i + 1}. [${r.prioritas.toUpperCase()}] ${r.tindakan}`),
+        ``,
+        `📅 *NEXT STEPS*`,
+        ...r.nextSteps.slice(0, 3).map((s, i) => `${i + 1}. ${s}`),
+        ``,
+        `_Dibuat: ${new Date().toLocaleString("id-ID")}_`,
+      ].join("\n");
+    }
+
+    return [
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `📊 *LAPORAN PERFORMA KAMPANYE*`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `📌 *${r.judul}*`,
+      `🖥️ Platform: ${r.platform}`,
+      `📅 Periode: ${r.periode}`,
+      `⏰ ${new Date().toLocaleString("id-ID")}`,
+      ``,
+      `${emoji} *SKOR PERFORMA: ${score.total}/100*`,
+      `*${score.label}*`,
+      `${score.keterangan}`,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `📈 *RINGKASAN EKSEKUTIF*`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      r.ringkasan,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `📊 *KPI UTAMA*`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      ...r.kpis.map((k) => [
+        `*${k.label}:* ${k.nilai} ${trendEmoji(k.trend, k.status)}`,
+        k.target ? `  Target: ${k.target}` : "",
+        `  ${k.perubahan}`,
+        `  _${k.insight}_`,
+      ].filter(Boolean).join("\n")),
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `✅ *HIGHLIGHTS*`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      ...r.highlights.map((h) => `${h.tipe === "positive" ? "✅" : h.tipe === "negative" ? "❌" : "ℹ️"} ${h.poin}`),
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `⚡ *REKOMENDASI OPTIMASI*`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      ...r.recommendations.map((rec, i) => [
+        `${i + 1}. *[${rec.prioritas.toUpperCase()}] ${rec.kategori}*`,
+        `   ${rec.tindakan}`,
+        `   💡 Dampak: ${rec.dampak}`,
+      ].join("\n")),
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      `🎯 *LANGKAH SELANJUTNYA*`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      ...r.nextSteps.map((s, i) => `${i + 1}. ${s}`),
+    ].join("\n");
+  };
 
   const handleGenerate = async () => {
     if (!spend.trim() && !revenue.trim()) {
@@ -366,6 +449,7 @@ export default function CampaignReport() {
                           { id: "recs", label: "⚡ Rekomendasi" },
                           { id: "benchmark", label: "📈 Benchmark" },
                           { id: "nextsteps", label: "🎯 Next Steps" },
+                          { id: "share", label: "📱 Share WA" },
                         ].map((t) => (
                           <TabsTrigger key={t.id} value={t.id} data-testid={`tab-rp-${t.id}`}
                             className="text-xs h-7 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -506,6 +590,79 @@ export default function CampaignReport() {
                           </div>
                         ))}
                       </div>
+                    </TabsContent>
+
+                    {/* Share WA Tab */}
+                    <TabsContent value="share" className="p-4 mt-0">
+                      {(() => {
+                        const waText = buildWaText(result, waFmt);
+                        const handleCopyWa = () => {
+                          navigator.clipboard.writeText(waText);
+                          setWaCopied(true);
+                          setTimeout(() => setWaCopied(false), 2000);
+                          toast({ title: "Teks WA disalin!", description: "Paste ke chat WhatsApp" });
+                        };
+                        return (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">Format laporan siap dikirim ke klien via WhatsApp</p>
+                              <div className="flex gap-1 border rounded-lg overflow-hidden">
+                                <button onClick={() => setWaFmt("ringkas")} data-testid="btn-wa-ringkas"
+                                  className={`px-3 py-1 text-xs transition-colors ${waFmt === "ringkas" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+                                  Ringkas
+                                </button>
+                                <button onClick={() => setWaFmt("detail")} data-testid="btn-wa-detail"
+                                  className={`px-3 py-1 text-xs transition-colors ${waFmt === "detail" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+                                  Detail
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* WA Preview */}
+                            <div className="relative">
+                              <div className="bg-[#e8f8e0] dark:bg-[#1a2f1a] rounded-xl rounded-tl-none p-3 max-h-[340px] overflow-y-auto border border-green-200 dark:border-green-900">
+                                <pre className="text-xs leading-relaxed whitespace-pre-wrap font-sans text-gray-800 dark:text-gray-200">
+                                  {waText}
+                                </pre>
+                              </div>
+                              {/* WA bubble tail */}
+                              <div className="absolute -top-0 -left-2 w-0 h-0 border-t-[8px] border-t-green-200 dark:border-t-green-900 border-l-[8px] border-l-transparent border-r-0" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                onClick={handleCopyWa}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                data-testid="btn-copy-wa"
+                              >
+                                {waCopied ? (
+                                  <><CheckCircle2 className="mr-2 h-4 w-4" />Tersalin!</>
+                                ) : (
+                                  <><Copy className="mr-2 h-4 w-4" />Copy Teks WA</>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={downloadReport}
+                                data-testid="btn-dl-wa"
+                                className="w-full"
+                              >
+                                <Download className="mr-2 h-4 w-4" />Download .txt
+                              </Button>
+                            </div>
+
+                            <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                              <p className="text-xs text-green-700 dark:text-green-400 font-medium">💡 Tips kirim ke klien:</p>
+                              <ul className="text-xs text-green-700 dark:text-green-400 mt-1 space-y-0.5">
+                                <li>• Copy teks → paste langsung ke WhatsApp (format *bold* otomatis terbaca)</li>
+                                <li>• Format "Ringkas" cocok untuk update cepat di grup WA klien</li>
+                                <li>• Format "Detail" cocok untuk laporan bulanan yang komprehensif</li>
+                                <li>• Download .txt untuk arsip atau lampirkan di email</li>
+                              </ul>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </TabsContent>
                   </Tabs>
                 </CardContent>

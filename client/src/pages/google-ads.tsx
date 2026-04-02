@@ -13,6 +13,8 @@ import {
   Loader2, ChevronRight, Copy, RefreshCw, CheckCircle2,
   AlertCircle, Sparkles, Target, Zap, Star, List,
   Link2, Tag, Phone, MapPin, ShoppingBag,
+  Monitor, Smartphone, ExternalLink, TrendingUp,
+  BarChart2, ChevronDown,
 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -104,7 +106,32 @@ export default function GoogleAds() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<GoogleAdsResult | null>(null);
   const [activeGroup, setActiveGroup] = useState(0);
+  const [serpView, setSerpView] = useState<"desktop" | "mobile">("desktop");
+  const [serpH, setSerpH] = useState([0, 1, 2]);
+  const [serpD, setSerpD] = useState([0, 1]);
   const { toast } = useToast();
+
+  const getAdStrength = (group: typeof result extends null ? never : NonNullable<typeof result>["adGroups"][0]) => {
+    if (!group) return 0;
+    const hCount = group.headlines.length;
+    const dCount = group.descriptions.length;
+    const hasKeywordInH = group.headlines.some((h) => keywords && h.teks.toLowerCase().includes(keywords.split(",")[0]?.trim().toLowerCase().split(" ")[0] || "___"));
+    const avgHLen = group.headlines.reduce((s, h) => s + h.karakter, 0) / Math.max(hCount, 1);
+    const avgDLen = group.descriptions.reduce((s, d) => s + d.karakter, 0) / Math.max(dCount, 1);
+    let score = 0;
+    score += Math.min(hCount / 15, 1) * 35;
+    score += Math.min(dCount / 4, 1) * 20;
+    score += Math.min(avgHLen / 25, 1) * 20;
+    score += Math.min(avgDLen / 75, 1) * 15;
+    score += hasKeywordInH ? 10 : 0;
+    return Math.round(score);
+  };
+
+  const adStrengthLabel = (s: number) =>
+    s >= 80 ? { label: "Excellent", color: "text-green-600" } :
+    s >= 60 ? { label: "Good", color: "text-blue-600" } :
+    s >= 40 ? { label: "Average", color: "text-yellow-600" } :
+    { label: "Poor", color: "text-red-600" };
 
   const handleGenerate = async () => {
     if (!produk.trim()) {
@@ -332,9 +359,10 @@ export default function GoogleAds() {
                 <CardContent className="p-0">
                   <Tabs defaultValue="rsa">
                     <div className="px-4 pt-2 border-b">
-                      <TabsList className="h-8 bg-transparent gap-0.5">
+                      <TabsList className="h-8 bg-transparent gap-0.5 flex-wrap">
                         {[
                           { id: "rsa", label: "📝 RSA" },
+                          { id: "serp", label: "🔍 SERP Preview" },
                           { id: "keywords", label: "🔑 Keywords" },
                           { id: "extensions", label: "🔗 Extensions" },
                           { id: "strategy", label: "💡 Strategi" },
@@ -443,6 +471,170 @@ export default function GoogleAds() {
                           </div>
                         </ScrollArea>
                       )}
+                    </TabsContent>
+
+                    {/* SERP Preview Tab */}
+                    <TabsContent value="serp" className="p-4 mt-0">
+                      {activeGroupData && (() => {
+                        const strength = getAdStrength(activeGroupData);
+                        const sl = adStrengthLabel(strength);
+                        const h1 = activeGroupData.headlines[serpH[0]]?.teks || "";
+                        const h2 = activeGroupData.headlines[serpH[1]]?.teks || "";
+                        const h3 = activeGroupData.headlines[serpH[2]]?.teks || "";
+                        const d1 = activeGroupData.descriptions[serpD[0]]?.teks || "";
+                        const d2 = activeGroupData.descriptions[serpD[1]]?.teks || "";
+                        const displayUrl = (url || "websitekamu.com").replace(/https?:\/\//, "").replace(/\/$/, "");
+                        const fullDesc = `${d1} ${d2}`.trim();
+
+                        return (
+                          <div className="space-y-4">
+                            {/* Ad Strength Meter */}
+                            <div className="p-3 rounded-xl border bg-gradient-to-r from-muted/30 to-muted/10">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <BarChart2 className="h-4 w-4 text-primary" />
+                                  <p className="text-sm font-semibold">Ad Strength</p>
+                                </div>
+                                <span className={`text-sm font-bold ${sl.color}`}>{strength}% — {sl.label}</span>
+                              </div>
+                              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={`h-2.5 rounded-full transition-all duration-700 ${strength >= 80 ? "bg-green-500" : strength >= 60 ? "bg-blue-500" : strength >= 40 ? "bg-yellow-500" : "bg-red-500"}`}
+                                  style={{ width: `${strength}%` }}
+                                />
+                              </div>
+                              <div className="flex justify-between mt-1">
+                                {["Poor", "Average", "Good", "Excellent"].map((l) => (
+                                  <span key={l} className="text-xs text-muted-foreground">{l}</span>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Desktop/Mobile Toggle */}
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase">Preview Tampilan</p>
+                              <div className="flex border rounded-lg overflow-hidden">
+                                <button onClick={() => setSerpView("desktop")} data-testid="btn-serp-desktop"
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${serpView === "desktop" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+                                  <Monitor className="h-3.5 w-3.5" />Desktop
+                                </button>
+                                <button onClick={() => setSerpView("mobile")} data-testid="btn-serp-mobile"
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${serpView === "mobile" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+                                  <Smartphone className="h-3.5 w-3.5" />Mobile
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* SERP Preview Card */}
+                            <div className={`${serpView === "mobile" ? "max-w-[360px]" : "w-full"} bg-white dark:bg-zinc-950 border rounded-xl p-4 shadow-md`}>
+                              {/* Google Search Bar (decorative) */}
+                              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+                                <SiGoogle className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                                <div className="flex-1 border rounded-full px-3 py-1.5 bg-muted/30 text-xs text-muted-foreground">
+                                  {keywords ? keywords.split(",")[0].trim() : `${produk} terbaik`}
+                                </div>
+                              </div>
+
+                              {/* Ad Result */}
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs border border-[#006621] text-[#006621] dark:border-green-500 dark:text-green-500 px-1 rounded font-medium">Ad</span>
+                                  <span className="text-xs text-[#006621] dark:text-green-500 font-medium truncate">{displayUrl}</span>
+                                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                                <div className={`${serpView === "mobile" ? "text-base" : "text-lg"} text-[#1a0dab] dark:text-blue-400 font-medium leading-tight hover:underline cursor-pointer`}>
+                                  {[h1, h2, h3].filter(Boolean).join(" | ")}
+                                </div>
+                                <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed line-clamp-2">
+                                  {fullDesc || "Deskripsi akan muncul di sini. Pastikan mengandung keyword dan call-to-action yang jelas."}
+                                </p>
+
+                                {/* Sitelinks */}
+                                {result?.extensions?.[0]?.items && (
+                                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5">
+                                    {result.extensions[0].items.slice(0, 4).map((item, i) => (
+                                      <span key={i} className="text-xs text-[#1a0dab] dark:text-blue-400 hover:underline cursor-pointer">
+                                        {item.split("|")[0].trim()}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="mt-3 pt-2 border-t flex items-center justify-between">
+                                <p className="text-xs text-muted-foreground italic">Preview estimasi — tampilan aktual mungkin berbeda</p>
+                                <button
+                                  onClick={() => {
+                                    const t = `${[h1, h2, h3].filter(Boolean).join(" | ")}\n${fullDesc}`;
+                                    navigator.clipboard.writeText(t);
+                                    toast({ title: "Ad copy disalin!" });
+                                  }}
+                                  data-testid="btn-copy-serp"
+                                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                                >
+                                  <Copy className="h-3 w-3" />Copy
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Headline Combination Picker */}
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Pilih Kombinasi Headline (3 posisi)</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {[0, 1, 2].map((pos) => (
+                                  <div key={pos}>
+                                    <p className="text-xs text-muted-foreground mb-1">Posisi {pos + 1}</p>
+                                    <div className="space-y-1 max-h-32 overflow-y-auto rounded border p-1">
+                                      {activeGroupData.headlines.map((h, i) => (
+                                        <button
+                                          key={i}
+                                          onClick={() => {
+                                            const newH = [...serpH];
+                                            newH[pos] = i;
+                                            setSerpH(newH);
+                                          }}
+                                          data-testid={`btn-serp-h${pos}-${i}`}
+                                          className={`w-full text-left px-2 py-1 rounded text-xs transition-colors ${serpH[pos] === i ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                                        >
+                                          {h.teks.slice(0, 20)}{h.teks.length > 20 ? "…" : ""}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Description Picker */}
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Pilih Description (2 posisi)</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {[0, 1].map((pos) => (
+                                  <div key={pos}>
+                                    <p className="text-xs text-muted-foreground mb-1">Desc {pos + 1}</p>
+                                    <div className="space-y-1 max-h-24 overflow-y-auto rounded border p-1">
+                                      {activeGroupData.descriptions.map((d, i) => (
+                                        <button
+                                          key={i}
+                                          onClick={() => {
+                                            const newD = [...serpD];
+                                            newD[pos] = i;
+                                            setSerpD(newD);
+                                          }}
+                                          data-testid={`btn-serp-d${pos}-${i}`}
+                                          className={`w-full text-left px-2 py-1 rounded text-xs transition-colors ${serpD[pos] === i ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                                        >
+                                          {d.teks.slice(0, 35)}{d.teks.length > 35 ? "…" : ""}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </TabsContent>
 
                     {/* Keywords Tab */}

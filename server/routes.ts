@@ -1612,6 +1612,59 @@ RETURN: Hanya return raw HTML yang langsung bisa dipakai — dimulai dari <!DOCT
     }
   });
 
+  // ─── LP HTML Improve ──────────────────────────────────────────────────────
+  app.post("/api/improve-lp-html", async (req, res) => {
+    try {
+      const { html, produk, template, warna } = req.body;
+      if (!html) return res.status(400).json({ error: "HTML wajib ada" });
+
+      const prompt = `Kamu adalah web developer dan conversion rate optimizer ahli Indonesia.
+
+Berikut adalah HTML landing page yang sudah ada:
+\`\`\`html
+${html.slice(0, 12000)}
+\`\`\`
+
+TUGAS: Tingkatkan HTML landing page ini dengan cara:
+1. Perkuat COPYWRITING — headline lebih punch, bullet points lebih benefit-focused, CTA lebih urgent
+2. Perbaiki VISUAL DESIGN — spacing lebih konsisten, typography hierarchy lebih jelas, color contrast lebih baik
+3. Tambahkan CONVERSION ELEMENTS — trust badges (pembeli, rating bintang), scarcity element, urgency messaging
+4. Perkuat MOBILE EXPERIENCE — pastikan semua elemen perfect di layar kecil
+5. Tambahkan SOCIAL PROOF — jumlah pembeli/pengguna di hero section, testimonial yang lebih compelling
+6. Perbaiki FLOW — pastikan setiap section mengalir natural ke berikutnya dengan transition text
+
+Produk: ${produk || "seperti di HTML"}
+Template: ${template || "product"}
+Warna utama: ${warna?.hex || "seperti di HTML"}
+
+PENTING:
+- Pertahankan semua section yang sudah ada
+- Jangan hilangkan konten, hanya perkuat
+- Tetap standalone HTML (tidak perlu CDN baru kecuali Google Fonts)
+- Return HANYA raw HTML — tidak ada penjelasan, tidak ada markdown code block
+
+Kembalikan versi HTML yang lebih baik dari original.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 8000,
+      });
+
+      let improvedHtml = response.choices[0]?.message?.content || html;
+      improvedHtml = improvedHtml.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+      if (!improvedHtml.startsWith("<!")) {
+        const idx = improvedHtml.indexOf("<!DOCTYPE");
+        if (idx > 0) improvedHtml = improvedHtml.slice(idx);
+      }
+      res.json({ html: improvedHtml });
+    } catch (error) {
+      console.error("LP improve error:", error);
+      res.status(500).json({ error: "Gagal improve HTML" });
+    }
+  });
+
   // ─── Google Ads Creator ───────────────────────────────────────────────────
   app.post("/api/generate-google-ads", async (req, res) => {
     try {

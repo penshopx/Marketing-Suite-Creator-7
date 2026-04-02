@@ -16,6 +16,41 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const nichePresets = [
+  {
+    id: "skincare", emoji: "💊", label: "Skincare",
+    data: { template: "product", gaya: "santai", warnaId: "ungu", produk: "Serum Wajah Glowing Vitamin C", tagline: "Kulit Glowing Cerah dalam 7 Hari — Terbukti 50.000+ Pengguna", target: "Wanita 18-35 tahun yang ingin kulit cerah alami", offer: "Gratis ongkir, bonus toner mini, garansi uang kembali 30 hari", harga: "149.000", hargaCoret: "299.000", cta: "YA! SAYA INGIN KULIT GLOWING", noWa: "" }
+  },
+  {
+    id: "fashion", emoji: "👗", label: "Fashion",
+    data: { template: "product", gaya: "gaul", warnaId: "hitam", produk: "Dress Korea Premium Wanita", tagline: "Tampil Classy Harga Terjangkau — Koleksi Korea Terbaru 2026", target: "Wanita muda 20-30 tahun pecinta fashion Korea", offer: "Beli 2 gratis 1, free ongkir, COD tersedia, 100+ pilihan warna", harga: "189.000", hargaCoret: "350.000", cta: "BELANJA SEKARANG!", noWa: "" }
+  },
+  {
+    id: "trading", emoji: "📈", label: "Kursus Trading",
+    data: { template: "kursus", gaya: "provokatif", warnaId: "hijau", produk: "Bootcamp Trading Saham & Kripto dari Nol", tagline: "Dari Nol ke Profit Konsisten — Kuasai Trading dalam 30 Hari", target: "Pemula yang ingin mulai investasi dan trading tapi takut rugi", offer: "Akses lifetime, grup telegram eksklusif, mentoring 1-on-1, update materi seumur hidup", harga: "397.000", hargaCoret: "997.000", cta: "DAFTAR BOOTCAMP SEKARANG", noWa: "" }
+  },
+  {
+    id: "digitalmarketing", emoji: "🎯", label: "Kursus Marketing",
+    data: { template: "kursus", gaya: "inspiratif", warnaId: "biru", produk: "Kursus Digital Marketing & Meta Ads", tagline: "Kuasai Meta Ads & Scale Iklan Kamu dalam 21 Hari", target: "Pebisnis online, UMKM, dan freelancer yang ingin jago beriklan", offer: "Modul lengkap, akses lifetime, sertifikat, bonus template iklan", harga: "297.000", hargaCoret: "597.000", cta: "SAYA MAU DAFTAR!", noWa: "" }
+  },
+  {
+    id: "herbal", emoji: "🌿", label: "Herbal/Kesehatan",
+    data: { template: "product", gaya: "formal", warnaId: "hijau", produk: "Minuman Herbal Pelangsing Alami", tagline: "Turunkan Berat Badan Alami Tanpa Efek Samping — Sudah BPOM", target: "Pria dan wanita dewasa yang ingin turun berat badan secara alami", offer: "Garansi 60 hari, gratis konsultasi dokter, COD tersedia", harga: "179.000", hargaCoret: "350.000", cta: "PESAN SEKARANG", noWa: "" }
+  },
+  {
+    id: "jasa_desain", emoji: "🎨", label: "Jasa Desain",
+    data: { template: "jasa", gaya: "santai", warnaId: "oranye", produk: "Jasa Desain Konten Sosial Media Premium", tagline: "Konten Viral Setiap Hari Tanpa Pusing — Kita yang Urus", target: "Brand, UMKM, dan bisnis online yang butuh konten berkualitas setiap hari", offer: "Free revisi unlimited, pengerjaan 24 jam, termasuk strategi konten", harga: "1.500.000", hargaCoret: "3.000.000", cta: "KONSULTASI GRATIS", noWa: "" }
+  },
+  {
+    id: "ebook", emoji: "📘", label: "Ebook/Digital",
+    data: { template: "digital", gaya: "provokatif", warnaId: "biru", produk: "Ebook: 100 Prompt ChatGPT untuk Bisnis Online", tagline: "Hemat 40 Jam Kerja per Bulan Pakai AI — Semua Prompt Siap Pakai", target: "Pebisnis, marketer, freelancer yang mau produktif pakai AI", offer: "Download instan, bonus 50 template Canva, update gratis seumur hidup", harga: "97.000", hargaCoret: "197.000", cta: "DOWNLOAD SEKARANG", noWa: "" }
+  },
+  {
+    id: "webinar_fb", emoji: "🎙️", label: "Webinar/Event",
+    data: { template: "webinar", gaya: "provokatif", warnaId: "merah", produk: "Webinar Gratis: Rahasia Jualan Laris di Facebook", tagline: "Webinar GRATIS: Cara Jualan Laris di Facebook & IG Tahun 2026", target: "Pebisnis online pemula yang mau belajar jualan di media sosial", offer: "Gratis 100%, rekaman tersedia, e-certificate, bonus template iklan", harga: "", hargaCoret: "", cta: "DAFTAR WEBINAR GRATIS", noWa: "" }
+  },
+];
+
 const templates = [
   { id: "product", label: "🛒 Produk Fisik", desc: "Jualan produk e-commerce, COD-friendly", icon: ShoppingBag },
   { id: "digital", label: "💾 Produk Digital", desc: "Ebook, template, software, preset", icon: Sparkles },
@@ -74,10 +109,59 @@ export default function LpHtmlGenerator() {
     guarantee: false, countdown: false, cta: true,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
   const [htmlResult, setHtmlResult] = useState<string>("");
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { toast } = useToast();
+
+  const applyPreset = (presetId: string) => {
+    const preset = nichePresets.find((p) => p.id === presetId);
+    if (!preset) return;
+    const d = preset.data;
+    setTemplate(d.template);
+    setGaya(d.gaya);
+    setWarnaId(d.warnaId);
+    setProduk(d.produk);
+    setTagline(d.tagline);
+    setTarget(d.target);
+    setOffer(d.offer);
+    setHarga(d.harga);
+    setHargaCoret(d.hargaCoret);
+    setCta(d.cta);
+    setNoWa(d.noWa);
+    // Enable relevant sections based on template
+    const isCourse = d.template === "kursus" || d.template === "webinar";
+    setEnabledSections((prev) => ({
+      ...prev,
+      masalah: true, fitur: true, testimoni: true,
+      harga: !!d.harga,
+      bonus: isCourse,
+      guarantee: d.template !== "webinar",
+      countdown: d.template === "product" || d.template === "digital",
+    }));
+    toast({ title: `Preset "${preset.label}" diterapkan!`, description: "Form sudah terisi, langsung generate" });
+  };
+
+  const handleImproveHtml = async () => {
+    if (!htmlResult) return;
+    setIsImproving(true);
+    try {
+      const response = await fetch("/api/improve-lp-html", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html: htmlResult, produk, template, warna: selectedWarna }),
+      });
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      setHtmlResult(data.html);
+      toast({ title: "HTML berhasil ditingkatkan!", description: "Design & copy lebih optimal" });
+    } catch {
+      toast({ title: "Error", description: "Gagal improve HTML", variant: "destructive" });
+    } finally {
+      setIsImproving(false);
+    }
+  };
 
   const selectedWarna = warna.find((w) => w.id === warnaId) || warna[0];
 
@@ -146,6 +230,27 @@ export default function LpHtmlGenerator() {
             <Zap className="h-3 w-3" />
             Siap Deploy
           </Badge>
+        </div>
+
+        {/* Niche Presets */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            Preset Niche — Isi Form Otomatis
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {nichePresets.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => applyPreset(preset.id)}
+                data-testid={`btn-preset-${preset.id}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border hover:border-primary hover:bg-primary/5 text-sm transition-all hover:shadow-sm"
+              >
+                <span>{preset.emoji}</span>
+                <span>{preset.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Template */}
@@ -332,6 +437,14 @@ export default function LpHtmlGenerator() {
                       </div>
                       <Button size="sm" variant="outline" onClick={handleGenerate} data-testid="btn-regen-lph">
                         <RefreshCw className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm" variant="outline" onClick={handleImproveHtml} disabled={isImproving}
+                        data-testid="btn-improve-lph"
+                        className="border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                      >
+                        {isImproving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                        {isImproving ? "Improving..." : "Improve"}
                       </Button>
                       <Button size="sm" variant="outline" onClick={handleCopyHtml} data-testid="btn-copy-lph">
                         <Copy className="h-3.5 w-3.5 mr-1" />HTML
