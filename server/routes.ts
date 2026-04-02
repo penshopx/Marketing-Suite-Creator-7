@@ -1488,6 +1488,130 @@ PENTING: Semua konten dalam Bahasa Indonesia. Sesuaikan tone dan style untuk set
     }
   });
 
+  // ─── LP HTML Generator ────────────────────────────────────────────────────
+  app.post("/api/generate-lp-html", async (req, res) => {
+    try {
+      const {
+        template, gaya, warna, produk, tagline, target, offer,
+        cta, noWa, harga, hargaCoret, enabledSections,
+      } = req.body;
+      if (!produk) return res.status(400).json({ error: "Produk wajib diisi" });
+
+      const templateGuides: Record<string, string> = {
+        product: "produk fisik e-commerce (fokus pada manfaat produk, social proof, COD/gratis ongkir jika ada, urgensi stok terbatas)",
+        digital: "produk digital (ebook, template, software — fokus pada value delivered, akses instan, lifetime)",
+        jasa: "jasa/service (fokus pada expertise, portofolio, proses kerja, garansi kepuasan)",
+        kursus: "kursus/bootcamp online (fokus pada transformasi, kurikulum, mentor, alumni success story)",
+        webinar: "webinar/event online (fokus pada tanggal, pembicara, what you'll learn, FOMO limited seats)",
+        leadmagnet: "lead magnet/freebie (fokus pada gratis, nilai yang didapat, CTA ambil sekarang)",
+      };
+
+      const gayaGuides: Record<string, string> = {
+        formal: "bahasa formal dan profesional, menggunakan 'Anda', tone terpercaya dan authority",
+        santai: "bahasa santai dan friendly, menggunakan 'kamu', tone seperti teman yang membantu",
+        gaul: "bahasa gaul dan relatable, menggunakan 'lo/gue', emoji sparingly, tone Gen-Z energy",
+        provokatif: "bahasa provokatif dan challenging, buka dengan pertanyaan menantang, shock value tinggi",
+        inspiratif: "bahasa inspiratif dan emosional, cerita transformasi, motivasi, harapan masa depan",
+      };
+
+      const activeSections = Object.entries(enabledSections || {})
+        .filter(([, v]) => v)
+        .map(([k]) => k);
+
+      const sectionInstructions: Record<string, string> = {
+        hero: `<HERO> Section: Headline utama yang powerful, subheadline yang menjelaskan benefit, CTA button yang bold`,
+        masalah: `<MASALAH> Section: 3-4 pain points yang relatable untuk ${target || "target audiens"}, gunakan emoji, format list`,
+        solusi: `<SOLUSI> Section: Perkenalkan produk sebagai solusi, benefit utama dalam format visual cards`,
+        fitur: `<FITUR> Section: 4-6 fitur/detail produk dengan ikon dan deskripsi singkat`,
+        bonus: `<BONUS> Section: Daftar bonus yang didapat, dengan nilai estimasi yang di-strikethrough`,
+        testimoni: `<TESTIMONI> Section: 3-4 testimoni fiktif yang realistis dengan nama, foto placeholder, bintang rating`,
+        harga: `<HARGA> Section: Pricing box yang eye-catching dengan harga coret, harga jual, list yang didapat, CTA button`,
+        faq: `<FAQ> Section: 5-6 pertanyaan umum dengan jawaban yang meyakinkan, accordion style`,
+        guarantee: `<GUARANTEE> Section: Badge/box garansi yang prominent, "no risk" messaging`,
+        countdown: `<COUNTDOWN> Section: Urgency element dengan visual countdown timer (placeholder), teks batas waktu`,
+        cta: `<CTA> Section: Final call-to-action yang kuat, summary singkat penawaran, tombol besar mencolok`,
+      };
+
+      const selectedSectionInstructions = activeSections
+        .map((s) => sectionInstructions[s] || "")
+        .filter(Boolean)
+        .join("\n");
+
+      const waLink = noWa ? `https://wa.me/${noWa.replace(/\D/g, "")}?text=Halo%2C%20saya%20tertarik%20dengan%20${encodeURIComponent(produk)}` : "#";
+      const ctaText = cta || "PESAN SEKARANG";
+      const primaryColor = warna?.hex || "#2563EB";
+      const hargaDisplay = harga ? `Rp ${harga}` : "";
+      const hargaCoretDisplay = hargaCoret ? `Rp ${hargaCoret}` : "";
+
+      const prompt = `Kamu adalah web developer dan copywriter ahli Indonesia yang membuat landing page HTML berkualitas tinggi.
+
+DETAIL PRODUK:
+- Nama: ${produk}
+- Tipe: ${templateGuides[template] || template}
+- Tagline/Headline: ${tagline || "buat yang powerful dan sesuai produk"}
+- Target Audiens: ${target || "pebisnis online Indonesia"}
+- Penawaran/Offer: ${offer || "penawaran terbaik"}
+- Harga Jual: ${hargaDisplay || "sesuaikan"}
+- Harga Coret: ${hargaCoretDisplay || "tidak ada"}
+- Teks CTA: ${ctaText}
+- Link WhatsApp: ${waLink}
+- Warna Tema Utama: ${primaryColor}
+
+GAYA BAHASA: ${gayaGuides[gaya] || gayaGuides.santai}
+
+SECTIONS YANG HARUS ADA (ikuti urutan ini):
+${selectedSectionInstructions}
+
+TUGAS: Buat COMPLETE HTML landing page yang:
+1. Standalone (tidak butuh CDN/library external — CSS/JS inline semua)
+2. Mobile-responsive (gunakan CSS flexbox/grid dengan media queries)
+3. Desain profesional dan conversion-optimized
+4. Copy persuasif dalam ${gayaGuides[gaya]}
+5. Warna utama: ${primaryColor} (gunakan untuk buttons, highlights, accents)
+6. CTA button link ke: ${waLink}
+7. Smooth scroll, hover effects, dan animasi subtle
+
+STRUKTUR HTML YANG DIHARAPKAN:
+- <!DOCTYPE html> dengan meta viewport
+- CSS inline di <style> tag (TIDAK ada link external, TIDAK ada CDN)
+- JavaScript minimal inline untuk interaktivitas (FAQ accordion, smooth scroll)
+- Responsive menggunakan media queries (breakpoint mobile: max-width 768px)
+- Font: gunakan Google Fonts CDN (ini BOLEH: fonts.googleapis.com)
+- Tidak ada gambar eksternal — gunakan background color/gradient sebagai pengganti foto produk
+- Testimoni: gunakan initial-based avatar (div dengan background color dan huruf)
+
+DESIGN GUIDELINES:
+- Header sticky dengan nama produk/brand
+- Hero section: full-width dengan gradient background, headline besar, CTA prominent
+- Sections bergantian background: putih dan abu-abu muda (#f8f9fa)
+- Cards dengan box-shadow halus
+- Tombol CTA: background ${primaryColor}, hover lebih gelap, border-radius 8px, font-weight bold
+- Footer dengan kontak dan copyright
+
+RETURN: Hanya return raw HTML yang langsung bisa dipakai — dimulai dari <!DOCTYPE html> hingga </html>. JANGAN ada markdown code block (backtick), JANGAN ada penjelasan di luar HTML.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+        max_tokens: 8000,
+      });
+
+      let html = response.choices[0]?.message?.content || "";
+      // Strip any accidental markdown fencing
+      html = html.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+      // Ensure it starts with DOCTYPE
+      if (!html.startsWith("<!")) {
+        const idx = html.indexOf("<!DOCTYPE");
+        if (idx > 0) html = html.slice(idx);
+      }
+      res.json({ html });
+    } catch (error) {
+      console.error("LP HTML generator error:", error);
+      res.status(500).json({ error: "Gagal generate landing page HTML" });
+    }
+  });
+
   // ─── Google Ads Creator ───────────────────────────────────────────────────
   app.post("/api/generate-google-ads", async (req, res) => {
     try {

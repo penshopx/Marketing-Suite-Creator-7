@@ -121,6 +121,7 @@ const aiAssistantItems = [
 
 const aiCreatorItems = [
   { title: "Ad Creator", url: "/ad-creator", icon: Megaphone },
+  { title: "LP HTML Builder", url: "/lp-html-generator", icon: Globe },
   { title: "Story Telling", url: "/story-telling", icon: BookOpen },
   { title: "Landing Page", url: "/landing-page", icon: Globe },
   { title: "Image Creator", url: "/ai-images", icon: Image },
@@ -318,7 +319,7 @@ export function AppSidebar() {
         <NavGroup label="Otomasi AI" items={automasiItems} badge="5" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={true} />
         <NavGroup label="Produk Digital" items={digitalProductItems} badge="9" badgeColor="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" defaultOpen={false} />
         <NavGroup label="AI Assistant" items={aiAssistantItems} badge="4" badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" defaultOpen={false} />
-        <NavGroup label="AI Creator" items={aiCreatorItems} badge="7" badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" defaultOpen={false} />
+        <NavGroup label="AI Creator" items={aiCreatorItems} badge="8" badgeColor="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" defaultOpen={false} />
         <NavGroup label="AI Audio" items={aiAudioItems} defaultOpen={false} />
       </SidebarContent>
 
