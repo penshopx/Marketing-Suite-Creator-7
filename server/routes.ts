@@ -208,6 +208,348 @@ Format: Start with the title, then the article content. Use markdown formatting 
   });
 
   // Ad generation endpoint
+  app.post("/api/generate-email-sequence", async (req, res) => {
+    try {
+      const {
+        sequenceType = "welcome",
+        product,
+        audience = "",
+        tone = "ramah",
+        extraContext = "",
+        language = "id",
+      } = req.body;
+
+      if (!product || typeof product !== "string" || !product.trim()) {
+        return res.status(400).json({ error: "Product is required" });
+      }
+
+      const sequenceSpec: Record<string, { count: number; goal: string; flow: string }> = {
+        welcome: {
+          count: 5,
+          goal: "Membangun trust dengan subscriber baru, perkenalkan brand & value",
+          flow: "Hari 0: Welcome + delivery hadiah/lead magnet | Hari 2: Cerita brand | Hari 4: Edukasi value | Hari 6: Soft pitch | Hari 8: Social proof + offer",
+        },
+        nurturing: {
+          count: 7,
+          goal: "Mendidik prospect dingin sampai siap beli",
+          flow: "7 email berisi: pain awareness, edukasi solusi, testimoni, common objection handling, mini case study, soft offer, hard offer",
+        },
+        promo: {
+          count: 5,
+          goal: "Push penjualan untuk launch / promo / event",
+          flow: "Hari 0: Tease/announce | Hari 1: Open + bonus | Hari 3: Social proof | Hari 5: Objection + FAQ | Hari 6: Last call urgency",
+        },
+        abandoned_cart: {
+          count: 3,
+          goal: "Recover keranjang yang ditinggalkan",
+          flow: "Jam 1: Reminder ramah | Hari 1: Atasi objection + bonus kecil | Hari 3: Last chance + urgency",
+        },
+      };
+
+      const spec = sequenceSpec[sequenceType] ?? sequenceSpec.welcome;
+      const langInstruction = language === "en"
+        ? "Write all emails in natural English."
+        : "Tulis semua email dalam Bahasa Indonesia yang natural, hangat, dan tidak kaku.";
+
+      const prompt = `Buat ${spec.count} email berurutan untuk sequence: ${sequenceType.toUpperCase()}.
+
+Produk / Brand: ${product}
+${audience ? `Target Audience: ${audience}` : ""}
+Tone: ${tone}
+${extraContext ? `Konteks tambahan: ${extraContext}` : ""}
+
+Tujuan sequence: ${spec.goal}
+Alur yang disarankan: ${spec.flow}
+
+Aturan ketat:
+- Setiap email harus punya: subject (max 50 karakter, bikin penasaran), preview text (max 90 karakter), body (200-400 kata, format paragraf pendek + bullet kalau perlu, gunakan placeholder [Nama] untuk personalisasi), dan CTA (1 frase singkat <8 kata).
+- Subject jangan generik ("Halo!"), harus punya hook.
+- Body harus mengalir natural, bukan brosur.
+- ${langInstruction}
+
+Jawab HANYA dalam bentuk JSON valid berikut:
+{
+  "emails": [
+    { "day": 0, "subject": "...", "preview": "...", "body": "...", "cta": "..." }
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: "You are a world-class email copywriter who writes high-converting email sequences. Always respond with valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 6000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      let parsed: { emails?: Array<Partial<{ day: number; subject: string; preview: string; body: string; cta: string }>> } = {};
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+        parsed = JSON.parse(jsonMatch[1] || content);
+      } catch {
+        parsed = {};
+      }
+
+      const cleanEmails = Array.isArray(parsed.emails) ? parsed.emails : [];
+      const emails = cleanEmails
+        .map((e, idx) => ({
+          day: typeof e?.day === "number" ? e.day : idx,
+          subject: (e?.subject && String(e.subject).trim()) || `Email ${idx + 1}`,
+          preview: (e?.preview && String(e.preview).trim()) || "",
+          body: (e?.body && String(e.body).trim()) || "",
+          cta: (e?.cta && String(e.cta).trim()) || "Pelajari Lebih Lanjut",
+        }))
+        .filter((e) => e.body.length > 0);
+
+      if (emails.length === 0) {
+        emails.push({
+          day: 0,
+          subject: `Selamat datang di ${product}`,
+          preview: "Ada hadiah pembuka untukmu",
+          body: `Hi [Nama],\n\nTerima kasih sudah bergabung dengan ${product}.\n\nKami akan kirim email berisi tips dan penawaran terbaik untuk kamu.\n\nSampai jumpa di email berikutnya!`,
+          cta: "Mulai Sekarang",
+        });
+      }
+
+      res.json({ emails, type: sequenceType, product });
+    } catch (error) {
+      console.error("Email sequence generation error:", error);
+      res.status(500).json({ error: "Failed to generate email sequence" });
+    }
+  });
+
+  app.post("/api/generate-content-calendar", async (req, res) => {
+    try {
+      const {
+        niche,
+        audience = "",
+        platform = "instagram",
+        pillars = [],
+        extraContext = "",
+      } = req.body;
+
+      if (!niche || typeof niche !== "string" || !niche.trim()) {
+        return res.status(400).json({ error: "Niche is required" });
+      }
+      const cleanPillars: string[] = Array.isArray(pillars) && pillars.length > 0
+        ? pillars.map(String)
+        : ["Edukasi", "Soft Selling", "Testimoni"];
+
+      const platformGuidance: Record<string, string> = {
+        instagram: "Instagram — format: Reels, Carousel, Single Post, Story. Caption 80-200 kata. Hashtag 5-15.",
+        tiktok: "TikTok — semua Video pendek 15-60 detik. Hook di 1-2 detik. Caption singkat. Hashtag 3-8 termasuk trending.",
+        facebook: "Facebook — format: Reels, Single Post, Carousel, Live. Caption boleh panjang 100-300 kata. Hashtag 3-5.",
+        youtube: "YouTube — format: Shorts dan Long-form. Untuk kalender 30 hari fokuskan ke Shorts (campur 1-2 long-form).",
+        linkedin: "LinkedIn — format: Text Post, Carousel, Article, Video. Tone profesional. Hashtag 3-5.",
+      };
+
+      const prompt = `Buat content calendar 30 hari (Hari 1-30) untuk platform ${platform}.
+
+Niche / Bisnis: ${niche}
+${audience ? `Target Audience: ${audience}` : ""}
+Content Pillars yang dipakai (rotasi): ${cleanPillars.join(", ")}
+${extraContext ? `Konteks tambahan: ${extraContext}` : ""}
+
+Platform spec: ${platformGuidance[platform] ?? platformGuidance.instagram}
+
+Aturan ketat:
+- Buat TEPAT 30 item, hari 1 sampai 30.
+- Rotasi pillar secara seimbang dari list yang diberikan.
+- Setiap item harus berbeda topik (jangan duplikat).
+- Topik: 1 kalimat (max 12 kata).
+- Hook: max 12 kata, stop scroll.
+- Caption: 1 kalimat preview (max 20 kata).
+- CTA: max 5 kata.
+- Hashtag: 5-8 tag, dipisah spasi, mulai dengan #.
+- Tulis dalam Bahasa Indonesia natural.
+- Output JSON saja, padat tanpa basa-basi.
+
+Jawab HANYA dalam bentuk JSON valid berikut:
+{
+  "items": [
+    {
+      "day": 1,
+      "pillar": "Edukasi",
+      "format": "Reels",
+      "topic": "...",
+      "hook": "...",
+      "caption": "...",
+      "cta": "...",
+      "hashtags": "#... #..."
+    }
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: "You are an expert content strategist for Indonesian social media brands. Always respond with valid JSON containing exactly 30 calendar items. Be concise." },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 16000,
+        response_format: { type: "json_object" },
+        reasoning_effort: "minimal",
+      } as any);
+
+      const content = response.choices[0]?.message?.content || "{}";
+      let parsed: { items?: Array<Partial<{ day: number; pillar: string; format: string; topic: string; hook: string; caption: string; cta: string; hashtags: string }>> } = {};
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+        parsed = JSON.parse(jsonMatch[1] || content);
+      } catch {
+        parsed = {};
+      }
+
+      const cleanItems = Array.isArray(parsed.items) ? parsed.items : [];
+      const items = cleanItems
+        .map((it, idx) => ({
+          day: typeof it?.day === "number" ? it.day : idx + 1,
+          pillar: (it?.pillar && String(it.pillar).trim()) || cleanPillars[idx % cleanPillars.length],
+          format: (it?.format && String(it.format).trim()) || "Post",
+          topic: (it?.topic && String(it.topic).trim()) || "",
+          hook: (it?.hook && String(it.hook).trim()) || "",
+          caption: (it?.caption && String(it.caption).trim()) || "",
+          cta: (it?.cta && String(it.cta).trim()) || "Save & share",
+          hashtags: (it?.hashtags && String(it.hashtags).trim()) || `#${niche.replace(/\s+/g, "")}`,
+        }))
+        .filter((it) => it.topic.length > 0)
+        .slice(0, 30);
+
+      if (items.length === 0) {
+        for (let i = 1; i <= 30; i++) {
+          items.push({
+            day: i,
+            pillar: cleanPillars[(i - 1) % cleanPillars.length],
+            format: "Post",
+            topic: `Konten hari ${i} untuk ${niche}`,
+            hook: "Berhenti scroll — ini penting buatmu.",
+            caption: "Caption ringkas tentang topik hari ini.",
+            cta: "Save & share",
+            hashtags: `#${niche.replace(/\s+/g, "")}`,
+          });
+        }
+      }
+
+      res.json({ items, niche, platform });
+    } catch (error) {
+      console.error("Content calendar generation error:", error);
+      res.status(500).json({ error: "Failed to generate content calendar" });
+    }
+  });
+
+  app.post("/api/generate-ab-variants", async (req, res) => {
+    try {
+      const {
+        headline,
+        body,
+        cta = "",
+        audience = "",
+        platform = "Meta Ads",
+        count = 5,
+        language = "id",
+      } = req.body;
+
+      if (!headline || !body) {
+        return res.status(400).json({ error: "Headline and body are required" });
+      }
+
+      const variantCount = [3, 5, 7].includes(count) ? count : 5;
+      const langInstruction = language === "en"
+        ? "Write all variants in English."
+        : "Tulis semua varian dalam Bahasa Indonesia natural.";
+
+      const prompt = `Saya punya satu copy iklan untuk ${platform}. Bantu buat ${variantCount} varian terkontrol untuk A/B test.
+
+COPY ASLI:
+Headline: ${headline}
+Body: ${body}
+CTA: ${cta || "(belum diisi, buatkan)"}
+
+${audience ? `Target Audience: ${audience}` : ""}
+Platform: ${platform}
+
+Aturan ketat:
+- Setiap varian ubah HANYA 1 elemen utama (hook angle, tone, CTA, length, atau angle benefit). Jangan ubah semuanya sekaligus — ini A/B test, bukan rewrite.
+- Setiap varian punya: label (A, B, C, ...), changeType (jelaskan apa yang diubah dalam 3-5 kata), headline, body, cta, dan rationale (kenapa varian ini layak dites, 1 kalimat).
+- Variasikan changeType lintas varian: misal "Hook: pertanyaan", "Hook: statistik", "Tone: kasual", "CTA: urgensi", "Angle: testimonial", "Length: pendek", "Angle: pain agitation".
+- Pertahankan inti pesan dan produk yang sama.
+- ${langInstruction}
+
+Selain varian, beri:
+- recommendation: 1-2 kalimat saran varian mana yang paling layak dites duluan dan kenapa.
+- testMetric: metrik utama yang harus dipantau (CTR / CPL / ROAS / Hook rate, dll).
+
+Jawab HANYA dalam bentuk JSON valid:
+{
+  "variants": [
+    { "label": "A", "changeType": "...", "headline": "...", "body": "...", "cta": "...", "rationale": "..." }
+  ],
+  "recommendation": "...",
+  "testMetric": "..."
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: "You are a senior performance marketer specialized in A/B testing ad creatives. Always respond with valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 6000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      let parsed: {
+        variants?: Array<Partial<{ label: string; changeType: string; headline: string; body: string; cta: string; rationale: string }>>;
+        recommendation?: string;
+        testMetric?: string;
+      } = {};
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+        parsed = JSON.parse(jsonMatch[1] || content);
+      } catch {
+        parsed = {};
+      }
+
+      const cleanVariants = Array.isArray(parsed.variants) ? parsed.variants : [];
+      const labels = ["A", "B", "C", "D", "E", "F", "G"];
+      const variants = cleanVariants
+        .map((v, idx) => ({
+          label: (v?.label && String(v.label).trim()) || labels[idx] || `V${idx + 1}`,
+          changeType: (v?.changeType && String(v.changeType).trim()) || "Variation",
+          headline: (v?.headline && String(v.headline).trim()) || headline,
+          body: (v?.body && String(v.body).trim()) || body,
+          cta: (v?.cta && String(v.cta).trim()) || cta || "Pelajari Lebih Lanjut",
+          rationale: (v?.rationale && String(v.rationale).trim()) || "Variasi tone untuk uji respon audience.",
+        }))
+        .filter((v) => v.headline.length > 0);
+
+      if (variants.length === 0) {
+        variants.push({
+          label: "A",
+          changeType: "Hook: pertanyaan",
+          headline: `${headline} — kamu siap?`,
+          body,
+          cta: cta || "Coba Sekarang",
+          rationale: "Hook berbentuk pertanyaan biasanya naikkan CTR pada audience dingin.",
+        });
+      }
+
+      res.json({
+        variants,
+        recommendation: parsed.recommendation?.trim() || "Tes varian A vs B dulu (split 50/50, budget sama, durasi 3 hari).",
+        testMetric: parsed.testMetric?.trim() || "CTR dan CPL",
+        original: { headline, body, cta },
+      });
+    } catch (error) {
+      console.error("A/B variant generation error:", error);
+      res.status(500).json({ error: "Failed to generate variants" });
+    }
+  });
+
   app.post("/api/generate-hook", async (req, res) => {
     try {
       const {

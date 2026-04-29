@@ -46,6 +46,8 @@ import {
   Send,
   Bot,
   Anchor,
+  Mail,
+  Shuffle,
 } from "lucide-react";
 import { SiTiktok, SiGoogle } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
@@ -111,6 +113,7 @@ const salesSystemItems = [
   { title: "Funnel Planner", url: "/funnel-planner", icon: GitBranch },
   { title: "Ad Scale Advisor", url: "/ad-scale-advisor", icon: TrendingUp },
   { title: "WA Broadcast Sequence", url: "/wa-broadcast", icon: Send },
+  { title: "Email Sequence", url: "/email-sequence", icon: Mail },
   { title: "CS Bot Script Builder", url: "/cs-bot-script", icon: Bot },
   { title: "Customer Journey Map", url: "/customer-journey", icon: Map },
 ];
@@ -122,6 +125,7 @@ const automasiItems = [
   { title: "Profit Lab", url: "/profit-lab", icon: FlaskConical },
   { title: "Video Script", url: "/video-script", icon: Clapperboard },
   { title: "Hashtag Generator", url: "/hashtag-generator", icon: Hash },
+  { title: "Content Calendar 30 Hari", url: "/content-calendar", icon: CalendarDays },
 ];
 
 const aiAssistantItems = [
@@ -134,6 +138,7 @@ const aiAssistantItems = [
 const aiCreatorItems = [
   { title: "Ad Creator", url: "/ad-creator", icon: Megaphone },
   { title: "Hook Generator", url: "/hook-generator", icon: Anchor },
+  { title: "A/B Variant Generator", url: "/ab-variant", icon: Shuffle },
   { title: "LP HTML Builder", url: "/lp-html-generator", icon: Globe },
   { title: "Story Telling", url: "/story-telling", icon: BookOpen },
   { title: "Landing Page", url: "/landing-page", icon: Globe },
