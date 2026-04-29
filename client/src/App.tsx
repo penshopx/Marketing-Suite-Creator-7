@@ -20,6 +20,7 @@ import AIVideo from "@/pages/ai-video";
 import AITTS from "@/pages/ai-tts";
 import AISTT from "@/pages/ai-stt";
 import AdCreator from "@/pages/ad-creator";
+import HookGenerator from "@/pages/hook-generator";
 import StoryTelling from "@/pages/story-telling";
 import AITemplates from "@/pages/ai-templates";
 import LandingPageCreator from "@/pages/landing-page";
@@ -82,6 +83,7 @@ function Router() {
       <Route path="/ai-tts" component={AITTS} />
       <Route path="/ai-stt" component={AISTT} />
       <Route path="/ad-creator" component={AdCreator} />
+      <Route path="/hook-generator" component={HookGenerator} />
       <Route path="/story-telling" component={StoryTelling} />
       <Route path="/ai-templates" component={AITemplates} />
       <Route path="/landing-page" component={LandingPageCreator} />

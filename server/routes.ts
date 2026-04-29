@@ -208,6 +208,132 @@ Format: Start with the title, then the article content. Use markdown formatting 
   });
 
   // Ad generation endpoint
+  app.post("/api/generate-hook", async (req, res) => {
+    try {
+      const {
+        topic,
+        targetAudience = "",
+        keyMessage = "",
+        platform = "tiktok",
+        style = "mixed",
+        language = "id",
+      } = req.body;
+
+      if (!topic || typeof topic !== "string" || !topic.trim()) {
+        return res.status(400).json({ error: "Topic is required" });
+      }
+
+      const platformGuidance: Record<string, string> = {
+        tiktok: "TikTok / Reels — sangat casual, native, hook harus relate dalam 1-2 detik pertama, hindari bahasa iklan",
+        instagram: "Instagram Reels — punchy, visual-first, emotional, gunakan kata-kata yang trendy tapi tetap clear",
+        meta: "Meta Ads (Facebook/Instagram feed) — boleh sedikit lebih panjang, fokus benefit + curiosity",
+        youtube: "YouTube Shorts — hook 1-3 detik sebelum skip button, langsung ke value",
+        general: "General-purpose — bisa dipakai lintas platform, tetap singkat dan menarik",
+      };
+
+      const styleGuidance: Record<string, string> = {
+        question: "Semua hook berupa pertanyaan yang relate ke pain audience.",
+        shocking_stat: "Semua hook berupa angka / fakta / statistik mengejutkan (boleh dibumbui asal masuk akal).",
+        story: "Semua hook berupa pembuka cerita pendek (POV, 'Dulu saya...', 'Kemarin...').",
+        controversial: "Semua hook berupa pernyataan berani / counter-intuitive yang memancing debat sehat.",
+        problem: "Semua hook menyebut masalah audience secara spesifik dan menyakitkan (problem agitation).",
+        curiosity: "Semua hook membuka curiosity gap — bilang ada sesuatu, tapi tahan informasinya.",
+        mixed: "Buat campuran 6 gaya berbeda: 1 pertanyaan, 1 statistik mengejutkan, 1 pembuka cerita, 1 kontroversial, 1 problem agitation, 1 curiosity gap.",
+      };
+
+      const langInstruction = language === "en"
+        ? "Write all hooks in English."
+        : "Tulis semua hook dalam Bahasa Indonesia yang natural dan kekinian (boleh sedikit slang sesuai platform).";
+
+      const styleLabels: Record<string, string> = {
+        question: "Question",
+        shocking_stat: "Shocking Stat",
+        story: "Story",
+        controversial: "Controversial",
+        problem: "Problem",
+        curiosity: "Curiosity",
+      };
+
+      const prompt = `Buat 6 hook (kalimat pembuka penangkap perhatian) untuk konten/iklan.
+
+Topik / Produk: ${topic}
+${targetAudience ? `Target Audience: ${targetAudience}` : ""}
+${keyMessage ? `Pesan / Penawaran Utama: ${keyMessage}` : ""}
+
+Platform: ${platformGuidance[platform] ?? platformGuidance.general}
+Gaya: ${styleGuidance[style] ?? styleGuidance.mixed}
+
+Aturan ketat:
+- Setiap hook MAKSIMAL 1 kalimat (atau 2 kalimat sangat pendek).
+- Maksimal 20 kata per hook.
+- Tidak boleh klise umum ("Tahukah kamu...", "Apakah kamu pernah...").
+- Harus spesifik ke topik dan audience yang diberikan.
+- ${langInstruction}
+
+Untuk setiap hook, beri label "style" salah satu dari: ${Object.values(styleLabels).join(", ")}.
+
+Jawab HANYA dalam bentuk JSON valid berikut:
+{
+  "hooks": [
+    { "style": "Question", "text": "..." },
+    { "style": "Shocking Stat", "text": "..." },
+    { "style": "Story", "text": "..." },
+    { "style": "Controversial", "text": "..." },
+    { "style": "Problem", "text": "..." },
+    { "style": "Curiosity", "text": "..." }
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a world-class direct-response copywriter who writes scroll-stopping hooks for short-form video and ads. Always respond with valid JSON.",
+          },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 4000,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+
+      let parsed: { hooks?: Array<{ style?: string; text?: string }> } = {};
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+        parsed = JSON.parse(jsonMatch[1] || content);
+      } catch {
+        parsed = {};
+      }
+
+      const cleanHooks = Array.isArray(parsed.hooks) ? parsed.hooks : [];
+      const hooks = cleanHooks
+        .map((h) => ({
+          style: (h?.style && String(h.style).trim()) || "Hook",
+          text: (h?.text && String(h.text).trim()) || "",
+        }))
+        .filter((h) => h.text.length > 0);
+
+      if (hooks.length === 0) {
+        hooks.push(
+          { style: "Question", text: `Pernah merasa stuck dengan ${topic}?` },
+          { style: "Curiosity", text: `Ada satu cara mengubah ${topic} yang jarang dibahas — ini lengkapnya.` },
+        );
+      }
+
+      res.json({
+        hooks,
+        platform,
+        topic,
+      });
+    } catch (error) {
+      console.error("Hook generation error:", error);
+      res.status(500).json({ error: "Failed to generate hooks" });
+    }
+  });
+
   app.post("/api/generate-ad", async (req, res) => {
     try {
       const {

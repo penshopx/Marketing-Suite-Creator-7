@@ -45,6 +45,7 @@ import {
   Map,
   Send,
   Bot,
+  Anchor,
 } from "lucide-react";
 import { SiTiktok, SiGoogle } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
@@ -132,6 +133,7 @@ const aiAssistantItems = [
 
 const aiCreatorItems = [
   { title: "Ad Creator", url: "/ad-creator", icon: Megaphone },
+  { title: "Hook Generator", url: "/hook-generator", icon: Anchor },
   { title: "LP HTML Builder", url: "/lp-html-generator", icon: Globe },
   { title: "Story Telling", url: "/story-telling", icon: BookOpen },
   { title: "Landing Page", url: "/landing-page", icon: Globe },
