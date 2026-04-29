@@ -61,6 +61,7 @@ import CsBotScript from "@/pages/cs-bot-script";
 import CustomerJourney from "@/pages/customer-journey";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 function Router() {
   return (
@@ -193,14 +194,16 @@ function AppContent() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="marketing-tools-theme">
-        <TooltipProvider>
-          <AppContent />
-          <Toaster />
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="light" storageKey="marketing-tools-theme">
+          <TooltipProvider>
+            <AppContent />
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
