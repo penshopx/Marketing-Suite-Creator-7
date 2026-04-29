@@ -258,27 +258,33 @@ Return as JSON: { "headline": "", "primaryText": "", "description": "", "callToA
           { role: "system", content: "You are an expert advertising copywriter who creates high-converting ad copy. Always respond with valid JSON." },
           { role: "user", content: prompt },
         ],
-        max_completion_tokens: 1024,
+        max_completion_tokens: 4000,
+        response_format: { type: "json_object" },
       });
 
       const content = response.choices[0]?.message?.content || "{}";
-      
-      // Parse JSON from response
-      let adData;
+
+      let adData: {
+        headline?: string;
+        primaryText?: string;
+        description?: string;
+        callToAction?: string;
+      } = {};
       try {
-        // Extract JSON from markdown code blocks if present
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
         adData = JSON.parse(jsonMatch[1] || content);
       } catch (e) {
-        adData = {
-          headline: "Transform Your Business Today",
-          primaryText: productDescription,
-          description: "Limited time offer",
-          callToAction: "Learn More",
-        };
+        adData = {};
       }
 
-      res.json(adData);
+      const safeAd = {
+        headline: adData.headline?.trim() || `Discover ${productName}`,
+        primaryText: adData.primaryText?.trim() || productDescription,
+        description: adData.description?.trim() || (uniqueValue || "Limited time offer"),
+        callToAction: adData.callToAction?.trim() || "Learn More",
+      };
+
+      res.json(safeAd);
     } catch (error) {
       console.error("Ad generation error:", error);
       res.status(500).json({ error: "Failed to generate ad" });
