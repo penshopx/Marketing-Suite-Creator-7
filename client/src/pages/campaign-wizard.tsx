@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { streamSSE } from "@/lib/stream-sse";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,42 +79,18 @@ export default function CampaignWizard() {
     setIsGenerating(true);
     setAiSuggestions(prev => ({ ...prev, [field]: "" }));
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt, history: [] }),
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const reader = response.body?.getReader();
-      if (!reader) return;
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.content) {
-                setAiSuggestions(prev => ({
-                  ...prev,
-                  [field]: (prev[field] ?? "") + data.content,
-                }));
-              }
-            } catch (e) {}
+      await streamSSE(
+        "/api/chat",
+        { message: prompt, history: [] },
+        (data) => {
+          if (data.content) {
+            setAiSuggestions(prev => ({
+              ...prev,
+              [field]: (prev[field] ?? "") + (data.content as string),
+            }));
           }
-        }
-      }
+        },
+      );
     } catch (error) {
       console.error("Error generating suggestion:", error);
       setAiSuggestions(prev => ({
