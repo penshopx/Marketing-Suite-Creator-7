@@ -63,12 +63,16 @@ export default function AIArticles() {
       setCurrentArticle(newArticle);
 
       const decoder = new TextDecoder();
+      let buffer = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        // Accumulate into buffer to handle lines split across chunks
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        // Keep the last (possibly incomplete) line in the buffer
+        buffer = lines.pop() ?? "";
 
         for (const line of lines) {
           if (line.startsWith("data: ")) {
