@@ -1,0 +1,232 @@
+Dari tampilan aplikasi yang Anda buat, alurnya sebenarnya sudah benar. Kalau tujuan Anda **membuat iklan Meta Ads yang siap dijalankan**, saya sarankan **jangan langsung masuk ke Campaign Wizard**. Mulai dari riset dulu agar iklannya lebih tepat sasaran.
+
+Saya lihat dashboard Anda sudah dibagi menjadi 4 tahap:
+
+### 1. Riset & Targeting (Mulai dari sini) ⭐⭐⭐⭐⭐
+
+Ini adalah langkah pertama.
+
+Urutannya:
+
+1. **Interest Finder AI**
+
+   * Cari interest calon pembeli.
+   * Misalnya produk Anda Ebook Kontraktor:
+
+     * Kontraktor
+     * Konstruksi
+     * Tender
+     * LPJK
+     * Arsitek
+     * AutoCAD
+     * Civil Engineering
+     * Manajemen Proyek
+     * Pengusaha
+     * UMKM
+
+Output:
+
+* 30-100 interest yang relevan.
+
+---
+
+2. **Audience Overlap**
+   Setelah dapat interest, cek apakah interest tersebut saling bertabrakan.
+
+Misalnya
+
+Interest A
+
+* Kontraktor
+
+Interest B
+
+* Civil Engineering
+
+Overlap 85%
+
+Berarti cukup pilih salah satu.
+
+Tujuannya agar audience tidak terlalu sempit.
+
+---
+
+3. **Audience Builder**
+
+Gabungkan menjadi beberapa audience.
+
+Contoh
+
+Audience 1
+
+* Kontraktor
+* Tender
+* LPJK
+
+Audience 2
+
+* Konsultan
+* Arsitek
+* BIM
+
+Audience 3
+
+* UMKM
+* Owner Bisnis
+
+Baru nanti dites.
+
+---
+
+## 2. Konten & Creative ⭐⭐⭐⭐⭐
+
+Sesudah tahu targetnya.
+
+Masuk ke:
+
+### Story Telling
+
+Buat angle iklan.
+
+Misalnya
+
+Hook 1
+
+> Dokumen proyek Anda tercecer?
+
+Hook 2
+
+> Tender tinggal 3 hari tapi file hilang?
+
+Hook 3
+
+> Karyawan resign, semua SOP ikut hilang?
+
+---
+
+### Ad Creator
+
+Setelah dapat hook.
+
+Buat:
+
+* Primary Text
+* Headline
+* Description
+* CTA
+
+---
+
+### Image Creator
+
+Generate gambar iklan.
+
+Misalnya
+
+* Hero Image
+* Carousel
+* Feed
+* Story
+
+---
+
+## 3. Campaign Wizard ⭐⭐⭐⭐
+
+Kalau materi iklan sudah siap.
+
+Baru masuk sini.
+
+Biasanya isinya:
+
+* Objective
+* Budget
+* Audience
+* Placement
+* Pixel
+* Event
+
+---
+
+## 4. Sistem Sales
+
+Sesudah iklan jalan.
+
+Masuk ke
+
+WA Broadcast
+
+↓
+
+CS Bot
+
+↓
+
+Closing Script
+
+↓
+
+Follow Up
+
+---
+
+## 5. Analisa & Scale
+
+Kalau iklan sudah running.
+
+Masuk ke
+
+Ad Analyzer
+
+↓
+
+Profit Lab
+
+↓
+
+Laporan Kampanye
+
+↓
+
+Scale Campaign
+
+---
+
+# Kalau saya yang menjalankan aplikasi ini, urutannya seperti ini:
+
+```
+Roadmap Winning
+        ↓
+Interest Finder AI
+        ↓
+Audience Overlap
+        ↓
+Audience Builder
+        ↓
+Story Telling
+        ↓
+Ad Creator
+        ↓
+Image Creator
+        ↓
+Campaign Wizard
+        ↓
+WA Broadcast
+        ↓
+Ad Analyzer
+```
+
+## Untuk produk Anda (ebook "Kontraktor Amnesia")
+
+Saya bahkan akan menyederhanakan menjadi alur praktis:
+
+1. **Roadmap Winning** → pahami strategi 14 hari.
+2. **Interest Finder AI** → cari target audience.
+3. **Story Telling** → buat 5–10 hook iklan.
+4. **Ad Creator** → buat copy iklan Meta Ads.
+5. **Image Creator** → buat gambar iklan.
+6. **Campaign Wizard** → susun campaign.
+7. **Ad Analyzer** → evaluasi hasil setelah iklan berjalan.
+
+Alur ini paling efisien untuk mulai beriklan dan tidak membuat Anda bolak-balik antar fitur.
+
+Dari percakapan kita sebelumnya, karena Anda ingin memasarkan **ebook Kontraktor Amnesia**, saya menyarankan kita mulai dari **Interest Finder AI** terlebih dahulu. Setelah daftar interest selesai, kita lanjut membuat **copywriting**, **gambar iklan**, lalu **Campaign Wizard** sehingga Anda sudah memiliki satu kampanye Meta Ads yang siap dijalankan dari awal sampai akhir.

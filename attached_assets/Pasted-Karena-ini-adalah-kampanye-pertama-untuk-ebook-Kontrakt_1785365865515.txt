@@ -1,0 +1,107 @@
+Karena ini adalah **kampanye pertama** untuk ebook **Kontraktor Anti Amnesia**, tujuan utamanya adalah **menguji pasar (validation)**, bukan langsung mengejar penjualan dalam jumlah besar. Jadi saya menyarankan menggunakan budget yang cukup untuk memperoleh data, tetapi tetap efisien.
+
+## Platform Iklan
+
+✅ **Meta Ads (Facebook & Instagram)**
+
+---
+
+## Budget Harian
+
+**Rp100.000/hari**
+
+> Alasan:
+>
+> * Cukup untuk menguji beberapa variasi iklan.
+> * Risiko lebih rendah dibanding langsung menggunakan anggaran besar.
+> * Setelah mendapatkan data, budget bisa dinaikkan secara bertahap.
+
+---
+
+## Durasi Kampanye
+
+**7 hari**
+
+> Target setelah 7 hari:
+>
+> * Mengetahui hook mana yang paling menarik.
+> * Mengetahui audience mana yang paling responsif.
+> * Mengukur CTR, CPC, CPM, dan konversi.
+> * Menentukan apakah kampanye layak di-scale.
+
+---
+
+# Campaign Summary
+
+**Produk:**
+Ebook Kontraktor Anti Amnesia
+
+**Target Audience:**
+Pria & Wanita usia 25–55 tahun yang bekerja atau memiliki minat di bidang konstruksi, kontraktor, konsultan, teknik sipil, manajemen proyek, serta pemilik usaha konstruksi.
+
+**Platform:**
+Meta Ads (Facebook & Instagram)
+
+**Budget:**
+Rp100.000/hari
+
+**Durasi:**
+7 hari
+
+---
+
+# Winning Strategy
+
+> **Objective:** Menghasilkan penjualan ebook sekaligus menguji respon pasar terhadap konsep "Kontraktor Anti Amnesia".
+
+### Fase 1 — Awareness (Hari 1–2)
+
+* Jalankan 3 variasi creative angle.
+* Gunakan 3–5 hook berbeda.
+* Fokus pada masalah yang sering dialami kontraktor.
+
+### Fase 2 — Testing (Hari 3–5)
+
+* Evaluasi CTR, CPC, dan engagement.
+* Matikan iklan dengan performa rendah.
+* Pertahankan iklan yang paling efektif.
+
+### Fase 3 — Optimization (Hari 6–7)
+
+* Alihkan lebih banyak anggaran ke iklan terbaik.
+* Uji CTA dan headline alternatif.
+* Siapkan retargeting untuk orang yang sudah melihat atau berinteraksi dengan iklan.
+
+---
+
+## KPI yang disarankan
+
+| KPI                    |                                        Target Awal |
+| ---------------------- | -------------------------------------------------: |
+| CTR                    |                                               > 2% |
+| CPC                    |                                          < Rp2.500 |
+| CPM                    |                                         < Rp35.000 |
+| Landing Page View Rate |                                              > 50% |
+| Cost per Purchase      | Sesuaikan dengan harga ebook dan margin keuntungan |
+
+---
+
+## Struktur kampanye yang saya rekomendasikan
+
+**Campaign**
+
+* Objective: Sales (jika pixel dan tracking sudah siap) atau Traffic (jika masih tahap validasi).
+
+**Ad Set**
+
+* Audience 1: Owner & Direktur Kontraktor
+* Audience 2: Project Manager & Engineer
+* Audience 3: Konsultan & Tenaga Ahli
+
+**Ads**
+
+* Ad 1: *"Karyawan resign, knowledge ikut hilang."*
+* Ad 2: *"Tender besok, dokumen proyek tidak ketemu."*
+* Ad 3: *"Masih mencari file proyek di WhatsApp?"*
+
+Dengan struktur ini Anda tidak hanya mendapatkan peluang penjualan, tetapi juga data yang bisa digunakan untuk mengoptimalkan kampanye berikutnya dan mengetahui pesan mana yang paling efektif untuk target pasar konstruksi.

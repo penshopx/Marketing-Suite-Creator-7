@@ -1,0 +1,90 @@
+Bagus. Saya sarankan **jangan mengisi secara asal**, karena hasil dari form ini akan menjadi dasar untuk:
+
+* Interest Finder AI
+* Audience Persona
+* Copywriting Meta Ads
+* Landing Page
+* Hook Iklan
+* AI Ad Creator
+
+Berikut saya buatkan versi yang siap ditempel ke form.
+
+---
+
+# Nama Produk/Layanan
+
+**Ebook Kontraktor Anti Amnesia**
+
+---
+
+# Deskripsi Produk
+
+> Ebook Kontraktor Anti Amnesia adalah panduan praktis yang membantu kontraktor, konsultan, dan pelaku usaha konstruksi menyimpan, mengelola, dan mendokumentasikan pengetahuan bisnis agar tidak hilang ketika karyawan resign, laptop rusak, dokumen tercecer, atau terjadi pergantian tim. Ebook ini berisi strategi membangun sistem dokumentasi yang rapi, menjaga pengalaman proyek tetap tersimpan, mengurangi pekerjaan berulang, serta mempersiapkan bisnis konstruksi agar lebih siap menghadapi tender, audit, dan pertumbuhan perusahaan.
+
+---
+
+# Unique Selling Proposition (USP)
+
+> Berbeda dengan buku manajemen pada umumnya, Kontraktor Anti Amnesia berfokus pada masalah nyata yang sering dialami perusahaan konstruksi: hilangnya pengetahuan bisnis akibat dokumen yang tidak tertata dan ketergantungan pada individu tertentu. Ebook ini menawarkan langkah-langkah praktis untuk membangun "memori bisnis" sehingga pengalaman proyek, SOP, dokumen penting, dan pengetahuan perusahaan tetap terjaga dan dapat digunakan kembali kapan saja.
+
+---
+
+## Kalau ada tombol "Generate USP"
+
+Saya akan menggunakan prompt berikut agar hasil AI lebih bagus.
+
+```text
+Produk saya adalah ebook digital berjudul "Kontraktor Anti Amnesia".
+
+Target pasar:
+- Kontraktor
+- Konsultan Konstruksi
+- Owner Perusahaan Konstruksi
+- Tenaga Ahli
+- Project Manager
+- Pengusaha UMKM Konstruksi
+
+Masalah utama:
+- Dokumen proyek tercecer
+- SOP tidak terdokumentasi
+- Karyawan resign membawa pengalaman
+- File hilang
+- Sulit mencari dokumen lama
+- Pekerjaan berulang
+- Tidak ada sistem knowledge management
+
+Manfaat:
+- Membangun memori bisnis
+- Dokumentasi lebih rapi
+- Menghemat waktu
+- Mengurangi kesalahan
+- Pengetahuan perusahaan tetap tersimpan
+- Siap menghadapi tender dan audit
+
+Tolong buatkan USP yang kuat, emosional, dan berbeda dari ebook manajemen bisnis biasa.
+```
+
+---
+
+## Saya juga menyarankan sedikit mengubah positioning produk.
+
+Daripada hanya menulis:
+
+> **Ebook Kontraktor Anti Amnesia**
+
+lebih kuat jika menjadi:
+
+> **Kontraktor Anti Amnesia**
+> *Bangun Memori Bisnis. Jangan Biarkan Pengalaman Berharga Hilang.*
+
+atau
+
+> **Kontraktor Anti Amnesia**
+> *Sistem Dokumentasi agar Bisnis Tetap Jalan Meski Orang Berganti.*
+
+atau
+
+> **Kontraktor Anti Amnesia**
+> *Rahasia Menyimpan Pengetahuan Proyek agar Tidak Hilang Selamanya.*
+
+Positioning seperti ini akan lebih mudah dipahami oleh calon pembeli dan menjadi dasar yang kuat untuk iklan Meta Ads. Dari sini, langkah berikutnya adalah menyusun **Customer Persona** dan **Interest Targeting**, sehingga kampanye iklan bisa langsung diarahkan ke audiens yang paling potensial.

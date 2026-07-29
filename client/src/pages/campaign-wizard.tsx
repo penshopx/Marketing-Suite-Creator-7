@@ -23,6 +23,29 @@ const steps: WizardStep[] = [
   { id: 5, title: "Launch Plan", description: "Rencanakan peluncuran", icon: <Rocket className="h-5 w-5" /> },
 ];
 
+const CAMPAIGN_OBJECTIVES = [
+  "Sales (Purchase)",
+  "Traffic",
+  "Leads",
+  "Awareness",
+  "Engagement",
+  "Video Views",
+  "Messages (WA/Messenger)",
+];
+
+// Shared scrollable output card
+function AIOutputCard({ content }: { content: string }) {
+  return (
+    <Card className="bg-primary/5 border-primary/20">
+      <CardContent className="pt-4">
+        <div className="max-h-64 overflow-y-auto pr-1">
+          <p className="text-sm whitespace-pre-wrap">{content}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CampaignWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -38,6 +61,7 @@ export default function CampaignWizard() {
     competitorWeakness: "",
     creativeAngle: "",
     emotionalHook: "",
+    campaignObjective: "",
     platform: "",
     budget: "",
     duration: "",
@@ -57,15 +81,10 @@ export default function CampaignWizard() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: prompt,
-          history: [],
-        }),
+        body: JSON.stringify({ message: prompt, history: [] }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const reader = response.body?.getReader();
       if (!reader) return;
@@ -77,11 +96,8 @@ export default function CampaignWizard() {
         const { done, value } = await reader.read();
         if (done) break;
 
-        // Accumulate into buffer to handle lines split across chunks
         buffer += decoder.decode(value, { stream: true });
-
         const lines = buffer.split("\n");
-        // Keep the last (possibly incomplete) line in the buffer
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
@@ -89,7 +105,6 @@ export default function CampaignWizard() {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.content) {
-                // Update in real-time so user sees text streaming in
                 setAiSuggestions(prev => ({
                   ...prev,
                   [field]: (prev[field] ?? "") + data.content,
@@ -130,10 +145,11 @@ export default function CampaignWizard() {
               <Textarea
                 id="productDescription"
                 data-testid="input-wizard-product-description"
-                placeholder="Jelaskan produk Anda secara detail..."
+                placeholder="Jelaskan produk Anda secara detail — apa isinya, untuk siapa, dan apa manfaat utamanya..."
                 value={campaignData.productDescription}
                 onChange={(e) => updateData("productDescription", e.target.value)}
-                rows={4}
+                rows={5}
+                className="resize-y"
               />
             </div>
             <div className="space-y-2">
@@ -144,7 +160,22 @@ export default function CampaignWizard() {
                   size="sm"
                   data-testid="button-generate-usp"
                   disabled={isGenerating || !campaignData.productDescription}
-                  onClick={() => generateAISuggestion("usp", `Berdasarkan produk ini: "${campaignData.productDescription}", buatkan 3 USP (Unique Selling Proposition) yang kuat dan compelling. Format: bullet points singkat.`)}
+                  onClick={() => generateAISuggestion("usp",
+                    `Anda adalah seorang Meta Ads Copywriter profesional.
+
+Produk: "${campaignData.productName}"
+Deskripsi: "${campaignData.productDescription}"
+
+Tugas:
+Buatkan 5 USP (Unique Selling Proposition) yang kuat, emosional, dan berbeda dari kompetitor.
+
+Format setiap USP:
+- **USP [nomor]: [Judul singkat]**
+  Penjelasan: [1-2 kalimat kenapa ini unik dan penting bagi calon pembeli]
+  Positioning: [Kalimat pendek siap pakai untuk iklan]
+
+Fokus pada: manfaat nyata, emosi calon pembeli, dan diferensiasi yang tidak mudah ditiru.`
+                  )}
                 >
                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   Generate USP
@@ -153,18 +184,13 @@ export default function CampaignWizard() {
               <Textarea
                 id="uniqueValue"
                 data-testid="input-wizard-usp"
-                placeholder="Apa yang membuat produk Anda unik?"
+                placeholder="Apa yang membuat produk Anda unik dan berbeda dari kompetitor?"
                 value={campaignData.uniqueValue}
                 onChange={(e) => updateData("uniqueValue", e.target.value)}
-                rows={3}
+                rows={4}
+                className="resize-y"
               />
-              {aiSuggestions.usp && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">{aiSuggestions.usp}</p>
-                  </CardContent>
-                </Card>
-              )}
+              {aiSuggestions.usp && <AIOutputCard content={aiSuggestions.usp} />}
             </div>
           </div>
         );
@@ -178,7 +204,7 @@ export default function CampaignWizard() {
                 <Input
                   id="targetAge"
                   data-testid="input-wizard-target-age"
-                  placeholder="Contoh: 25-35 tahun"
+                  placeholder="Contoh: 25-55 tahun"
                   value={campaignData.targetAge}
                   onChange={(e) => updateData("targetAge", e.target.value)}
                 />
@@ -188,21 +214,24 @@ export default function CampaignWizard() {
                 <Input
                   id="targetGender"
                   data-testid="input-wizard-target-gender"
-                  placeholder="Pria/Wanita/Semua"
+                  placeholder="Pria / Wanita / Semua"
                   value={campaignData.targetGender}
                   onChange={(e) => updateData("targetGender", e.target.value)}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="targetInterests">Minat & Hobi Target</Label>
+              <Label htmlFor="targetInterests">
+                Minat, Jabatan & Interest Targeting
+              </Label>
               <Textarea
                 id="targetInterests"
                 data-testid="input-wizard-target-interests"
-                placeholder="Contoh: fitness, kesehatan, skincare, fashion..."
+                placeholder="Contoh: Kontraktor, Civil Engineering, Project Management, Tender, LPJK, AutoCAD, BIM, Manajemen Proyek..."
                 value={campaignData.targetInterests}
                 onChange={(e) => updateData("targetInterests", e.target.value)}
-                rows={3}
+                rows={4}
+                className="resize-y"
               />
             </div>
             <div className="space-y-2">
@@ -213,7 +242,26 @@ export default function CampaignWizard() {
                   size="sm"
                   data-testid="button-generate-pain-points"
                   disabled={isGenerating || !campaignData.productDescription}
-                  onClick={() => generateAISuggestion("painPoints", `Untuk produk "${campaignData.productName}" dengan deskripsi: "${campaignData.productDescription}", untuk target audience usia ${campaignData.targetAge || "25-40"} ${campaignData.targetGender || ""}, apa saja pain points yang mungkin mereka alami? Berikan 5 pain points utama dalam format bullet points.`)}
+                  onClick={() => generateAISuggestion("painPoints",
+                    `Anda adalah Meta Ads Strategist yang ahli di perilaku konsumen.
+
+Produk: "${campaignData.productName}"
+Deskripsi produk: "${campaignData.productDescription}"
+Target audience: Usia ${campaignData.targetAge || "25-55"}, ${campaignData.targetGender || "pria & wanita"}
+Minat/Jabatan: ${campaignData.targetInterests || "sesuai produk"}
+
+Tugas:
+Identifikasi 10 pain points utama target audience yang paling relevan untuk digunakan dalam iklan Meta Ads.
+
+Format setiap pain point:
+**[nomor]. [Nama masalah singkat]**
+- Situasi: [Kapan/dimana masalah ini terjadi]
+- Dampak bisnis/kehidupan: [Konsekuensi nyata jika dibiarkan]
+- Emosi yang dirasakan: [Frustrasi / Panik / Malu / Cemas / dll]
+- Hook iklan: [1 kalimat opening iklan yang langsung menyentuh masalah ini]
+
+Fokus pada masalah yang paling sering dialami sehari-hari dan paling menyakitkan secara emosional.`
+                  )}
                 >
                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   Generate Pain Points
@@ -222,18 +270,13 @@ export default function CampaignWizard() {
               <Textarea
                 id="targetPainPoints"
                 data-testid="input-wizard-pain-points"
-                placeholder="Masalah apa yang dihadapi target audience Anda?"
+                placeholder="Masalah apa yang paling sering dan paling menyakitkan bagi target audience Anda?"
                 value={campaignData.targetPainPoints}
                 onChange={(e) => updateData("targetPainPoints", e.target.value)}
-                rows={3}
+                rows={4}
+                className="resize-y"
               />
-              {aiSuggestions.painPoints && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">{aiSuggestions.painPoints}</p>
-                  </CardContent>
-                </Card>
-              )}
+              {aiSuggestions.painPoints && <AIOutputCard content={aiSuggestions.painPoints} />}
             </div>
           </div>
         );
@@ -246,21 +289,53 @@ export default function CampaignWizard() {
               <Textarea
                 id="competitors"
                 data-testid="input-wizard-competitors"
-                placeholder="Sebutkan 3-5 kompetitor utama Anda..."
+                placeholder="Sebutkan kompetitor: bisa produk sejenis, solusi alternatif, atau cara lain orang menyelesaikan masalah yang sama..."
                 value={campaignData.competitors}
                 onChange={(e) => updateData("competitors", e.target.value)}
-                rows={3}
+                rows={4}
+                className="resize-y"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="competitorWeakness">Kelemahan Kompetitor</Label>
+                <Label htmlFor="competitorWeakness">Analisis Kompetitor & Diferensiasi</Label>
                 <Button
                   variant="ghost"
                   size="sm"
                   data-testid="button-analyze-competitors"
                   disabled={isGenerating || !campaignData.competitors}
-                  onClick={() => generateAISuggestion("competitorAnalysis", `Analisis kompetitor berikut untuk produk ${campaignData.productName}: ${campaignData.competitors}. Berikan insight tentang: 1) Kelemahan umum kompetitor 2) Peluang yang bisa dimanfaatkan 3) Strategi diferensiasi yang bisa digunakan. Format dalam bullet points yang actionable.`)}
+                  onClick={() => generateAISuggestion("competitorAnalysis",
+                    `Anda adalah seorang Brand Strategist dan Meta Ads Consultant.
+
+Produk saya: "${campaignData.productName}"
+Deskripsi: "${campaignData.productDescription}"
+USP: "${campaignData.uniqueValue}"
+Target: ${campaignData.targetAge} ${campaignData.targetGender}
+
+Kompetitor yang dihadapi:
+${campaignData.competitors}
+
+Tugas:
+Lakukan analisis kompetitor yang mendalam dan berikan strategi diferensiasi.
+
+Format output:
+
+## 1. Analisis Kelemahan Kompetitor
+Untuk setiap kompetitor, jelaskan:
+- Fokus mereka
+- Kelemahan utama
+- Celah yang bisa dimanfaatkan
+
+## 2. Tabel Positioning
+Buat tabel perbandingan: Kompetitor | Fokus Mereka | Posisi Unik Produk Saya
+
+## 3. Strategi Diferensiasi
+- 3 pesan utama yang membedakan produk dari semua kompetitor
+- Angle iklan yang tidak dipakai kompetitor
+
+## 4. Pesan Utama untuk Iklan
+Berikan 3 kalimat positioning siap pakai.`
+                  )}
                 >
                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   Analisis AI
@@ -272,15 +347,10 @@ export default function CampaignWizard() {
                 placeholder="Apa kelemahan kompetitor yang bisa Anda manfaatkan?"
                 value={campaignData.competitorWeakness}
                 onChange={(e) => updateData("competitorWeakness", e.target.value)}
-                rows={3}
+                rows={4}
+                className="resize-y"
               />
-              {aiSuggestions.competitorAnalysis && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">{aiSuggestions.competitorAnalysis}</p>
-                  </CardContent>
-                </Card>
-              )}
+              {aiSuggestions.competitorAnalysis && <AIOutputCard content={aiSuggestions.competitorAnalysis} />}
             </div>
           </div>
         );
@@ -296,27 +366,43 @@ export default function CampaignWizard() {
                   size="sm"
                   data-testid="button-generate-creative-angle"
                   disabled={isGenerating}
-                  onClick={() => generateAISuggestion("creativeAngle", `Untuk produk "${campaignData.productName}" dengan USP: "${campaignData.uniqueValue}", target audience dengan pain points: "${campaignData.targetPainPoints}", buatkan 5 creative angle yang bisa digunakan untuk iklan. Setiap angle harus: 1) Menarik perhatian 2) Relevan dengan pain points 3) Menunjukkan solusi. Format: Judul angle + penjelasan singkat.`)}
+                  onClick={() => generateAISuggestion("creativeAngle",
+                    `Anda adalah Meta Ads Creative Strategist berpengalaman.
+
+Produk: "${campaignData.productName}"
+USP: "${campaignData.uniqueValue}"
+Target audience pain points: "${campaignData.targetPainPoints}"
+Target: ${campaignData.targetAge}, ${campaignData.targetGender}
+
+Tugas:
+Buatkan 15 Creative Angle untuk iklan Meta Ads. Jangan menjual produknya — jual solusi terhadap masalah. Gunakan pendekatan Problem → Consequence → Solution.
+
+Format setiap angle:
+
+### Angle [nomor]: [Nama Angle]
+- **Pain Point:** [Masalah spesifik yang diangkat]
+- **Ide Visual:** [Deskripsi visual/gambar/video yang mendukung]
+- **Headline:** [Judul iklan maks 10 kata]
+- **Primary Text:** [Kalimat pembuka iklan 1-2 kalimat]
+- **CTA:** [Call-to-action]
+
+Variasikan jenis angle: Fear of Loss, Curiosity, Story, Before-After, Authority, Urgency, Contrarian, Social Proof.`
+                  )}
                 >
                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  Generate Angles
+                  Generate 15 Angles
                 </Button>
               </div>
               <Textarea
                 id="creativeAngle"
                 data-testid="input-wizard-creative-angle"
-                placeholder="Angle kreatif apa yang akan Anda gunakan?"
+                placeholder="Tulis angle utama yang akan digunakan, atau pilih dari hasil generate AI di bawah..."
                 value={campaignData.creativeAngle}
                 onChange={(e) => updateData("creativeAngle", e.target.value)}
-                rows={3}
+                rows={4}
+                className="resize-y"
               />
-              {aiSuggestions.creativeAngle && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">{aiSuggestions.creativeAngle}</p>
-                  </CardContent>
-                </Card>
-              )}
+              {aiSuggestions.creativeAngle && <AIOutputCard content={aiSuggestions.creativeAngle} />}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -326,27 +412,44 @@ export default function CampaignWizard() {
                   size="sm"
                   data-testid="button-generate-emotional-hook"
                   disabled={isGenerating}
-                  onClick={() => generateAISuggestion("emotionalHook", `Buatkan 5 emotional hook yang powerful untuk iklan produk "${campaignData.productName}". Hooks harus: 1) Memicu emosi kuat (fear, desire, curiosity, urgency) 2) Relevan dengan target audience 3) Bisa digunakan sebagai opening iklan. Format: Hook + emosi yang dipicu.`)}
+                  onClick={() => generateAISuggestion("emotionalHook",
+                    `Anda adalah seorang Meta Ads Copywriter yang ahli psikologi pemasaran.
+
+Produk: "${campaignData.productName}"
+Target audience: ${campaignData.targetAge}, ${campaignData.targetGender}
+Pain points utama: "${campaignData.targetPainPoints}"
+
+Tugas:
+Buatkan 30 hook Meta Ads yang kuat. Maksimal 12 kata per hook. Gunakan bahasa yang sederhana, emosional, dan langsung ke masalah.
+
+Kelompokkan berdasarkan kategori:
+
+**🔴 Fear of Loss (5 hook)**
+**🟡 Curiosity (5 hook)**
+**🟢 Story (5 hook)**
+**🔵 Question (5 hook)**
+**🟠 Urgency (3 hook)**
+**⚫ Mistake (3 hook)**
+**🟣 Contrarian (2 hook)**
+**⭐ Authority (2 hook)**
+
+Format: [nomor]. "[teks hook]"`
+                  )}
                 >
                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  Generate Hooks
+                  Generate 30 Hooks
                 </Button>
               </div>
               <Textarea
                 id="emotionalHook"
                 data-testid="input-wizard-emotional-hook"
-                placeholder="Hook emosional apa yang akan menarik perhatian?"
+                placeholder="Tulis hook utama yang akan dipakai, atau pilih dari hasil generate AI di bawah..."
                 value={campaignData.emotionalHook}
                 onChange={(e) => updateData("emotionalHook", e.target.value)}
-                rows={3}
+                rows={4}
+                className="resize-y"
               />
-              {aiSuggestions.emotionalHook && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">{aiSuggestions.emotionalHook}</p>
-                  </CardContent>
-                </Card>
-              )}
+              {aiSuggestions.emotionalHook && <AIOutputCard content={aiSuggestions.emotionalHook} />}
             </div>
           </div>
         );
@@ -354,6 +457,27 @@ export default function CampaignWizard() {
       case 5:
         return (
           <div className="space-y-6">
+            {/* Campaign Objective */}
+            <div className="space-y-2">
+              <Label>Campaign Objective</Label>
+              <div className="flex flex-wrap gap-2">
+                {CAMPAIGN_OBJECTIVES.map((obj) => (
+                  <Badge
+                    key={obj}
+                    variant={campaignData.campaignObjective === obj ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => updateData("campaignObjective", obj)}
+                  >
+                    {obj}
+                  </Badge>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pilih Sales jika pixel & tracking sudah siap. Pilih Traffic/Leads untuk validasi awal.
+              </p>
+            </div>
+
+            {/* Platform */}
             <div className="space-y-2">
               <Label>Platform Iklan</Label>
               <div className="flex flex-wrap gap-2">
@@ -370,13 +494,15 @@ export default function CampaignWizard() {
                 ))}
               </div>
             </div>
+
+            {/* Budget & Duration */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="budget">Budget Harian</Label>
                 <Input
                   id="budget"
                   data-testid="input-wizard-budget"
-                  placeholder="Contoh: Rp 500.000"
+                  placeholder="Contoh: Rp 100.000"
                   value={campaignData.budget}
                   onChange={(e) => updateData("budget", e.target.value)}
                 />
@@ -386,13 +512,14 @@ export default function CampaignWizard() {
                 <Input
                   id="duration"
                   data-testid="input-wizard-duration"
-                  placeholder="Contoh: 14 hari"
+                  placeholder="Contoh: 7 hari"
                   value={campaignData.duration}
                   onChange={(e) => updateData("duration", e.target.value)}
                 />
               </div>
             </div>
 
+            {/* Campaign Summary + Generate */}
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -402,51 +529,92 @@ export default function CampaignWizard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Produk:</span>
-                    <span className="font-medium">{campaignData.productName || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Target:</span>
-                    <span className="font-medium">{campaignData.targetAge} {campaignData.targetGender}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Platform:</span>
-                    <span className="font-medium">{campaignData.platform || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Budget:</span>
-                    <span className="font-medium">{campaignData.budget || "-"}</span>
-                  </div>
+                  {[
+                    { label: "Produk", value: campaignData.productName },
+                    { label: "Target", value: `${campaignData.targetAge} ${campaignData.targetGender}`.trim() },
+                    { label: "Objective", value: campaignData.campaignObjective },
+                    { label: "Platform", value: campaignData.platform },
+                    { label: "Budget", value: campaignData.budget ? `${campaignData.budget}/hari` : "" },
+                    { label: "Durasi", value: campaignData.duration },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex justify-between">
+                      <span className="text-muted-foreground">{label}:</span>
+                      <span className="font-medium text-right max-w-[60%] break-words">{value || "-"}</span>
+                    </div>
+                  ))}
                 </div>
-                <Button 
-                  className="w-full" 
-                  data-testid="button-generate-winning-campaign"
-                  onClick={() => generateAISuggestion("winningStrategy", `Buatkan strategi winning campaign lengkap untuk:
-Produk: ${campaignData.productName}
-USP: ${campaignData.uniqueValue}
-Target: ${campaignData.targetAge} ${campaignData.targetGender}, interests: ${campaignData.targetInterests}
-Pain Points: ${campaignData.targetPainPoints}
-Kompetitor: ${campaignData.competitors}
-Creative Angle: ${campaignData.creativeAngle}
-Emotional Hook: ${campaignData.emotionalHook}
-Platform: ${campaignData.platform}
-Budget: ${campaignData.budget}/hari selama ${campaignData.duration}
 
-Berikan strategi lengkap meliputi:
-1. Struktur kampanye (awareness, consideration, conversion)
-2. Rekomendasi targeting detail
-3. Creative recommendations (format, copy, visual)
-4. A/B testing plan
-5. KPIs yang harus dimonitor
-6. Tips optimisasi untuk winning`)}
+                <Button
+                  className="w-full"
+                  data-testid="button-generate-winning-campaign"
                   disabled={isGenerating}
+                  onClick={() => generateAISuggestion("winningStrategy",
+                    `Anda adalah Meta Ads Strategist senior dengan pengalaman kampanye digital di berbagai industri.
+
+DATA KAMPANYE:
+- Produk: ${campaignData.productName}
+- Deskripsi: ${campaignData.productDescription}
+- USP: ${campaignData.uniqueValue}
+- Target: Usia ${campaignData.targetAge}, ${campaignData.targetGender}
+- Interests: ${campaignData.targetInterests}
+- Pain Points: ${campaignData.targetPainPoints}
+- Kompetitor: ${campaignData.competitors}
+- Creative Angle: ${campaignData.creativeAngle}
+- Emotional Hook: ${campaignData.emotionalHook}
+- Platform: ${campaignData.platform}
+- Campaign Objective: ${campaignData.campaignObjective}
+- Budget: ${campaignData.budget}/hari selama ${campaignData.duration}
+
+Tugas:
+Buatkan Winning Campaign Strategy yang komprehensif dan siap dieksekusi. Format dalam markdown yang rapi.
+
+---
+
+## 📋 Executive Summary
+[Ringkasan strategi 2-3 kalimat]
+
+## 🎯 Campaign Objective & Funnel
+[Objective yang dipilih + alasan + struktur funnel Awareness→Consideration→Conversion dengan alokasi budget %]
+
+## 👥 Target Audience
+[Segmentasi audience: Audience 1, 2, 3 dengan jabatan/minat spesifik]
+
+## 📊 Struktur Kampanye
+[Campaign → Ad Set → Ads: nama dan breakdown]
+
+## 🎨 Creative Strategy
+[3 angle utama yang direkomendasikan + format creative: image/video/carousel]
+
+## ✍️ Copywriting Angles
+[3 variasi copy: Headline + Primary Text + CTA untuk masing-masing angle]
+
+## 🖼 Creative Recommendation
+[Rekomendasi visual: ukuran, warna, elemen gambar, teks overlay]
+
+## 🌐 Landing Page Checklist
+[Elemen LP yang wajib ada: Hero, Pain Point, Solusi, Bukti, FAQ, CTA]
+
+## 📈 KPI Target
+[CTR, CPC, CPM, ROAS, Cost per Lead/Purchase — sesuaikan dengan objective]
+
+## 🔄 Optimization Plan
+- Hari 1-2: [aksi]
+- Hari 3-5: [aksi]  
+- Hari 6-7: [aksi]
+
+## 🚀 Scaling Strategy
+[Kapan dan bagaimana menaikkan budget + kriteria lolos untuk scale]
+
+## ⚠️ Risiko & Mitigasi
+[3 risiko utama yang harus dihindari + cara mengatasinya]`
+                  )}
                 >
                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
                   Generate Winning Strategy
                 </Button>
+
                 {aiSuggestions.winningStrategy && (
-                  <div className="mt-4 p-4 bg-background rounded-lg max-h-96 overflow-y-auto">
+                  <div className="mt-4 p-4 bg-background rounded-lg max-h-[480px] overflow-y-auto">
                     <p className="text-sm whitespace-pre-wrap">{aiSuggestions.winningStrategy}</p>
                   </div>
                 )}
@@ -474,78 +642,78 @@ Berikan strategi lengkap meliputi:
             </p>
           </div>
 
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Step {currentStep} of {steps.length}</CardTitle>
-                <CardDescription>{steps[currentStep - 1].title}</CardDescription>
+          <Card>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Step {currentStep} of {steps.length}</CardTitle>
+                  <CardDescription>{steps[currentStep - 1].title}</CardDescription>
+                </div>
+                <Badge variant="outline" className="gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  {Math.round(progress)}% Complete
+                </Badge>
               </div>
-              <Badge variant="outline" className="gap-1">
-                <TrendingUp className="h-3 w-3" />
-                {Math.round(progress)}% Complete
-              </Badge>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </CardHeader>
-        </Card>
+              <Progress value={progress} className="h-2" />
+            </CardHeader>
+          </Card>
 
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {steps.map((step) => (
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {steps.map((step) => (
+              <Button
+                key={step.id}
+                variant={currentStep === step.id ? "default" : "outline"}
+                size="sm"
+                className="shrink-0 gap-2"
+                data-testid={`button-wizard-step-${step.id}`}
+                onClick={() => setCurrentStep(step.id)}
+              >
+                {currentStep > step.id ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                ) : currentStep === step.id ? (
+                  step.icon
+                ) : (
+                  <Circle className="h-4 w-4" />
+                )}
+                {step.title}
+              </Button>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {steps[currentStep - 1].icon}
+                {steps[currentStep - 1].title}
+              </CardTitle>
+              <CardDescription>{steps[currentStep - 1].description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-between">
             <Button
-              key={step.id}
-              variant={currentStep === step.id ? "default" : "outline"}
-              size="sm"
-              className="shrink-0 gap-2"
-              data-testid={`button-wizard-step-${step.id}`}
-              onClick={() => setCurrentStep(step.id)}
+              variant="outline"
+              data-testid="button-wizard-prev"
+              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+              disabled={currentStep === 1}
             >
-              {currentStep > step.id ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              ) : currentStep === step.id ? (
-                step.icon
-              ) : (
-                <Circle className="h-4 w-4" />
-              )}
-              {step.title}
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Sebelumnya
             </Button>
-          ))}
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {steps[currentStep - 1].icon}
-              {steps[currentStep - 1].title}
-            </CardTitle>
-            <CardDescription>{steps[currentStep - 1].description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {renderStepContent()}
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            data-testid="button-wizard-prev"
-            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-            disabled={currentStep === 1}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Sebelumnya
-          </Button>
-          <Button
-            data-testid="button-wizard-next"
-            onClick={() => setCurrentStep(Math.min(steps.length, currentStep + 1))}
-            disabled={currentStep === steps.length}
-          >
-            Selanjutnya
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
+            <Button
+              data-testid="button-wizard-next"
+              onClick={() => setCurrentStep(Math.min(steps.length, currentStep + 1))}
+              disabled={currentStep === steps.length}
+            >
+              Selanjutnya
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

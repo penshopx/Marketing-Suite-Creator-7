@@ -1,0 +1,228 @@
+Iya, saya lihat dari screenshot-nya memang **hasil AI kepotong** karena area textbox tidak cukup tinggi. Isinya baru sampai bagian setup event.
+
+Kalau saya yang menyusun **Winning Strategy** untuk aplikasi Anda, saya justru akan membuatnya lebih terstruktur seperti berikut.
+
+---
+
+# 🎯 Winning Strategy - Meta Ads Ebook "Kontraktor Anti Amnesia"
+
+## Objective Campaign
+
+Target utama adalah menghasilkan **penjualan ebook** sekaligus mengumpulkan data audience yang paling responsif untuk kampanye berikutnya.
+
+---
+
+## Funnel Campaign
+
+### Tahap 1 — Awareness (30%)
+
+**Budget:** Rp30.000/hari
+
+Tujuan:
+
+* Mengenalkan masalah "Kontraktor Amnesia"
+* Mendapat Video Views
+* Mendapat Reach
+
+Konten:
+
+* Story
+* Video pendek
+* Carousel Pain Point
+
+---
+
+### Tahap 2 — Consideration (30%)
+
+**Budget:** Rp30.000/hari
+
+Target:
+
+* Landing Page View
+* Traffic
+
+Konten:
+
+* Edukasi
+* Studi kasus
+* Kesalahan umum kontraktor
+
+CTA
+
+> Pelajari Selengkapnya
+
+---
+
+### Tahap 3 — Conversion (40%)
+
+**Budget:** Rp40.000/hari
+
+Target:
+
+Purchase Ebook
+
+CTA
+
+> Download Sekarang
+
+---
+
+# Audience
+
+Primary Audience
+
+* Owner Kontraktor
+* Direktur
+* Project Manager
+* Civil Engineer
+* Site Engineer
+* Konsultan
+
+Interest
+
+* Konstruksi
+* Tender
+* LPJK
+* BIM
+* AutoCAD
+* Project Management
+
+---
+
+# Creative Strategy
+
+Gunakan minimal **3 Angle**
+
+### Angle 1
+
+"Karyawan resign, knowledge ikut hilang."
+
+---
+
+### Angle 2
+
+"Tender tinggal besok, file proyek tidak ketemu."
+
+---
+
+### Angle 3
+
+"Masih menyimpan dokumen proyek di WhatsApp?"
+
+---
+
+# Landing Page
+
+Landing Page sebaiknya memiliki:
+
+✅ Hero Section
+
+✅ Pain Point
+
+✅ Solusi
+
+✅ Isi Ebook
+
+✅ Benefit
+
+✅ Testimoni
+
+✅ FAQ
+
+✅ CTA
+
+---
+
+# Pixel Event
+
+Tracking
+
+* ViewContent
+* AddToCart
+* InitiateCheckout
+* Purchase
+
+---
+
+# KPI
+
+CTR > 2%
+
+CPC < Rp2.500
+
+CPM < Rp35.000
+
+Purchase Rate > 2%
+
+ROAS > 3
+
+---
+
+# Optimasi Hari ke-3
+
+Lakukan evaluasi.
+
+Jika CTR rendah
+
+➡️ Ganti Hook
+
+Jika CPC mahal
+
+➡️ Ganti Audience
+
+Jika banyak klik tapi tidak beli
+
+➡️ Perbaiki Landing Page
+
+---
+
+# Hari ke-5
+
+Matikan iklan yang performanya buruk.
+
+Scale budget iklan terbaik **20–30% per hari**, jangan langsung dilipatgandakan agar algoritma Meta tetap stabil.
+
+---
+
+# Hari ke-7
+
+Analisis
+
+* Audience terbaik
+* Hook terbaik
+* Gambar terbaik
+* Placement terbaik
+
+Kemudian buat Campaign V2 berdasarkan data tersebut.
+
+---
+
+## Saran untuk aplikasi Marketing Tools AI Anda
+
+Melihat hasil yang tampil di screenshot, saya menyarankan output **Generate Winning Strategy** jangan berupa paragraf panjang. Akan jauh lebih profesional jika AI menghasilkan format seperti ini:
+
+```
+📋 Executive Summary
+
+🎯 Campaign Objective
+
+👥 Target Audience
+
+📊 Budget Allocation
+
+🎨 Creative Strategy
+
+📢 Copywriting Angle
+
+🖼 Creative Recommendation
+
+🌐 Landing Page Checklist
+
+📈 KPI
+
+🔄 Optimization Plan
+
+🚀 Scaling Strategy
+```
+
+Format seperti ini jauh lebih mudah dibaca, tidak mudah terpotong di kotak hasil AI, dan terlihat seperti laporan dari tools marketing profesional. Selain itu, pengguna bisa langsung mengeksekusi setiap bagian tanpa harus membaca paragraf yang panjang.

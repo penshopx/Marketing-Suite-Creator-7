@@ -1,0 +1,69 @@
+Untuk produk **Ebook Kontraktor Anti Amnesia**, saya menyarankan **jangan menyebut ebook atau penulis tertentu sebagai kompetitor**. Yang menjadi kompetitor utama justru adalah **cara orang menyelesaikan masalah yang sama**, bukan hanya produk yang mirip.
+
+Berikut isian yang saya rekomendasikan.
+
+---
+
+# Kompetitor Utama
+
+> **1. Buku dan ebook manajemen proyek konstruksi**
+> Berfokus pada teori manajemen proyek, namun belum membahas bagaimana menjaga pengetahuan perusahaan agar tidak hilang.
+
+> **2. Pelatihan dan seminar manajemen konstruksi**
+> Memberikan materi secara langsung, tetapi peserta sering kesulitan menerapkan dan mendokumentasikan ilmu setelah pelatihan selesai.
+
+> **3. Google Drive / OneDrive / Dropbox sebagai tempat penyimpanan dokumen**
+> Membantu menyimpan file, tetapi tidak mengubah dokumen menjadi pengetahuan yang mudah dicari dan dimanfaatkan kembali.
+
+> **4. Konsultan SOP dan Knowledge Management**
+> Solusinya lebih lengkap, tetapi biayanya relatif tinggi dan biasanya ditujukan untuk perusahaan menengah hingga besar.
+
+> **5. Kebiasaan dokumentasi manual perusahaan**
+> Mengandalkan folder komputer, hard disk, atau WhatsApp, sehingga informasi mudah tercecer dan sulit ditelusuri.
+
+---
+
+# Kelemahan Kompetitor
+
+> Sebagian besar solusi yang ada hanya berfokus pada penyimpanan dokumen atau teori manajemen, bukan pada bagaimana menjaga pengetahuan perusahaan agar tetap hidup dan mudah dimanfaatkan kembali. Banyak perusahaan masih bergantung pada individu tertentu sehingga ketika karyawan resign atau berpindah proyek, pengalaman dan informasi penting ikut hilang. Selain itu, solusi konsultasi biasanya membutuhkan biaya besar dan waktu implementasi yang lama, sehingga kurang terjangkau bagi kontraktor kecil dan menengah.
+
+---
+
+## Prompt untuk tombol **Analisis AI**
+
+```text
+Produk saya adalah ebook digital berjudul "Kontraktor Anti Amnesia".
+
+Target pasar:
+- Kontraktor
+- Konsultan Konstruksi
+- Owner Perusahaan Konstruksi
+- Project Manager
+- Tenaga Ahli
+- Pengusaha Konstruksi
+
+Kompetitor utama:
+1. Buku manajemen proyek konstruksi
+2. Pelatihan manajemen konstruksi
+3. Google Drive, OneDrive, Dropbox
+4. Konsultan SOP dan Knowledge Management
+5. Dokumentasi manual perusahaan
+
+Analisis kelemahan masing-masing kompetitor dan jelaskan peluang diferensiasi produk saya. Fokus pada aspek biaya, kemudahan implementasi, kepraktisan, dan kemampuan menjaga knowledge perusahaan agar tidak hilang.
+```
+
+---
+
+## Posisi unik ebook Anda
+
+Agar iklan Meta Ads lebih kuat, saya menyarankan positioning berikut:
+
+| Kompetitor             | Fokus Mereka       | Posisi **Kontraktor Anti Amnesia**                     |
+| ---------------------- | ------------------ | ------------------------------------------------------ |
+| Buku manajemen proyek  | Teori              | Solusi praktis yang bisa langsung diterapkan           |
+| Google Drive / Dropbox | Menyimpan file     | Menjaga pengetahuan bisnis agar tetap bisa digunakan   |
+| Seminar & Pelatihan    | Belajar sekali     | Panduan yang bisa dipelajari dan diterapkan kapan saja |
+| Konsultan SOP          | Mahal dan kompleks | Lebih terjangkau dan mudah dipraktikkan sendiri        |
+| Dokumentasi manual     | Tidak terstruktur  | Sistem dokumentasi yang rapi dan mudah dicari kembali  |
+
+Dengan posisi ini, pesan utama iklan Anda bukan lagi **"jual ebook"**, tetapi **"membantu kontraktor menghentikan kebiasaan kehilangan pengetahuan dan dokumen penting"**. Itu adalah masalah nyata yang lebih mudah menarik perhatian calon pembeli dan membedakan produk Anda dari alternatif yang sudah ada.

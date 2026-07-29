@@ -187,6 +187,34 @@ function AppContent() {
     );
   }
 
+  // Allow Campaign Wizard without login
+  if (location === "/campaign-wizard") {
+    return (
+      <>
+        <div className="min-h-screen bg-background">
+          <header className="flex items-center justify-between px-6 py-3 border-b bg-background/95 sticky top-0 z-50">
+            <a href="/" className="flex items-center gap-2 font-bold text-lg">
+              <span className="text-primary">✦</span> AI Marketing Tools
+            </a>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {!user && (
+                <a href="/login">
+                  <button className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+                    Login
+                  </button>
+                </a>
+              )}
+            </div>
+          </header>
+          <CampaignWizard />
+        </div>
+        <FloatingChatbot />
+        <PWAInstallBanner />
+      </>
+    );
+  }
+
   if (!user) {
     return (
       <>

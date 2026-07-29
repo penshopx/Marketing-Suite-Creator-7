@@ -1,0 +1,99 @@
+Untuk **kampanye pertama**, saya menyarankan jangan langsung menggunakan budget besar. Fokus utama adalah **menguji audience, hook, dan creative** terlebih dahulu.
+
+## Platform Iklan
+
+✅ **Meta Ads (Facebook & Instagram)**
+
+---
+
+## Budget Harian
+
+**Rp100.000/hari**
+
+---
+
+## Durasi Kampanye
+
+**7 Hari**
+
+---
+
+## Campaign Summary
+
+**Produk:**
+Ebook Kontraktor Anti Amnesia
+
+**Target:**
+25–55 tahun (25–35 tahun: Site Engineer & Admin Proyek, 35–45 tahun: Project Manager & Konsultan, 45–55 tahun: Owner & Direktur Perusahaan Konstruksi), pria dan wanita.
+
+**Platform:**
+Meta Ads (Facebook & Instagram)
+
+**Budget:**
+Rp100.000/hari × 7 hari = **Rp700.000**
+
+---
+
+## Jika tombol **Generate Winning Strategy** menggunakan AI
+
+Saya menyarankan prompt seperti ini:
+
+```text
+Anda adalah seorang Meta Ads Strategist dengan pengalaman di industri konstruksi.
+
+Produk:
+Ebook Kontraktor Anti Amnesia
+
+Target:
+- Usia 25–55 tahun
+- Site Engineer
+- Admin Proyek
+- Project Manager
+- Konsultan Konstruksi
+- Owner Kontraktor
+- Direktur Perusahaan Konstruksi
+
+Budget:
+Rp100.000 per hari
+
+Durasi:
+7 hari
+
+Tujuan:
+Menjual ebook digital.
+
+Buatkan strategi lengkap meliputi:
+1. Campaign Objective
+2. Struktur Campaign
+3. Audience
+4. Creative Angle
+5. Hook
+6. Jenis Gambar/Video
+7. Placement
+8. Budget Allocation
+9. KPI
+10. Optimasi Hari ke-3
+11. Scaling Hari ke-7
+12. Risiko yang harus dihindari.
+
+Format dalam markdown yang rapi dengan heading dan bullet point.
+```
+
+### Catatan untuk aplikasi Anda
+
+Karena target audiens sudah sangat spesifik (berdasarkan jabatan dan rentang usia), saya juga menyarankan menambahkan satu field baru di **Campaign Wizard**:
+
+**🎯 Campaign Objective**
+
+* Awareness
+* Traffic
+* Leads
+* Sales (Purchase)
+* Engagement
+* Video Views
+* Messages (WhatsApp/Messenger)
+
+Untuk produk **Ebook Kontraktor Anti Amnesia**, pilihan default yang saya rekomendasikan adalah:
+
+* **Campaign Objective:** **Sales (Purchase)** jika landing page dan tracking sudah siap.
+* Jika belum ada pixel atau event pembelian yang memadai, gunakan **Traffic** atau **Leads** terlebih dahulu untuk mengumpulkan data, lalu beralih ke **Sales** pada kampanye berikutnya.

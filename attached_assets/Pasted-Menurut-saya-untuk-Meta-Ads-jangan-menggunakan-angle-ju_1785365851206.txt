@@ -1,0 +1,113 @@
+Menurut saya, untuk **Meta Ads** jangan menggunakan angle **"jual ebook"**. Orang tidak bangun tidur lalu berpikir, *"Hari ini saya ingin membeli ebook."* Mereka lebih peduli pada masalah yang sedang mereka hadapi.
+
+Yang perlu dijual adalah **masalahnya**, sedangkan ebook menjadi **solusinya**.
+
+---
+
+# Creative Angle
+
+> **Kontraktor kehilangan aset paling berharga bukan karena proyek gagal, tetapi karena pengetahuan, dokumen, dan pengalaman proyek tidak pernah terdokumentasi dengan baik. Kontraktor Anti Amnesia membantu perusahaan mulai membangun memori bisnis agar pengalaman tidak hilang ketika orang berganti, proyek selesai, atau dokumen tercecer.**
+
+---
+
+## Prompt untuk tombol "Generate Angles"
+
+```text
+Produk saya adalah ebook digital berjudul "Kontraktor Anti Amnesia".
+
+Target market:
+- Owner Kontraktor
+- Direktur
+- Project Manager
+- Konsultan
+- Engineer
+- Admin Tender
+
+Buatkan 10 creative angle Meta Ads yang tidak menjual ebook, tetapi menjual solusi terhadap masalah kehilangan dokumen, knowledge, SOP, pengalaman proyek, dan ketergantungan pada individu.
+
+Gunakan pendekatan Problem → Consequence → Solution.
+```
+
+---
+
+# Emotional Hook
+
+> **"Pernah panik karena dokumen penting dicari saat deadline tender, tetapi tidak ada yang tahu letaknya?"**
+
+---
+
+## Prompt untuk tombol "Generate Hooks"
+
+```text
+Buatkan 20 hook Meta Ads untuk ebook "Kontraktor Anti Amnesia".
+
+Target:
+Kontraktor, Konsultan, Owner, Project Manager.
+
+Gunakan psikologi marketing.
+
+Jenis hook:
+- Fear of Loss
+- Curiosity
+- Pain Point
+- Story
+- Question
+- Authority
+- Future
+- Mistake
+- Contrarian
+- Urgency
+
+Maksimal 15 kata per hook.
+```
+
+---
+
+## Saya juga sudah menyiapkan 15 hook yang sangat cocok untuk Meta Ads
+
+### Fear of Loss
+
+1. **Karyawan resign, tapi semua pengalaman proyek ikut hilang.**
+2. **Tender tinggal besok, dokumen penting justru tidak ditemukan.**
+3. **Berapa banyak proyek rugi hanya karena dokumentasi yang buruk?**
+
+### Pain Point
+
+4. **Masih mencari file proyek di WhatsApp?**
+5. **Folder penuh, tapi dokumen yang dicari tetap tidak ketemu.**
+6. **SOP ada, tapi tidak pernah dipakai karena sulit ditemukan.**
+
+### Curiosity
+
+7. **Mengapa kontraktor besar jarang kehilangan knowledge perusahaan?**
+8. **Rahasia perusahaan yang tetap berjalan meski tim berganti.**
+9. **Masalah terbesar kontraktor ternyata bukan kekurangan proyek.**
+
+### Story
+
+10. **Semua berjalan normal… sampai admin proyek mengundurkan diri.**
+11. **Laptop rusak, hard disk hilang, proyek ikut berantakan.**
+12. **Satu file hilang bisa membuat tim bekerja dari nol lagi.**
+
+### Future
+
+13. **Bayangkan semua pengalaman proyek tersimpan dan mudah dicari kapan saja.**
+14. **Bangun bisnis yang tetap berjalan meski orang berganti.**
+15. **Jangan biarkan proyek berikutnya mengulang kesalahan yang sama.**
+
+---
+
+## Rekomendasi angle utama untuk kampanye pertama
+
+Jika saya memilih satu angle untuk diuji pertama kali, saya akan menggunakan:
+
+> **"Karyawan Resign, Knowledge Ikut Hilang."**
+
+Alasannya:
+
+* Sangat relevan dengan target pasar konstruksi.
+* Memunculkan rasa khawatir yang nyata tanpa berlebihan.
+* Mudah dikembangkan menjadi gambar, video, maupun carousel.
+* Mengarahkan pembaca pada solusi berupa sistem dokumentasi dan "memori bisnis", bukan sekadar ebook.
+
+Angle ini selaras dengan positioning **Kontraktor Anti Amnesia** sebagai solusi menjaga pengetahuan perusahaan agar tidak hilang ketika terjadi pergantian orang atau proyek.

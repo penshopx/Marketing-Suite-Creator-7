@@ -1,0 +1,93 @@
+Untuk form **Creative Strategy**, saya menyarankan isinya tidak terlalu panjang, tetapi cukup kuat untuk menjadi dasar AI membuat copywriting dan gambar iklan.
+
+---
+
+# Creative Angle
+
+```text
+Menggunakan pendekatan Problem–Agitate–Solution (PAS) dengan fokus pada masalah nyata yang sering dialami perusahaan konstruksi, seperti dokumen proyek yang tercecer, hilangnya pengetahuan ketika karyawan resign, dan pekerjaan yang terus berulang karena tidak adanya sistem dokumentasi. Iklan akan membangun rasa urgensi, menunjukkan dampak bisnis yang terjadi, lalu menawarkan Ebook Kontraktor Anti Amnesia sebagai panduan praktis untuk membangun "Memori Bisnis" yang rapi dan berkelanjutan.
+```
+
+---
+
+# Emotional Hook
+
+```text
+Pernah panik karena dokumen proyek tidak ditemukan saat deadline tender?
+
+Karyawan resign, tapi semua pengalaman proyek ikut hilang?
+
+Berapa banyak waktu terbuang hanya untuk mencari file lama?
+
+Jangan biarkan bisnis Anda mengulang kesalahan yang sama. Saatnya membangun Memori Bisnis agar pengetahuan perusahaan tetap tersimpan dan mudah digunakan kapan saja.
+```
+
+---
+
+## Jika tombol **Generate Angles** menggunakan AI
+
+Gunakan prompt berikut:
+
+```text
+Anda adalah Meta Ads Creative Strategist.
+
+Produk:
+Ebook "Kontraktor Anti Amnesia"
+
+Target:
+- Owner Kontraktor
+- Direktur
+- Project Manager
+- Konsultan
+- Civil Engineer
+- Admin Tender
+
+Buatkan 15 Creative Angle Meta Ads.
+
+Setiap angle harus terdiri dari:
+- Nama Angle
+- Pain Point
+- Ide Visual
+- Headline
+- CTA
+
+Fokus pada masalah nyata di industri konstruksi seperti kehilangan dokumen, knowledge, SOP, pergantian karyawan, keterlambatan tender, dan pekerjaan berulang.
+```
+
+---
+
+## Jika tombol **Generate Hooks** menggunakan AI
+
+Gunakan prompt berikut:
+
+```text
+Buatkan 30 hook Meta Ads untuk ebook "Kontraktor Anti Amnesia".
+
+Kategori:
+- Fear of Loss
+- Curiosity
+- Story
+- Question
+- Urgency
+- Mistake
+- Contrarian
+- Authority
+
+Setiap hook maksimal 12 kata.
+
+Gunakan bahasa sederhana, emosional, dan relevan dengan dunia konstruksi.
+```
+
+---
+
+## Saya juga menyarankan aplikasi Anda menghasilkan beberapa angle sekaligus, misalnya:
+
+| Creative Angle              | Emotional Hook                                               |
+| --------------------------- | ------------------------------------------------------------ |
+| **Karyawan Resign**         | "Karyawan resign, knowledge proyek ikut hilang."             |
+| **Tender Deadline**         | "Tender besok, dokumen masih dicari?"                        |
+| **File Hilang**             | "Masih mencari file proyek di WhatsApp?"                     |
+| **Bisnis Bergantung Orang** | "Bisnis Anda bergantung pada sistem atau satu orang?"        |
+| **Kontraktor Modern**       | "Kontraktor hebat menyimpan knowledge, bukan hanya dokumen." |
+
+Dengan format seperti ini, AI nantinya bisa langsung membuat **copywriting**, **gambar iklan**, **video script**, bahkan **landing page** berdasarkan angle yang dipilih, sehingga alur kerja pengguna menjadi jauh lebih cepat dan konsisten.

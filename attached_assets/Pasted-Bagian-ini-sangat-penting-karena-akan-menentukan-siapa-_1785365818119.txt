@@ -1,0 +1,105 @@
+Bagian ini sangat penting karena akan menentukan **siapa yang melihat iklan Meta Ads Anda**. Untuk ebook **Kontraktor Anti Amnesia**, saya sarankan targetnya tidak terlalu luas agar budget iklan lebih efisien.
+
+---
+
+# Range Usia
+
+**25–55 tahun**
+
+> Alasannya:
+>
+> * 25–35 tahun: Site Engineer, Project Engineer, Admin Proyek, Quantity Surveyor.
+> * 35–45 tahun: Project Manager, Kepala Teknik, Tenaga Ahli.
+> * 45–55 tahun: Owner, Direktur, Komisaris perusahaan konstruksi.
+
+---
+
+# Gender
+
+**Semua (Pria & Wanita)**
+
+Karena industri konstruksi saat ini tidak hanya didominasi pria. Banyak wanita bekerja sebagai estimator, QS, admin tender, HSE, hingga konsultan.
+
+---
+
+# Minat & Hobi Target
+
+Isi seperti berikut (pisahkan dengan koma jika diperlukan):
+
+```
+Konstruksi,
+Kontraktor,
+Teknik Sipil,
+Civil Engineering,
+Arsitektur,
+Project Management,
+Manajemen Proyek,
+Tender Proyek,
+Pengadaan Barang dan Jasa,
+BIM,
+AutoCAD,
+SAP2000,
+ETABS,
+SketchUp,
+Perusahaan Konstruksi,
+Konsultan Konstruksi,
+Properti,
+Developer,
+Bisnis,
+Kewirausahaan,
+Produktivitas,
+Digitalisasi Bisnis,
+Knowledge Management,
+Manajemen Dokumen,
+SOP Perusahaan,
+UMKM,
+Teknologi Bisnis
+```
+
+---
+
+# Pain Points Target Audience
+
+> Kontraktor dan perusahaan konstruksi sering mengalami kesulitan menemukan dokumen proyek ketika dibutuhkan. Pengetahuan penting hanya tersimpan di kepala karyawan tertentu sehingga ketika mereka resign atau pindah proyek, pengalaman tersebut ikut hilang. Dokumen tender, SOP, gambar kerja, laporan, dan arsip proyek tersebar di berbagai perangkat atau aplikasi sehingga menyulitkan pencarian. Akibatnya pekerjaan sering diulang, terjadi kesalahan yang sama, produktivitas menurun, dan perusahaan kehilangan waktu serta peluang bisnis.
+
+---
+
+## Prompt untuk tombol "Generate Pain Points"
+
+Jika aplikasi Anda memiliki tombol AI **Generate Pain Points**, gunakan prompt berikut:
+
+```text
+Produk saya adalah ebook digital berjudul "Kontraktor Anti Amnesia".
+
+Target audience:
+- Owner perusahaan konstruksi
+- Direktur kontraktor
+- Project Manager
+- Site Manager
+- Site Engineer
+- Civil Engineer
+- Konsultan konstruksi
+- Admin Proyek
+- Admin Tender
+- Quantity Surveyor
+- Pengusaha konstruksi
+
+Tolong identifikasi pain points utama mereka terkait pengelolaan dokumen, SOP, knowledge management, tender, proyek, dan operasional perusahaan.
+
+Fokus pada masalah yang sering dialami sehari-hari, dampak bisnisnya, serta emosi yang dirasakan. Buat hasilnya dalam bentuk poin-poin yang spesifik dan relevan untuk digunakan dalam iklan Meta Ads.
+```
+
+### Pain points utama yang sebaiknya menjadi fokus iklan
+
+* Dokumen proyek sulit ditemukan saat dibutuhkan.
+* File penting tersebar di banyak perangkat dan aplikasi.
+* SOP perusahaan belum terdokumentasi dengan baik.
+* Pengetahuan proyek hanya dimiliki orang tertentu.
+* Karyawan resign membawa pengalaman dan informasi penting.
+* Pekerjaan berulang karena tidak ada dokumentasi yang rapi.
+* Kesalahan yang sama terus terulang antarproyek.
+* Persiapan tender memakan waktu lama karena mencari dokumen.
+* Sulit melakukan serah terima proyek antaranggota tim.
+* Perusahaan bergantung pada individu, bukan pada sistem.
+
+Pain points tersebut sangat kuat untuk dijadikan dasar pembuatan **hook iklan**, misalnya: *"Pernah panik karena file tender tidak ketemu saat deadline tinggal hitungan jam?"* atau *"Karyawan resign, tapi semua pengalaman proyek ikut hilang?"* Kedua contoh itu langsung menyentuh masalah yang banyak dialami pelaku konstruksi.

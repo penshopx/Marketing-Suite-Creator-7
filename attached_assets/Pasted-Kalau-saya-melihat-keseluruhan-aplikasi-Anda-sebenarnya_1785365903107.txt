@@ -1,0 +1,251 @@
+Kalau saya melihat keseluruhan aplikasi Anda, sebenarnya alurnya sudah cukup lengkap. Yang perlu dijaga adalah **urutan penggunaannya**, agar pengguna tidak bingung.
+
+Kalau tujuan kita adalah **menjual Ebook Kontraktor Anti Amnesia**, maka setelah **Campaign Wizard** saya menyarankan urutannya seperti ini.
+
+---
+
+# Tahap 1 — Persiapan (✅ Sudah)
+
+* ✅ Product Research
+* ✅ Audience Targeting
+* ✅ Competitor Analysis
+* ✅ Creative Strategy
+* ✅ Winning Strategy
+
+---
+
+# Tahap 2 — Creative (Lanjut)
+
+Masuk ke menu **AI Creator**.
+
+## 1. Hook Generator ⭐⭐⭐⭐⭐
+
+Buat minimal 30 hook.
+
+Contoh:
+
+> Karyawan resign, knowledge ikut hilang.
+
+> Tender besok, file proyek tidak ketemu.
+
+> Berapa banyak proyek gagal karena dokumen berantakan?
+
+Output:
+
+30 hook.
+
+---
+
+## 2. Story Telling ⭐⭐⭐⭐⭐
+
+AI membuat cerita.
+
+Misalnya
+
+Masalah
+
+↓
+
+Konsekuensi
+
+↓
+
+Solusi
+
+↓
+
+CTA
+
+Ini nanti dipakai untuk Meta Ads.
+
+---
+
+## 3. Ad Creator ⭐⭐⭐⭐⭐
+
+AI membuat
+
+* Primary Text
+* Headline
+* Description
+* CTA
+
+Sudah siap upload ke Ads Manager.
+
+---
+
+## 4. Image Creator ⭐⭐⭐⭐⭐
+
+Generate
+
+* Feed
+* Carousel
+* Story
+* Square
+
+---
+
+# Tahap 3 — Landing Page
+
+Masuk
+
+Landing Page
+
+atau
+
+LP HTML Builder
+
+AI membuat
+
+* Hero
+* Benefit
+* Isi Ebook
+* FAQ
+* CTA
+
+---
+
+# Tahap 4 — Sistem Sales
+
+Kalau orang klik iklan.
+
+Masuk
+
+WA Broadcast Sequence
+
+↓
+
+CS Bot
+
+↓
+
+CS Closing Script
+
+↓
+
+Customer Journey
+
+Ini supaya tidak kehilangan calon pembeli yang belum langsung membeli.
+
+---
+
+# Tahap 5 — Launch
+
+Campaign Launcher
+
+AI bisa membuat checklist
+
+✅ Pixel
+
+✅ CAPI
+
+✅ Audience
+
+✅ Budget
+
+✅ Placement
+
+✅ CTA
+
+---
+
+# Tahap 6 — Setelah Iklan Jalan
+
+Masuk
+
+Ad Analyzer
+
+↓
+
+Profit Lab
+
+↓
+
+Ad Scale Advisor
+
+↓
+
+Auto Rule Builder
+
+---
+
+# Tahap 7 — Scale
+
+Kalau sudah profit.
+
+Masuk
+
+Meta Ads Advanced
+
+↓
+
+Campaign Scale Advisor
+
+↓
+
+Lookalike Audience
+
+↓
+
+Retargeting
+
+---
+
+# Menurut saya, urutan yang paling efektif adalah
+
+```text
+Roadmap Winning
+        ↓
+Interest Finder AI
+        ↓
+Audience Overlap
+        ↓
+Audience Builder
+        ↓
+Campaign Wizard
+        ↓
+Hook Generator
+        ↓
+Story Telling
+        ↓
+Ad Creator
+        ↓
+Image Creator
+        ↓
+Landing Page
+        ↓
+Campaign Launcher
+        ↓
+Ad Analyzer
+        ↓
+Profit Lab
+        ↓
+Scale Campaign
+```
+
+---
+
+## Ada satu saran besar untuk aplikasi Anda
+
+Kalau saya menjadi konsultan produk ini, saya justru akan **mengunci alur kerja** agar pengguna tidak bingung memilih puluhan menu.
+
+Misalnya setelah pengguna selesai **Campaign Wizard**, aplikasi otomatis menampilkan tombol:
+
+> **➡️ Langkah Berikutnya: Generate Hook Iklan**
+
+Setelah selesai membuat hook:
+
+> **➡️ Langkah Berikutnya: Buat Copywriting**
+
+Setelah copywriting selesai:
+
+> **➡️ Langkah Berikutnya: Generate Gambar Iklan**
+
+Setelah gambar selesai:
+
+> **➡️ Langkah Berikutnya: Buat Landing Page**
+
+Setelah landing page selesai:
+
+> **➡️ Langkah Berikutnya: Launch Campaign**
+
+Jadi pengguna tidak perlu menebak-nebak harus membuka menu apa berikutnya. Aplikasi bertindak seperti **marketing coach** yang memandu dari riset hingga iklan tayang dan dianalisis hasilnya. Menurut saya, pendekatan ini akan membuat pengalaman pengguna jauh lebih sederhana dan meningkatkan peluang mereka benar-benar menyelesaikan satu kampanye sampai selesai.
