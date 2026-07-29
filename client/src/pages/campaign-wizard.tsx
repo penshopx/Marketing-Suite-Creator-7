@@ -52,6 +52,7 @@ export default function CampaignWizard() {
 
   const generateAISuggestion = async (field: string, prompt: string) => {
     setIsGenerating(true);
+    setAiSuggestions(prev => ({ ...prev, [field]: "" }));
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -62,34 +63,48 @@ export default function CampaignWizard() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const reader = response.body?.getReader();
       if (!reader) return;
 
-      let result = "";
       const decoder = new TextDecoder();
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        // Accumulate into buffer to handle lines split across chunks
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        // Keep the last (possibly incomplete) line in the buffer
+        buffer = lines.pop() ?? "";
 
         for (const line of lines) {
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.content) {
-                result += data.content;
+                // Update in real-time so user sees text streaming in
+                setAiSuggestions(prev => ({
+                  ...prev,
+                  [field]: (prev[field] ?? "") + data.content,
+                }));
               }
             } catch (e) {}
           }
         }
       }
-
-      setAiSuggestions(prev => ({ ...prev, [field]: result }));
     } catch (error) {
       console.error("Error generating suggestion:", error);
+      setAiSuggestions(prev => ({
+        ...prev,
+        [field]: "Terjadi kesalahan saat generate. Silakan coba lagi.",
+      }));
     } finally {
       setIsGenerating(false);
     }
