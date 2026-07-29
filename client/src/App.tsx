@@ -63,6 +63,7 @@ import AutoRule from "@/pages/auto-rule";
 import WaBroadcast from "@/pages/wa-broadcast";
 import CsBotScript from "@/pages/cs-bot-script";
 import CustomerJourney from "@/pages/customer-journey";
+import Workroom from "@/pages/workroom";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -122,6 +123,7 @@ function Router() {
       <Route path="/wa-broadcast" component={WaBroadcast} />
       <Route path="/cs-bot-script" component={CsBotScript} />
       <Route path="/customer-journey" component={CustomerJourney} />
+      <Route path="/workroom" component={Workroom} />
       <Route component={NotFound} />
     </Switch>
   );

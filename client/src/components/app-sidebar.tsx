@@ -58,6 +58,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Network } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -81,6 +82,7 @@ import { useCampaignStore } from "@/hooks/use-campaign-store";
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Panduan Fitur", url: "/guide-chatbot", icon: HelpCircle },
+  { title: "MultiClaw Workroom", url: "/workroom", icon: Network },
 ];
 
 const winningItems = [

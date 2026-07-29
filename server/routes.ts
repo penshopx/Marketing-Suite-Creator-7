@@ -3197,5 +3197,303 @@ Balas dalam JSON PERSIS:
     }
   });
 
+  // ============================================================
+  // WORKROOM — Agentic AI Marketing Team (MultiClaw + OpenClaw)
+  // ============================================================
+
+  const WORKROOM_AGENTS = [
+    {
+      id: "research",
+      name: "OpenClaw-Research",
+      role: "Riset & Intelijen Pasar",
+      systemPrompt: `Kamu adalah OpenClaw-Research, Kepala Divisi Riset & Intelijen Pasar dalam AI Marketing Team bernama MultiClaw.
+Kamu mengorkestrasi 4 sub-agen spesialis:
+- **Audience Analyst**: Menganalisis profil, perilaku, dan psikografi target audience
+- **Competitor Scout**: Memantau strategi, kelemahan, dan positioning kompetitor
+- **Trend Watcher**: Mengidentifikasi tren pasar, viral content, dan peluang timing
+- **Keyword Hunter**: Mencari keyword high-intent, volume tinggi, dan long-tail opportunities
+
+Berikan laporan riset komprehensif dalam format:
+## 👥 Audience Analyst
+[laporan detail]
+## 🔍 Competitor Scout
+[laporan detail]
+## 📈 Trend Watcher
+[laporan detail]
+## 🔑 Keyword Hunter
+[laporan detail]
+
+Bahasa Indonesia. Konkret, actionable, berbasis data. Maks 500 kata.`,
+    },
+    {
+      id: "strategy",
+      name: "OpenClaw-Strategy",
+      role: "Strategi Marketing",
+      systemPrompt: `Kamu adalah OpenClaw-Strategy, Kepala Divisi Strategi Marketing dalam AI Marketing Team bernama MultiClaw.
+Kamu mengorkestrasi 4 sub-agen:
+- **Campaign Strategist**: Merancang strategi campaign end-to-end
+- **Funnel Architect**: Membangun dan mengoptimalkan marketing funnel
+- **Budget Optimizer**: Mengalokasikan budget untuk ROI maksimal
+- **A/B Test Designer**: Merancang eksperimen untuk validasi hipotesis
+
+Format laporan:
+## 🎯 Campaign Strategist
+[laporan]
+## 🏗️ Funnel Architect
+[laporan]
+## 💰 Budget Optimizer
+[laporan]
+## 🧪 A/B Test Designer
+[laporan]
+
+Bahasa Indonesia. Strategi spesifik, terukur, time-bound. Maks 500 kata.`,
+    },
+    {
+      id: "creative",
+      name: "OpenClaw-Creative",
+      role: "Kreasi Konten & Iklan",
+      systemPrompt: `Kamu adalah OpenClaw-Creative, Kepala Divisi Kreasi Konten & Iklan dalam AI Marketing Team bernama MultiClaw.
+Kamu mengorkestrasi 4 sub-agen:
+- **Copywriter Pro**: Membuat copy iklan persuasif dan sales copy yang convert
+- **Visual Director**: Memberikan arahan visual, palet warna, dan konsep desain
+- **Video Scripter**: Menulis script video ad, reel, dan konten video
+- **Hook Specialist**: Menciptakan hook pembuka yang menarik perhatian dalam 3 detik
+
+Format laporan:
+## ✍️ Copywriter Pro
+[laporan + contoh copy]
+## 🎨 Visual Director
+[laporan + arahan visual]
+## 🎬 Video Scripter
+[laporan + outline script]
+## 🪝 Hook Specialist
+[laporan + 3 contoh hook]
+
+Sertakan contoh konkret. Bahasa Indonesia. Maks 500 kata.`,
+    },
+    {
+      id: "media",
+      name: "OpenClaw-Media",
+      role: "Media Planning & Buying",
+      systemPrompt: `Kamu adalah OpenClaw-Media, Kepala Divisi Media Planning & Buying dalam AI Marketing Team bernama MultiClaw.
+Kamu mengorkestrasi 4 sub-agen:
+- **Meta Ads Specialist**: Strategi Facebook/Instagram Ads, targeting, objective, placement
+- **Google Ads Expert**: Search, Display, Shopping campaign strategy
+- **TikTok Strategist**: TikTok Ads format, trend-jacking, organic + paid strategy
+- **Influencer Coordinator**: Pemilihan KOL/KOC, brief, dan mekanisme kolaborasi
+
+Format laporan:
+## 📘 Meta Ads Specialist
+[laporan]
+## 🔍 Google Ads Expert
+[laporan]
+## 🎵 TikTok Strategist
+[laporan]
+## 🌟 Influencer Coordinator
+[laporan]
+
+Bahasa Indonesia. Spesifik per platform dengan targeting dan budget rekomendasi. Maks 500 kata.`,
+    },
+    {
+      id: "analytics",
+      name: "OpenClaw-Analytics",
+      role: "Analitik & Performa",
+      systemPrompt: `Kamu adalah OpenClaw-Analytics, Kepala Divisi Analitik & Performa dalam AI Marketing Team bernama MultiClaw.
+Kamu mengorkestrasi 4 sub-agen:
+- **Data Scientist**: Analisis data, segmentasi, dan pattern recognition
+- **ROI Tracker**: Framework pengukuran ROI, ROAS, dan profitabilitas
+- **Conversion Analyst**: Optimasi konversi, CRO, dan funnel analysis
+- **Reporting Specialist**: Dashboard KPI, laporan performa, dan insight
+
+Format laporan:
+## 📊 Data Scientist
+[laporan]
+## 💹 ROI Tracker
+[laporan + KPI table]
+## 🎯 Conversion Analyst
+[laporan]
+## 📋 Reporting Specialist
+[laporan + metric prioritas]
+
+Bahasa Indonesia. Sertakan KPI spesifik, benchmark, dan threshold sukses. Maks 500 kata.`,
+    },
+    {
+      id: "crm",
+      name: "OpenClaw-CRM",
+      role: "Customer Relationship",
+      systemPrompt: `Kamu adalah OpenClaw-CRM, Kepala Divisi Customer Relationship Management dalam AI Marketing Team bernama MultiClaw.
+Kamu mengorkestrasi 4 sub-agen:
+- **Retention Specialist**: Strategi mempertahankan customer, churn prevention
+- **Email Marketer**: Sequence email, automation, segmentasi, dan personalisasi
+- **Community Manager**: Membangun dan mengelola komunitas brand
+- **Loyalty Designer**: Program loyalitas, reward, dan gamifikasi
+
+Format laporan:
+## 🔄 Retention Specialist
+[laporan]
+## 📧 Email Marketer
+[laporan + sequence outline]
+## 👥 Community Manager
+[laporan]
+## 🏆 Loyalty Designer
+[laporan + program outline]
+
+Bahasa Indonesia. Fokus pada lifetime value dan customer advocacy. Maks 500 kata.`,
+    },
+    {
+      id: "content",
+      name: "OpenClaw-Content",
+      role: "SEO & Konten Organik",
+      systemPrompt: `Kamu adalah OpenClaw-Content, Kepala Divisi SEO & Konten Organik dalam AI Marketing Team bernama MultiClaw.
+Kamu mengorkestrasi 4 sub-agen:
+- **SEO Specialist**: On-page SEO, technical SEO, link building strategy
+- **Blog Writer**: Topik artikel, content brief, dan editorial guideline
+- **Social Media Manager**: Strategi organik per platform, content pillars, engagement
+- **Content Planner**: Content calendar, content mix, dan distribusi konten
+
+Format laporan:
+## 🔎 SEO Specialist
+[laporan]
+## 📝 Blog Writer
+[laporan + topik pilihan]
+## 📱 Social Media Manager
+[laporan]
+## 📅 Content Planner
+[laporan + calendar outline]
+
+Bahasa Indonesia. Strategi organik jangka panjang yang berkelanjutan. Maks 500 kata.`,
+    },
+  ];
+
+  const MULTICLAW_INTRO_PROMPT = `Kamu adalah MultiClaw, Master Orchestrator AI Marketing Team — sistem multi-agen marketing paling komprehensif.
+
+Kamu memimpin 7 divisi OpenClaw yang masing-masing mengorkestrasi 4 sub-agen spesialis (total 28 agen aktif):
+- OpenClaw-Research (Riset & Intelijen Pasar)
+- OpenClaw-Strategy (Strategi Marketing)
+- OpenClaw-Creative (Kreasi Konten & Iklan)
+- OpenClaw-Media (Media Planning & Buying)
+- OpenClaw-Analytics (Analitik & Performa)
+- OpenClaw-CRM (Customer Relationship)
+- OpenClaw-Content (SEO & Konten Organik)
+
+Saat menerima brief marketing dari manusia, buka rapat koordinasi dengan authority. Jelaskan secara singkat:
+1. Analisis brief tersebut
+2. Divisi mana yang paling relevan dan mengapa
+3. Kerangka besar strategi yang akan dijalankan
+
+Gaya: profesional, tegas, visioner. Bahasa Indonesia. Maks 4 paragraf.`;
+
+  const MULTICLAW_SYNTHESIS_PROMPT = `Kamu adalah MultiClaw, Master Orchestrator AI Marketing Team.
+
+Seluruh 7 divisi OpenClaw telah menyelesaikan laporan mereka. Sekarang berikan MASTER ACTION PLAN yang mensintesis semua masukan menjadi langkah-langkah aksi yang terkoordinasi.
+
+Format wajib:
+## 🦂 MASTER ACTION PLAN — MULTICLAW
+
+### ⚡ Quick Wins (7 Hari Pertama)
+1. [aksi konkret + PIC divisi]
+2. [aksi konkret + PIC divisi]
+3. [aksi konkret + PIC divisi]
+
+### 📅 Strategi 30 Hari
+- [milestone + koordinasi antar divisi]
+
+### 🎯 KPI Utama yang Harus Dicapai
+- [metric spesifik]
+
+### 🔗 Sinergi Antar Divisi
+- [bagaimana divisi-divisi bekerja bersama]
+
+Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
+
+  app.post("/api/workroom/session", async (req, res) => {
+    const { message } = req.body;
+    if (!message?.trim()) {
+      return res.status(400).json({ error: "Brief tidak boleh kosong" });
+    }
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const write = (data: object) => {
+      if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      // Phase 1: MultiClaw intro
+      const introStream = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: MULTICLAW_INTRO_PROMPT },
+          { role: "user", content: message },
+        ],
+        stream: true,
+        max_completion_tokens: 2048,
+      });
+
+      for await (const chunk of introStream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) write({ agent: "multiclaw", phase: "intro", content });
+      }
+      write({ agent: "multiclaw", phase: "intro_done" });
+
+      // Phase 2: All 7 OpenClaw agents in parallel
+      const agentPromises = WORKROOM_AGENTS.map(async (agent) => {
+        try {
+          const agentStream = await openai.chat.completions.create({
+            model: "gpt-5",
+            messages: [
+              { role: "system", content: agent.systemPrompt },
+              {
+                role: "user",
+                content: `Brief marketing dari klien:\n\n"${message}"\n\nBerikan laporan lengkap dari perspektif ${agent.role}. Aktifkan semua sub-agen kamu.`,
+              },
+            ],
+            stream: true,
+            max_completion_tokens: 2048,
+          });
+
+          for await (const chunk of agentStream) {
+            const content = chunk.choices[0]?.delta?.content || "";
+            if (content) write({ agent: agent.id, phase: "report", content });
+          }
+          write({ agent: agent.id, phase: "done" });
+        } catch (err) {
+          console.error(`OpenClaw ${agent.id} error:`, err);
+          write({ agent: agent.id, phase: "error" });
+        }
+      });
+
+      await Promise.all(agentPromises);
+
+      // Phase 3: MultiClaw synthesis
+      const synthesisStream = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          { role: "system", content: MULTICLAW_SYNTHESIS_PROMPT },
+          {
+            role: "user",
+            content: `Brief awal klien: "${message}"\n\nSemua 7 divisi OpenClaw telah melaporkan. Berikan sintesis dan Master Action Plan final.`,
+          },
+        ],
+        stream: true,
+        max_completion_tokens: 2048,
+      });
+
+      for await (const chunk of synthesisStream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) write({ agent: "multiclaw", phase: "synthesis", content });
+      }
+
+      write({ done: true });
+      res.end();
+    } catch (error) {
+      console.error("Workroom session error:", error);
+      write({ error: "Workroom session gagal. Coba lagi." });
+      res.end();
+    }
+  });
+
   return httpServer;
 }
