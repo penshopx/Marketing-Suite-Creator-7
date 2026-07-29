@@ -29,6 +29,7 @@ import {
   HelpCircle
 } from "lucide-react";
 import { Link } from "wouter";
+import { streamSSE } from "@/lib/stream-sse";
 
 interface Message {
   role: "user" | "assistant";
@@ -135,60 +136,24 @@ export default function GuideChatbot() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/guide-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: messageText,
-          history: updatedHistory.slice(0, -1),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get response");
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      let assistantMessage = "";
-      let buffer = "";
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          // Accumulate into buffer to handle lines split across chunks
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          // Keep the last (possibly incomplete) line in the buffer
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                if (data.content) {
-                  assistantMessage += data.content;
-                  setMessages((prev) => {
-                    const newMessages = [...prev];
-                    newMessages[newMessages.length - 1] = {
-                      role: "assistant",
-                      content: assistantMessage,
-                    };
-                    return newMessages;
-                  });
-                }
-              } catch (e) {
-                // Skip invalid JSON
+      await streamSSE(
+        "/api/guide-chat",
+        { message: messageText, history: updatedHistory.slice(0, -1) },
+        (data) => {
+          if (data.content) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last?.role === "assistant") {
+                updated[updated.length - 1] = { ...last, content: last.content + (data.content as string) };
               }
-            }
+              return updated;
+            });
           }
-        }
-      }
+        },
+      );
     } catch (error) {
       console.error("Chat error:", error);
       setMessages((prev) => [

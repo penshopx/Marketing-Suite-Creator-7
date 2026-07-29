@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Loader2, Copy, Download, Sparkles, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { streamSSE } from "@/lib/stream-sse";
 
 interface GeneratedArticle {
   id: string;
@@ -42,17 +43,6 @@ export default function AIArticles() {
     setCurrentArticle(null);
 
     try {
-      const response = await fetch("/api/generate-article", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, keywords, tone, length }),
-      });
-
-      if (!response.ok) throw new Error("Failed to generate article");
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
       const newArticle: GeneratedArticle = {
         id: Date.now().toString(),
         title: topic,
@@ -62,38 +52,22 @@ export default function AIArticles() {
       };
       setCurrentArticle(newArticle);
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        // Accumulate into buffer to handle lines split across chunks
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        // Keep the last (possibly incomplete) line in the buffer
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.content) {
-                setCurrentArticle((prev) =>
-                  prev ? { ...prev, content: prev.content + data.content } : prev
-                );
-              }
-              if (data.title) {
-                setCurrentArticle((prev) =>
-                  prev ? { ...prev, title: data.title } : prev
-                );
-              }
-            } catch (e) {
-              // Skip invalid JSON
-            }
+      await streamSSE(
+        "/api/generate-article",
+        { topic, keywords, tone, length },
+        (data) => {
+          if (data.content) {
+            setCurrentArticle((prev) =>
+              prev ? { ...prev, content: prev.content + (data.content as string) } : prev
+            );
           }
-        }
-      }
+          if (data.title) {
+            setCurrentArticle((prev) =>
+              prev ? { ...prev, title: data.title as string } : prev
+            );
+          }
+        },
+      );
 
       setCurrentArticle((prev) => {
         if (prev) {

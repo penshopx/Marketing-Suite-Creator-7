@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Send, Bot, User, Loader2, Sparkles, Trash2, Target, TrendingUp, Megaphone, PenTool, Search, BarChart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { streamSSE } from "@/lib/stream-sse";
 
 interface Message {
   id: string;
@@ -50,61 +51,32 @@ export default function AIExpert() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/expert-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      setMessages((prev) => [
+        ...prev,
+        { id: (Date.now() + 1).toString(), role: "assistant", content: "" },
+      ]);
+
+      await streamSSE(
+        "/api/expert-chat",
+        {
           message: userMessage.content,
           expertType: selectedExpert.id,
           systemPrompt: selectedExpert.prompt,
           history: messages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to send message");
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "",
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        // Accumulate into buffer to handle lines split across chunks
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        // Keep the last (possibly incomplete) line in the buffer
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.content) {
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const lastMessage = newMessages[newMessages.length - 1];
-                  if (lastMessage.role === "assistant") {
-                    lastMessage.content += data.content;
-                  }
-                  return newMessages;
-                });
+        },
+        (data) => {
+          if (data.content) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last?.role === "assistant") {
+                updated[updated.length - 1] = { ...last, content: last.content + (data.content as string) };
               }
-            } catch (e) {
-              // Skip invalid JSON
-            }
+              return updated;
+            });
           }
-        }
-      }
+        },
+      );
     } catch (error) {
       console.error("Error sending message:", error);
       setMessages((prev) => [

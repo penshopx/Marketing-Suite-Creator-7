@@ -1,0 +1,1 @@
+- [SSE Streaming Utility](sse-streaming-utility.md) — all AI tool pages use client/src/lib/stream-sse.ts; new streaming pages must use it too.

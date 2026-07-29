@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Loader2, Copy, Sparkles, Heart, Zap, Trophy, Users, Target, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { streamSSE } from "@/lib/stream-sse";
 
 const storyTypes = [
   { id: "hero_journey", name: "Hero's Journey", icon: Trophy, description: "Customer as the hero overcoming challenges" },
@@ -64,24 +65,6 @@ export default function StoryTelling() {
     setCurrentStory(null);
 
     try {
-      const response = await fetch("/api/generate-story", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storyType,
-          emotion,
-          productName,
-          productBenefit,
-          targetAudience,
-          additionalContext,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to generate story");
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
       const newStory: GeneratedStory = {
         id: Date.now().toString(),
         title: `${productName} Story`,
@@ -92,38 +75,22 @@ export default function StoryTelling() {
       };
       setCurrentStory(newStory);
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        // Accumulate into buffer to handle lines split across chunks
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        // Keep the last (possibly incomplete) line in the buffer
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.content) {
-                setCurrentStory((prev) =>
-                  prev ? { ...prev, content: prev.content + data.content } : prev
-                );
-              }
-              if (data.title) {
-                setCurrentStory((prev) =>
-                  prev ? { ...prev, title: data.title } : prev
-                );
-              }
-            } catch (e) {
-              // Skip invalid JSON
-            }
+      await streamSSE(
+        "/api/generate-story",
+        { storyType, emotion, productName, productBenefit, targetAudience, additionalContext },
+        (data) => {
+          if (data.content) {
+            setCurrentStory((prev) =>
+              prev ? { ...prev, content: prev.content + (data.content as string) } : prev
+            );
           }
-        }
-      }
+          if (data.title) {
+            setCurrentStory((prev) =>
+              prev ? { ...prev, title: data.title as string } : prev
+            );
+          }
+        },
+      );
 
       setCurrentStory((prev) => {
         if (prev) {
