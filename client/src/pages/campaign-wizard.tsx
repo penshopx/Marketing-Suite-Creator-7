@@ -446,7 +446,7 @@ Berikan strategi lengkap meliputi:
                   Generate Winning Strategy
                 </Button>
                 {aiSuggestions.winningStrategy && (
-                  <div className="mt-4 p-4 bg-background rounded-lg">
+                  <div className="mt-4 p-4 bg-background rounded-lg max-h-96 overflow-y-auto">
                     <p className="text-sm whitespace-pre-wrap">{aiSuggestions.winningStrategy}</p>
                   </div>
                 )}
