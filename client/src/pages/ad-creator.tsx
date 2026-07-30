@@ -11,6 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Megaphone, Loader2, Copy, Sparkles, Target, Users, DollarSign } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiYoutube, SiLinkedin, SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const platforms = [
   { id: "meta_ads", name: "Meta Ads", icon: SiFacebook, color: "bg-blue-500/10 text-blue-600" },
@@ -49,6 +52,14 @@ export default function AdCreator() {
   const [generatedAd, setGeneratedAd] = useState<GeneratedAd | null>(null);
   const [adHistory, setAdHistory] = useState<GeneratedAd[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProductName(fields.productName);
+    if (fields.productDescription) setProductDescription(fields.productDescription);
+    if (fields.targetAudience) setTargetAudience(fields.targetAudience);
+    if (fields.uniqueValue) setUniqueValue(fields.uniqueValue);
+  };
 
   const handleGenerate = async () => {
     if (!productName.trim() || !productDescription.trim()) {
@@ -120,14 +131,23 @@ export default function AdCreator() {
   return (
     <div className="flex-1 overflow-auto p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Megaphone className="h-6 w-6 text-primary" />
-            AI Ad Creator
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Create winning ad copy for all major platforms
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Megaphone className="h-6 w-6 text-primary" />
+              AI Ad Creator
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Create winning ad copy for all major platforms
+            </p>
+          </div>
+          <AIAutoFillButton
+            toolName="ad-creator"
+            onFill={handleAutoFill}
+            isAutoFilling={isAutoFilling}
+            triggerAutoFill={triggerAutoFill}
+            compact
+          />
         </div>
 
         <Tabs defaultValue="create" className="space-y-6">
@@ -197,8 +217,9 @@ export default function AdCreator() {
                         id="productName"
                         placeholder="e.g., FitPro Smartwatch"
                         value={productName}
-                        onChange={(e) => setProductName(e.target.value)}
+                        onChange={(e) => { setProductName(e.target.value); markManualEdit("productName"); }}
                         data-testid="input-product-name"
+                        className={cn(aiFilledFields.has("productName") && AI_FIELD_CLASS)}
                       />
                     </div>
 
@@ -208,8 +229,8 @@ export default function AdCreator() {
                         id="productDescription"
                         placeholder="Describe your product and its key features..."
                         value={productDescription}
-                        onChange={(e) => setProductDescription(e.target.value)}
-                        className="min-h-[100px]"
+                        onChange={(e) => { setProductDescription(e.target.value); markManualEdit("productDescription"); }}
+                        className={cn("min-h-[100px]", aiFilledFields.has("productDescription") && AI_FIELD_CLASS)}
                         data-testid="input-product-description"
                       />
                     </div>
@@ -220,8 +241,9 @@ export default function AdCreator() {
                         id="targetAudience"
                         placeholder="e.g., Health-conscious professionals 25-45"
                         value={targetAudience}
-                        onChange={(e) => setTargetAudience(e.target.value)}
+                        onChange={(e) => { setTargetAudience(e.target.value); markManualEdit("targetAudience"); }}
                         data-testid="input-target-audience"
+                        className={cn(aiFilledFields.has("targetAudience") && AI_FIELD_CLASS)}
                       />
                     </div>
 
@@ -231,8 +253,9 @@ export default function AdCreator() {
                         id="uniqueValue"
                         placeholder="e.g., 30-day battery life, water resistant"
                         value={uniqueValue}
-                        onChange={(e) => setUniqueValue(e.target.value)}
+                        onChange={(e) => { setUniqueValue(e.target.value); markManualEdit("uniqueValue"); }}
                         data-testid="input-unique-value"
+                        className={cn(aiFilledFields.has("uniqueValue") && AI_FIELD_CLASS)}
                       />
                     </div>
 

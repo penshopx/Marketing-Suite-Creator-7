@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Users, Sparkles, Loader2, Plus, X, Target, Brain, Heart, ShoppingBag, MapPin, Calendar, DollarSign, Briefcase } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface AudiencePersona {
   name: string;
@@ -39,6 +42,28 @@ export default function AudienceBuilder() {
   const [interests, setInterests] = useState<string[]>([]);
   const [newInterest, setNewInterest] = useState("");
   const [ageRange, setAgeRange] = useState([25, 45]);
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productDescription) {
+      setProductDescription(fields.productDescription);
+    }
+    if (fields.ageRange) {
+      const match = fields.ageRange.match(/(\d+)\D+(\d+)/);
+      if (match) {
+        const min = Math.max(18, Math.min(65, parseInt(match[1])));
+        const max = Math.max(min, Math.min(65, parseInt(match[2])));
+        setAgeRange([min, max]);
+      }
+    }
+    if (fields.interests) {
+      const newInterests = fields.interests
+        .split(",")
+        .map((i: string) => i.trim())
+        .filter(Boolean);
+      setInterests(newInterests);
+    }
+  };
 
   const addInterest = () => {
     if (newInterest.trim() && !interests.includes(newInterest.trim())) {
@@ -122,14 +147,22 @@ export default function AudienceBuilder() {
     <>
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
-              Audience Builder
-            </h1>
-            <p className="text-muted-foreground">
-              Bangun dan pahami target audience ideal Anda untuk kampanye yang winning
-            </p>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <Users className="h-8 w-8 text-primary" />
+                Audience Builder
+              </h1>
+              <p className="text-muted-foreground">
+                Bangun dan pahami target audience ideal Anda untuk kampanye yang winning
+              </p>
+            </div>
+            <AIAutoFillButton
+              toolName="audience-builder"
+              onFill={handleAutoFill}
+              isAutoFilling={isAutoFilling}
+              triggerAutoFill={triggerAutoFill}
+            />
           </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -146,8 +179,9 @@ export default function AudienceBuilder() {
                   data-testid="input-audience-product"
                   placeholder="Jelaskan produk atau layanan Anda..."
                   value={productDescription}
-                  onChange={(e) => setProductDescription(e.target.value)}
+                  onChange={(e) => { setProductDescription(e.target.value); markManualEdit("productDescription"); }}
                   rows={4}
+                  className={cn(aiFilledFields.has("productDescription") && AI_FIELD_CLASS)}
                 />
               </div>
 

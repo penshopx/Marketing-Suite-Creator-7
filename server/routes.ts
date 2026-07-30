@@ -3921,5 +3921,193 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     res.end();
   });
 
+  // AI Auto-Fill endpoint — fills any tool's form fields with AI
+  app.post("/api/ai-autofill", async (req, res) => {
+    try {
+      const { toolName, userBrief = "", campaignContext = {} } = req.body as {
+        toolName: string;
+        userBrief?: string;
+        campaignContext?: Record<string, string>;
+      };
+
+      // Tool-specific field definitions
+      const TOOL_CONFIGS: Record<string, { description: string; fields: Record<string, string> }> = {
+        "campaign-wizard": {
+          description: "Campaign Wizard untuk membuat kampanye iklan digital yang winning",
+          fields: {
+            productName: "Nama produk/layanan (singkat, max 5 kata)",
+            productDescription: "Deskripsi produk yang detail dan menarik (2-3 kalimat)",
+            uniqueValue: "Unique Selling Proposition — apa yang benar-benar membedakan produk ini",
+            targetAge: "Range usia target audience (e.g. '25-45 tahun')",
+            targetGender: "Gender target: Pria / Wanita / Semua",
+            targetInterests: "Minat, jabatan & interest targeting (comma-separated, 8-12 items)",
+            targetPainPoints: "3-5 pain point utama target audience yang paling terasa",
+            competitors: "2-3 kompetitor atau solusi alternatif yang ada di pasaran",
+            competitorWeakness: "Kelemahan kompetitor yang bisa dimanfaatkan produk ini",
+            creativeAngle: "Angle kreatif utama untuk iklan (Problem → Consequence → Solution)",
+            emotionalHook: "1 hook emosional yang kuat untuk opening iklan (max 12 kata)",
+            campaignObjective: "Pilih salah satu: Sales (Purchase) / Traffic / Leads / Awareness / Engagement / Video Views / Messages (WA/Messenger)",
+            platform: "Platform iklan utama: pilih salah satu: Meta Ads / Instagram / TikTok / YouTube / Google Ads / LinkedIn",
+            budget: "Estimasi budget harian yang masuk akal (e.g. 'Rp 100.000')",
+            duration: "Durasi kampanye yang direkomendasikan (e.g. '7 hari')",
+          },
+        },
+        "audience-builder": {
+          description: "Audience Builder untuk membangun buyer persona",
+          fields: {
+            productDescription: "Deskripsi produk/layanan yang lengkap untuk riset audience",
+            ageRange: "Range usia dalam format 'MIN-MAX' (hanya angka, e.g. '25-45')",
+            interests: "Daftar interest/minat yang relevan, comma-separated (8-12 items)",
+          },
+        },
+        "ad-creator": {
+          description: "Ad Creator untuk membuat copy iklan di berbagai platform",
+          fields: {
+            productName: "Nama produk/layanan",
+            productDescription: "Deskripsi produk yang menarik untuk copy iklan",
+            targetAudience: "Target audience utama (demografis + psikografis singkat)",
+            uniqueValue: "Unique Value Proposition yang paling menjual",
+          },
+        },
+        "wa-broadcast": {
+          description: "WA Broadcast Sequence untuk follow-up WhatsApp",
+          fields: {
+            produk: "Nama produk/layanan",
+            harga: "Harga produk (e.g. 'Rp 149.000' atau 'Rp 299.000/bulan')",
+            usp: "USP/keunggulan produk yang membuat orang mau beli",
+          },
+        },
+        "cs-bot-script": {
+          description: "CS Bot Script untuk customer service otomatis",
+          fields: {
+            produk: "Nama produk/bisnis",
+            harga: "Harga dan paket yang tersedia",
+            deskripsiProduk: "Deskripsi produk lengkap + FAQ yang sering ditanya customer",
+            target: "Target customer (e.g. 'Wanita 25-35, ibu muda, pebisnis online')",
+          },
+        },
+        "google-ads": {
+          description: "Google Ads campaign generator",
+          fields: {
+            produk: "Nama produk/layanan",
+            url: "URL landing page (contoh: https://example.com)",
+            keywords: "Kata kunci utama yang relevan (comma-separated, 5-8 keywords)",
+            targetAudience: "Target audience utama",
+            usp: "Unique Selling Proposition",
+            budget: "Estimasi budget harian",
+          },
+        },
+        "landing-page": {
+          description: "Landing Page generator",
+          fields: {
+            productName: "Nama produk/layanan",
+            tagline: "Tagline yang menarik dan memorable (max 8 kata)",
+            description: "Deskripsi produk untuk landing page (2-3 kalimat)",
+            benefits: "3-5 benefit utama produk (comma-separated)",
+            targetMarket: "Target market utama",
+          },
+        },
+        "email-sequence": {
+          description: "Email sequence marketing generator",
+          fields: {
+            productName: "Nama produk/layanan",
+            productDescription: "Deskripsi produk untuk email sequence",
+            targetAudience: "Target audience",
+            uniqueValue: "Unique Value Proposition",
+          },
+        },
+        "hook-generator": {
+          description: "Hook generator untuk content marketing",
+          fields: {
+            topic: "Topik atau produk yang akan dibuat hook-nya",
+            audience: "Target audience yang akan membaca/melihat content",
+            painPoint: "Pain point utama yang ingin disentuh",
+          },
+        },
+        "content-calendar": {
+          description: "Content calendar planning",
+          fields: {
+            brand: "Nama brand/bisnis",
+            niche: "Niche atau industri bisnis",
+            targetAudience: "Target audience konten",
+            goals: "Tujuan konten (awareness/engagement/konversi)",
+          },
+        },
+      };
+
+      const config = TOOL_CONFIGS[toolName];
+      if (!config) {
+        return res.status(400).json({ error: "Unknown tool" });
+      }
+
+      const contextParts: string[] = [];
+      if (Object.keys(campaignContext).length > 0) {
+        contextParts.push("**Konteks Campaign Aktif:**");
+        for (const [k, v] of Object.entries(campaignContext)) {
+          contextParts.push(`- ${k}: ${v}`);
+        }
+      }
+      if (userBrief.trim()) {
+        contextParts.push(`**Brief dari User:**\n${userBrief}`);
+      }
+
+      const fieldList = Object.entries(config.fields)
+        .map(([key, desc]) => `- "${key}": ${desc}`)
+        .join("\n");
+
+      const systemPrompt = `Anda adalah AI Marketing Assistant yang ahli mengisi form tool marketing secara cerdas dan relevan. Selalu balas dalam JSON valid.`;
+
+      const userPrompt = `Tool: ${config.description}
+
+${contextParts.length > 0 ? contextParts.join("\n\n") : "Tidak ada konteks campaign. Gunakan contoh produk yang masuk akal dan relevan."}
+
+Tugas: Isi semua field form berikut dengan nilai yang **realistis, spesifik, dan actionable** untuk tool ini.
+
+Field yang harus diisi:
+${fieldList}
+
+PENTING:
+- Balas HANYA dengan JSON object berisi field-field di atas
+- Semua nilai harus dalam Bahasa Indonesia
+- Jangan gunakan placeholder seperti "contoh produk" — gunakan data yang konkret dan spesifik
+- Nilai harus langsung bisa dipakai tanpa edit besar
+- Jika ada konteks campaign, gunakan data tersebut sebagai basis
+
+Format respons (JSON only, no markdown):
+{
+  "fields": {
+    "fieldName": "nilai yang diisi",
+    ...
+  }
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 1500,
+      });
+
+      const raw = completion.choices[0]?.message?.content ?? "{}";
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return res.status(500).json({ error: "Invalid AI response" });
+      }
+
+      // Support both { fields: {...} } and flat { fieldName: value } shapes
+      const fields = (parsed.fields as Record<string, string>) ?? (parsed as Record<string, string>);
+
+      return res.json({ fields });
+    } catch (error) {
+      console.error("AI auto-fill error:", error);
+      return res.status(500).json({ error: "Failed to auto-fill" });
+    }
+  });
+
   return httpServer;
 }

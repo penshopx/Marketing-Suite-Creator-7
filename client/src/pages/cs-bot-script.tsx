@@ -15,6 +15,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
 import { CampaignContextBar } from "@/components/campaign-context-bar";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface QnaItem {
   pertanyaan: string;
@@ -56,6 +59,14 @@ export default function CsBotScript() {
   const { toast } = useToast();
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.produk) setProduk(fields.produk);
+    if (fields.harga) setHarga(fields.harga);
+    if (fields.deskripsiProduk) setDeskripsiProduk(fields.deskripsiProduk);
+    if (fields.target) setTarget(fields.target);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -147,9 +158,18 @@ export default function CsBotScript() {
             Generate knowledge base Q&A + alur percakapan CS siap pakai di Respond.io, Qontak, dll
           </p>
         </div>
-        <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-          Terinspirasi Cekat.AI
-        </Badge>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+            Terinspirasi Cekat.AI
+          </Badge>
+          <AIAutoFillButton
+            toolName="cs-bot-script"
+            onFill={handleAutoFill}
+            isAutoFilling={isAutoFilling}
+            triggerAutoFill={triggerAutoFill}
+            compact
+          />
+        </div>
       </div>
 
       <CampaignContextBar
@@ -175,9 +195,9 @@ export default function CsBotScript() {
               <Input
                 placeholder="e.g. Serum Wajah, Kursus Trading"
                 value={produk}
-                onChange={(e) => setProduk(e.target.value)}
+                onChange={(e) => { setProduk(e.target.value); markManualEdit("produk"); }}
                 data-testid="input-produk-csbot"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("produk") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -185,9 +205,9 @@ export default function CsBotScript() {
               <Input
                 placeholder="e.g. Rp 149k / Paket Basic 299k, Pro 599k"
                 value={harga}
-                onChange={(e) => setHarga(e.target.value)}
+                onChange={(e) => { setHarga(e.target.value); markManualEdit("harga"); }}
                 data-testid="input-harga-csbot"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("harga") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -195,9 +215,9 @@ export default function CsBotScript() {
               <Textarea
                 placeholder="Jelaskan produk Anda, fitur, garansi, pengiriman, kebijakan refund, dll. Semakin detail = script lebih akurat"
                 value={deskripsiProduk}
-                onChange={(e) => setDeskripsiProduk(e.target.value)}
+                onChange={(e) => { setDeskripsiProduk(e.target.value); markManualEdit("deskripsiProduk"); }}
                 data-testid="input-desc-csbot"
-                className="mt-1 h-28 resize-none"
+                className={cn("mt-1 h-28 resize-none", aiFilledFields.has("deskripsiProduk") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -205,9 +225,9 @@ export default function CsBotScript() {
               <Input
                 placeholder="e.g. Wanita 20-35, ibu muda, pebisnis online"
                 value={target}
-                onChange={(e) => setTarget(e.target.value)}
+                onChange={(e) => { setTarget(e.target.value); markManualEdit("target"); }}
                 data-testid="input-target-csbot"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("target") && AI_FIELD_CLASS)}
               />
             </div>
             <div>

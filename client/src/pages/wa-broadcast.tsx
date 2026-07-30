@@ -14,6 +14,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
 import { CampaignContextBar } from "@/components/campaign-context-bar";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface BroadcastMessage {
   day: number;
@@ -64,6 +67,13 @@ export default function WaBroadcast() {
   const { toast } = useToast();
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.produk) setProduk(fields.produk);
+    if (fields.harga) setHarga(fields.harga);
+    if (fields.usp) setUsp(fields.usp);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -160,9 +170,18 @@ export default function WaBroadcast() {
             Generate urutan pesan follow-up otomatis 7–30 hari siap blast ke WhatsApp
           </p>
         </div>
-        <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800">
-          Terinspirasi Cekat.AI
-        </Badge>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800">
+            Terinspirasi Cekat.AI
+          </Badge>
+          <AIAutoFillButton
+            toolName="wa-broadcast"
+            onFill={handleAutoFill}
+            isAutoFilling={isAutoFilling}
+            triggerAutoFill={triggerAutoFill}
+            compact
+          />
+        </div>
       </div>
 
       <CampaignContextBar
@@ -187,9 +206,9 @@ export default function WaBroadcast() {
               <Input
                 placeholder="e.g. Serum Wajah Glowing, Kursus Meta Ads"
                 value={produk}
-                onChange={(e) => setProduk(e.target.value)}
+                onChange={(e) => { setProduk(e.target.value); markManualEdit("produk"); }}
                 data-testid="input-produk-broadcast"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("produk") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -197,9 +216,9 @@ export default function WaBroadcast() {
               <Input
                 placeholder="e.g. Rp 149.000 / Rp 299.000/bulan"
                 value={harga}
-                onChange={(e) => setHarga(e.target.value)}
+                onChange={(e) => { setHarga(e.target.value); markManualEdit("harga"); }}
                 data-testid="input-harga-broadcast"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("harga") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -207,9 +226,9 @@ export default function WaBroadcast() {
               <Textarea
                 placeholder="Apa yang membuat produk ini berbeda? Garansi? Terbukti?"
                 value={usp}
-                onChange={(e) => setUsp(e.target.value)}
+                onChange={(e) => { setUsp(e.target.value); markManualEdit("usp"); }}
                 data-testid="input-usp-broadcast"
-                className="mt-1 h-16 resize-none"
+                className={cn("mt-1 h-16 resize-none", aiFilledFields.has("usp") && AI_FIELD_CLASS)}
               />
             </div>
             <div>

@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Circle, ArrowRight, ArrowLeft, Target, Users, Lightbulb, Rocket, TrendingUp, Sparkles, Trophy, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface WizardStep {
   id: number;
@@ -50,6 +53,7 @@ function AIOutputCard({ content }: { content: string }) {
 export default function CampaignWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
   const [campaignData, setCampaignData] = useState({
     productName: "",
     productDescription: "",
@@ -73,6 +77,28 @@ export default function CampaignWizard() {
 
   const updateData = (field: string, value: string) => {
     setCampaignData(prev => ({ ...prev, [field]: value }));
+    markManualEdit(field);
+  };
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    setCampaignData(prev => ({
+      ...prev,
+      ...(fields.productName !== undefined && { productName: fields.productName }),
+      ...(fields.productDescription !== undefined && { productDescription: fields.productDescription }),
+      ...(fields.uniqueValue !== undefined && { uniqueValue: fields.uniqueValue }),
+      ...(fields.targetAge !== undefined && { targetAge: fields.targetAge }),
+      ...(fields.targetGender !== undefined && { targetGender: fields.targetGender }),
+      ...(fields.targetInterests !== undefined && { targetInterests: fields.targetInterests }),
+      ...(fields.targetPainPoints !== undefined && { targetPainPoints: fields.targetPainPoints }),
+      ...(fields.competitors !== undefined && { competitors: fields.competitors }),
+      ...(fields.competitorWeakness !== undefined && { competitorWeakness: fields.competitorWeakness }),
+      ...(fields.creativeAngle !== undefined && { creativeAngle: fields.creativeAngle }),
+      ...(fields.emotionalHook !== undefined && { emotionalHook: fields.emotionalHook }),
+      ...(fields.campaignObjective !== undefined && { campaignObjective: fields.campaignObjective }),
+      ...(fields.platform !== undefined && { platform: fields.platform }),
+      ...(fields.budget !== undefined && { budget: fields.budget }),
+      ...(fields.duration !== undefined && { duration: fields.duration }),
+    }));
   };
 
   const generateAISuggestion = async (field: string, prompt: string) => {
@@ -115,6 +141,7 @@ export default function CampaignWizard() {
                 placeholder="Contoh: SkinCare Pro"
                 value={campaignData.productName}
                 onChange={(e) => updateData("productName", e.target.value)}
+                className={cn(aiFilledFields.has("productName") && AI_FIELD_CLASS)}
               />
             </div>
             <div className="space-y-2">
@@ -126,7 +153,7 @@ export default function CampaignWizard() {
                 value={campaignData.productDescription}
                 onChange={(e) => updateData("productDescription", e.target.value)}
                 rows={5}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("productDescription") && AI_FIELD_CLASS)}
               />
             </div>
             <div className="space-y-2">
@@ -165,7 +192,7 @@ Fokus pada: manfaat nyata, emosi calon pembeli, dan diferensiasi yang tidak muda
                 value={campaignData.uniqueValue}
                 onChange={(e) => updateData("uniqueValue", e.target.value)}
                 rows={4}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("uniqueValue") && AI_FIELD_CLASS)}
               />
               {aiSuggestions.usp && <AIOutputCard content={aiSuggestions.usp} />}
             </div>
@@ -184,6 +211,7 @@ Fokus pada: manfaat nyata, emosi calon pembeli, dan diferensiasi yang tidak muda
                   placeholder="Contoh: 25-55 tahun"
                   value={campaignData.targetAge}
                   onChange={(e) => updateData("targetAge", e.target.value)}
+                  className={cn(aiFilledFields.has("targetAge") && AI_FIELD_CLASS)}
                 />
               </div>
               <div className="space-y-2">
@@ -194,6 +222,7 @@ Fokus pada: manfaat nyata, emosi calon pembeli, dan diferensiasi yang tidak muda
                   placeholder="Pria / Wanita / Semua"
                   value={campaignData.targetGender}
                   onChange={(e) => updateData("targetGender", e.target.value)}
+                  className={cn(aiFilledFields.has("targetGender") && AI_FIELD_CLASS)}
                 />
               </div>
             </div>
@@ -208,7 +237,7 @@ Fokus pada: manfaat nyata, emosi calon pembeli, dan diferensiasi yang tidak muda
                 value={campaignData.targetInterests}
                 onChange={(e) => updateData("targetInterests", e.target.value)}
                 rows={4}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("targetInterests") && AI_FIELD_CLASS)}
               />
             </div>
             <div className="space-y-2">
@@ -251,7 +280,7 @@ Fokus pada masalah yang paling sering dialami sehari-hari dan paling menyakitkan
                 value={campaignData.targetPainPoints}
                 onChange={(e) => updateData("targetPainPoints", e.target.value)}
                 rows={4}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("targetPainPoints") && AI_FIELD_CLASS)}
               />
               {aiSuggestions.painPoints && <AIOutputCard content={aiSuggestions.painPoints} />}
             </div>
@@ -270,7 +299,7 @@ Fokus pada masalah yang paling sering dialami sehari-hari dan paling menyakitkan
                 value={campaignData.competitors}
                 onChange={(e) => updateData("competitors", e.target.value)}
                 rows={4}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("competitors") && AI_FIELD_CLASS)}
               />
             </div>
             <div className="space-y-2">
@@ -325,7 +354,7 @@ Berikan 3 kalimat positioning siap pakai.`
                 value={campaignData.competitorWeakness}
                 onChange={(e) => updateData("competitorWeakness", e.target.value)}
                 rows={4}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("competitorWeakness") && AI_FIELD_CLASS)}
               />
               {aiSuggestions.competitorAnalysis && <AIOutputCard content={aiSuggestions.competitorAnalysis} />}
             </div>
@@ -377,7 +406,7 @@ Variasikan jenis angle: Fear of Loss, Curiosity, Story, Before-After, Authority,
                 value={campaignData.creativeAngle}
                 onChange={(e) => updateData("creativeAngle", e.target.value)}
                 rows={4}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("creativeAngle") && AI_FIELD_CLASS)}
               />
               {aiSuggestions.creativeAngle && <AIOutputCard content={aiSuggestions.creativeAngle} />}
             </div>
@@ -424,7 +453,7 @@ Format: [nomor]. "[teks hook]"`
                 value={campaignData.emotionalHook}
                 onChange={(e) => updateData("emotionalHook", e.target.value)}
                 rows={4}
-                className="resize-y"
+                className={cn("resize-y", aiFilledFields.has("emotionalHook") && AI_FIELD_CLASS)}
               />
               {aiSuggestions.emotionalHook && <AIOutputCard content={aiSuggestions.emotionalHook} />}
             </div>
@@ -482,6 +511,7 @@ Format: [nomor]. "[teks hook]"`
                   placeholder="Contoh: Rp 100.000"
                   value={campaignData.budget}
                   onChange={(e) => updateData("budget", e.target.value)}
+                  className={cn(aiFilledFields.has("budget") && AI_FIELD_CLASS)}
                 />
               </div>
               <div className="space-y-2">
@@ -492,6 +522,7 @@ Format: [nomor]. "[teks hook]"`
                   placeholder="Contoh: 7 hari"
                   value={campaignData.duration}
                   onChange={(e) => updateData("duration", e.target.value)}
+                  className={cn(aiFilledFields.has("duration") && AI_FIELD_CLASS)}
                 />
               </div>
             </div>
@@ -609,15 +640,29 @@ Buatkan Winning Campaign Strategy yang komprehensif dan siap dieksekusi. Format 
     <>
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-primary" />
-              Campaign Wizard
-            </h1>
-            <p className="text-muted-foreground">
-              Ikuti panduan langkah demi langkah untuk membuat kampanye iklan yang winning
-            </p>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <Trophy className="h-8 w-8 text-primary" />
+                Campaign Wizard
+              </h1>
+              <p className="text-muted-foreground">
+                Ikuti panduan langkah demi langkah untuk membuat kampanye iklan yang winning
+              </p>
+            </div>
+            <AIAutoFillButton
+              toolName="campaign-wizard"
+              onFill={handleAutoFill}
+              isAutoFilling={isAutoFilling}
+              triggerAutoFill={triggerAutoFill}
+            />
           </div>
+          {isAutoFilling && (
+            <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg px-3 py-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              AI sedang menganalisis dan mengisi semua field...
+            </div>
+          )}
 
           <Card>
             <CardHeader className="pb-4">
