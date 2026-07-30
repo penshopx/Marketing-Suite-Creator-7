@@ -3975,9 +3975,9 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
         ? `Campaign: "${project.name}"\nBrief: ${project.brief}`
         : "";
 
-      // Use gpt-4o for quality on par with original Workroom generation (Task #21)
+      // Use gpt-5 for quality on par with original Workroom generation (Task #21, upgraded Task #44)
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-5",
         messages: [
           {
             role: "system",
@@ -4592,7 +4592,7 @@ Format respons (JSON only, no markdown):
 }`;
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
