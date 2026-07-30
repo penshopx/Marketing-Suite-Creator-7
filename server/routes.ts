@@ -78,15 +78,34 @@ async function getBusinessProfileContext(req: Request): Promise<string> {
  * then terminates with `data: {"done":true}` and ends the response.
  *
  * Centralises the stream-loop so a fix here covers every SSE route. (Task #23)
+ * Per-token timeout prevents silent hangs when the AI stream stalls mid-response. (Task #5)
  */
 async function pipeStreamToSSE(
   stream: AsyncIterable<{ choices: Array<{ delta?: { content?: string | null } }> }>,
   res: Response,
   payloadKey = "content",
+  tokenTimeoutMs = 45_000,
 ): Promise<void> {
   try {
-    for await (const chunk of stream) {
-      const token = chunk.choices[0]?.delta?.content || "";
+    const iterator = stream[Symbol.asyncIterator]();
+    while (true) {
+      // Race each chunk against a per-token timeout so a stalled stream is
+      // detected and surfaced rather than hanging the client indefinitely.
+      let timeoutId: ReturnType<typeof setTimeout>;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error(`SSE token timeout after ${tokenTimeoutMs}ms`)),
+          tokenTimeoutMs,
+        );
+      });
+      let result: IteratorResult<{ choices: Array<{ delta?: { content?: string | null } }> }>;
+      try {
+        result = await Promise.race([iterator.next(), timeoutPromise]);
+      } finally {
+        clearTimeout(timeoutId!);
+      }
+      if (result.done) break;
+      const token = result.value.choices[0]?.delta?.content || "";
       if (token && !res.writableEnded) {
         res.write(`data: ${JSON.stringify({ [payloadKey]: token })}\n\n`);
       }

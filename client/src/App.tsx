@@ -1,6 +1,7 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Link, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { Sparkles } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -133,6 +134,26 @@ function Router() {
   );
 }
 
+function ActiveProfileBadge() {
+  const { user } = useAuth();
+  const { data: profile } = useQuery<{ businessName?: string; businessType?: string } | null>({
+    queryKey: ["/api/business-profile"],
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  if (!user || !profile?.businessName) return null;
+  return (
+    <Link href="/settings">
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-300/40 dark:border-purple-700/40 cursor-pointer hover:bg-purple-500/15 transition-colors max-w-[180px]">
+        <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+        <span className="text-xs font-medium text-purple-700 dark:text-purple-300 truncate leading-none">
+          {profile.businessName}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 function AuthenticatedApp() {
   const sidebarStyle = {
     "--sidebar-width": "16rem",
@@ -147,6 +168,7 @@ function AuthenticatedApp() {
           <div className="flex flex-col flex-1 overflow-hidden">
             <header className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <ActiveProfileBadge />
               <ThemeToggle />
             </header>
             <main className="flex-1 overflow-auto">
