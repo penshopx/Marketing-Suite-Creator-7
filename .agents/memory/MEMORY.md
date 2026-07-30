@@ -1,1 +1,2 @@
 - [SSE Streaming Utility](sse-streaming-utility.md) — all AI tool pages use client/src/lib/stream-sse.ts; new streaming pages must use it too.
+- [Workroom Phase Generation](workroom-phase-generation.md) — gpt-5 needs max_completion_tokens≥8000; stream:true required; ~43s per phase; server restart needed after routes.ts changes.

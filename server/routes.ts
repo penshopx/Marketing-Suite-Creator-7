@@ -1797,7 +1797,7 @@ ATURAN FORMAT JAWABAN:
       messages.push({ role: "user", content: message });
 
       const stream = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-5",
         messages,
         stream: true,
       });
@@ -3829,32 +3829,61 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
       write({ type: "agent_start", agentId: agent.id, agentName: agent.name });
 
       try {
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+        // Use streaming so the SSE connection stays alive during long AI generation
+        const stream = await openai.chat.completions.create({
+          model: "gpt-5",
           messages: [
             { role: "system", content: agent.systemPrompt },
             { role: "user", content: `Brief kampanye:\n\n"${project.brief}"\n\nNama proyek: ${project.name}\n\nHasilkan deliverable konkret untuk kampanye ini.` },
           ],
-          max_completion_tokens: 3000,
+          stream: true,
+          max_completion_tokens: 8000,
         });
 
-        const raw = completion.choices[0]?.message?.content ?? "";
+        let raw = "";
+        for await (const chunk of stream) {
+          const token = chunk.choices[0]?.delta?.content || "";
+          if (token) {
+            raw += token;
+            // Send periodic progress so the client stays alive
+            write({ type: "agent_progress", agentId: agent.id, chars: raw.length });
+          }
+        }
+
+        // If model produced nothing at all, emit a heartbeat so client doesn't hang
+        if (!raw.trim()) {
+          write({ type: "agent_progress", agentId: agent.id, chars: 0 });
+        }
         
         // Extract JSON from response
         let deliverableData: Array<{ type: string; title: string; content: string }> = [];
         try {
-          // Try to find JSON array in response
-          const jsonMatch = raw.match(/\[[\s\S]*\]/);
+          // Strip markdown code fences that reasoning models often add
+          const stripped = raw
+            .replace(/```json\s*/gi, "")
+            .replace(/```\s*/g, "")
+            .trim();
+
+          // Find outermost JSON array
+          const jsonMatch = stripped.match(/\[[\s\S]*\]/);
           if (jsonMatch) {
-            deliverableData = JSON.parse(jsonMatch[0]);
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              deliverableData = parsed;
+            }
           }
-        } catch {
-          // Fallback: create a single deliverable with raw content
-          deliverableData = [{
-            type: agent.deliverables[0]?.type ?? "report",
-            title: `Laporan ${agent.name}`,
+        } catch (parseErr) {
+          console.error(`JSON parse error for ${agent.id}:`, parseErr);
+        }
+
+        // Fallback: if JSON extraction failed but we have raw content, save it as a single deliverable
+        if (deliverableData.length === 0 && raw.trim().length > 0) {
+          console.warn(`${agent.id}: falling back to raw content (${raw.length} chars)`);
+          deliverableData = agent.deliverables.map((def) => ({
+            type: def.type,
+            title: `${agent.name} — ${def.type.replace(/_/g, " ")}`,
             content: raw,
-          }];
+          }));
         }
 
         // Save each deliverable to DB
