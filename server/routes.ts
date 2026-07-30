@@ -82,15 +82,25 @@ async function pipeStreamToSSE(
   res: Response,
   payloadKey = "content",
 ): Promise<void> {
-  for await (const chunk of stream) {
-    const token = chunk.choices[0]?.delta?.content || "";
-    if (token && !res.writableEnded) {
-      res.write(`data: ${JSON.stringify({ [payloadKey]: token })}\n\n`);
+  try {
+    for await (const chunk of stream) {
+      const token = chunk.choices[0]?.delta?.content || "";
+      if (token && !res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ [payloadKey]: token })}\n\n`);
+      }
     }
-  }
-  if (!res.writableEnded) {
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    }
+  } catch (err) {
+    // Headers already sent — can't switch to HTTP 500. Send an SSE error event
+    // so the client can surface a message rather than hanging indefinitely. (Task #22)
+    console.error("[SSE] Stream error:", err);
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ error: "Koneksi AI terputus — coba lagi." })}\n\n`);
+      res.end();
+    }
   }
 }
 
