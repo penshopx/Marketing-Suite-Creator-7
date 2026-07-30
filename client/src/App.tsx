@@ -136,22 +136,40 @@ function Router() {
 
 function ActiveProfileBadge() {
   const { user } = useAuth();
-  const { data: profile } = useQuery<{ businessName?: string; businessType?: string } | null>({
+  const { data: profile, isSuccess } = useQuery<{ businessName?: string; businessType?: string } | null>({
     queryKey: ["/api/business-profile"],
     enabled: !!user,
     staleTime: 60_000,
   });
-  if (!user || !profile?.businessName) return null;
-  return (
-    <Link href="/settings">
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-300/40 dark:border-purple-700/40 cursor-pointer hover:bg-purple-500/15 transition-colors max-w-[180px]">
-        <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-        <span className="text-xs font-medium text-purple-700 dark:text-purple-300 truncate leading-none">
-          {profile.businessName}
+
+  if (!user) return null;
+
+  // Profile exists — show active profile pill
+  if (profile?.businessName) {
+    return (
+      <Link href="/settings">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-300/40 dark:border-purple-700/40 cursor-pointer hover:bg-purple-500/15 transition-colors max-w-[180px]">
+          <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+          <span className="text-xs font-medium text-purple-700 dark:text-purple-300 truncate leading-none">
+            {profile.businessName}
+          </span>
+        </div>
+      </Link>
+    );
+  }
+
+  // Query resolved but no profile — nudge user to set one up
+  if (isSuccess && !profile?.businessName) {
+    return (
+      <Link href="/settings">
+        <span className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
+          Isi profil bisnis →
         </span>
-      </div>
-    </Link>
-  );
+      </Link>
+    );
+  }
+
+  return null;
 }
 
 function AuthenticatedApp() {

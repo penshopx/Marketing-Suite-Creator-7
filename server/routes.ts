@@ -4536,8 +4536,9 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
             const snippets = delivs
               .filter((d) => d.content && d.content.length > 20)
               .map((d) => {
-                const preview = d.content.length > 300
-                  ? d.content.slice(0, 300) + "..."
+                // 600 chars gives AI enough room to find product name + price
+                const preview = d.content.length > 600
+                  ? d.content.slice(0, 600) + "..."
                   : d.content;
                 return `- ${d.deliverableType} [fase ${d.phase}]: ${preview}`;
               })
@@ -4580,6 +4581,7 @@ PENTING:
 - Jangan gunakan placeholder seperti "contoh produk" — gunakan data yang konkret dan spesifik
 - Nilai harus langsung bisa dipakai tanpa edit besar
 - Jika ada konteks campaign, gunakan data tersebut sebagai basis
+- Jika ada Riwayat Workroom Campaign: ekstrak nama produk/bisnis dari deliverable dan masukkan ke field "produk" atau "nama"; ekstrak harga (format "Rp X.XXX" atau "Rp X.XXX/bulan") dari deliverable dan masukkan ke field "harga" — jangan mengarang nilai jika sudah ada di teks
 
 Format respons (JSON only, no markdown):
 {
