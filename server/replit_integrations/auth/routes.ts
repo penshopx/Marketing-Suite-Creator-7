@@ -2,6 +2,9 @@ import type { Express } from "express";
 import { authStorage } from "./storage";
 import { isAuthenticated } from "./replitAuth";
 import bcrypt from "bcryptjs";
+import { db } from "../../db";
+import { users } from "@shared/models/auth";
+import { eq } from "drizzle-orm";
 
 export function registerAuthRoutes(app: Express): void {
   app.get("/api/auth/user", async (req: any, res) => {
@@ -155,6 +158,70 @@ export function registerAuthRoutes(app: Express): void {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login gagal" });
+    }
+  });
+
+  // ── Forgot / Reset Password (no-email, token shown on screen) ──────────────
+  // In-memory store: email → { tokenHash, expiry }. Cleared on restart (tokens live 15 min).
+  const resetTokens = new Map<string, { tokenHash: string; expiry: Date }>();
+
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body as { email?: string };
+      if (!email) return res.status(400).json({ error: "Email diperlukan" });
+      const user = await authStorage.getUserByEmail(email.toLowerCase().trim());
+      if (!user) {
+        // Return the same response to avoid email enumeration
+        return res.json({ success: true });
+      }
+      const token = require("crypto").randomBytes(3).toString("hex").toUpperCase(); // 6-char e.g. "A3F9C2"
+      const tokenHash = await bcrypt.hash(token, 8);
+      resetTokens.set(email.toLowerCase().trim(), {
+        tokenHash,
+        expiry: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      });
+      // Return token directly (no email service — displayed on screen)
+      res.json({ success: true, token });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ error: "Terjadi kesalahan" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { email, token, newPassword } = req.body as {
+        email?: string; token?: string; newPassword?: string;
+      };
+      if (!email || !token || !newPassword) {
+        return res.status(400).json({ error: "Data tidak lengkap" });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Password minimal 6 karakter" });
+      }
+      const key = email.toLowerCase().trim();
+      const stored = resetTokens.get(key);
+      if (!stored) {
+        return res.status(400).json({ error: "Kode reset tidak ditemukan atau sudah kadaluwarsa" });
+      }
+      if (new Date() > stored.expiry) {
+        resetTokens.delete(key);
+        return res.status(400).json({ error: "Kode reset sudah kadaluwarsa. Minta kode baru." });
+      }
+      const isValid = await bcrypt.compare(token.toUpperCase(), stored.tokenHash);
+      if (!isValid) {
+        return res.status(400).json({ error: "Kode reset salah" });
+      }
+      const user = await authStorage.getUserByEmail(key);
+      if (!user) return res.status(404).json({ error: "Akun tidak ditemukan" });
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await db.update(users).set({ password: hashedPassword } as any).where(eq(users.id, user.id));
+      resetTokens.delete(key);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ error: "Terjadi kesalahan" });
     }
   });
 
