@@ -54,18 +54,46 @@ async function getBusinessProfileContext(req: Request): Promise<string> {
     const p = rows[0];
     const lines: string[] = [];
     if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
-    if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
-    if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
+    if (p.businessType) lines.push(`Tipe Bisnis: ${p.businessType}`);
+    if (p.industry) lines.push(`Industri: ${p.industry}`);
+    if (p.productsServices) lines.push(`Produk/Layanan: ${p.productsServices}`);
     if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
+    if (p.valueProposition) lines.push(`Value Proposition/USP: ${p.valueProposition}`);
+    if (p.tone) lines.push(`Tone Komunikasi: ${p.tone}`);
     if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
-    const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
-    if (platforms) lines.push(`Platform Utama: ${platforms}`);
+    if (p.goals) lines.push(`Goals: ${p.goals}`);
+    if (p.competitors) lines.push(`Kompetitor: ${p.competitors}`);
+    if (p.additionalContext) lines.push(`Konteks Tambahan: ${p.additionalContext}`);
     if (lines.length === 0) return "";
     return `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
   } catch {
     return "";
   }
 }
+/**
+ * Pipes an OpenAI streaming completion to an active SSE response.
+ * Sends `data: {"content":"..."}` per token (or `{"<key>":"..."}` if payloadKey is set),
+ * then terminates with `data: {"done":true}` and ends the response.
+ *
+ * Centralises the stream-loop so a fix here covers every SSE route. (Task #23)
+ */
+async function pipeStreamToSSE(
+  stream: AsyncIterable<{ choices: Array<{ delta?: { content?: string | null } }> }>,
+  res: Response,
+  payloadKey = "content",
+): Promise<void> {
+  for await (const chunk of stream) {
+    const token = chunk.choices[0]?.delta?.content || "";
+    if (token && !res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ [payloadKey]: token })}\n\n`);
+    }
+  }
+  if (!res.writableEnded) {
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -85,12 +113,16 @@ export async function registerRoutes(
           const p = rows[0];
           const lines: string[] = [];
           if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
-          if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
-          if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
+          if (p.businessType) lines.push(`Tipe Bisnis: ${p.businessType}`);
+          if (p.industry) lines.push(`Industri: ${p.industry}`);
+          if (p.productsServices) lines.push(`Produk/Layanan: ${p.productsServices}`);
           if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
+          if (p.valueProposition) lines.push(`Value Proposition/USP: ${p.valueProposition}`);
+          if (p.tone) lines.push(`Tone Komunikasi: ${p.tone}`);
           if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
-          const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
-          if (platforms) lines.push(`Platform Utama: ${platforms}`);
+          if (p.goals) lines.push(`Goals: ${p.goals}`);
+          if (p.competitors) lines.push(`Kompetitor: ${p.competitors}`);
+          if (p.additionalContext) lines.push(`Konteks Tambahan: ${p.additionalContext}`);
           if (lines.length > 0) {
             (req as any).bpCtx = `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
           }
@@ -128,15 +160,7 @@ export async function registerRoutes(
         max_completion_tokens: 2048,
       });
 
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
-        }
-      }
-
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
+      await pipeStreamToSSE(stream, res);
     } catch (error) {
       console.error("Chat error:", error);
       res.status(500).json({ error: "Failed to process chat" });
@@ -171,15 +195,7 @@ export async function registerRoutes(
         max_completion_tokens: 2048,
       });
 
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
-        }
-      }
-
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
+      await pipeStreamToSSE(stream, res);
     } catch (error) {
       console.error("Expert chat error:", error);
       res.status(500).json({ error: "Failed to process expert chat" });
@@ -878,15 +894,7 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
         max_completion_tokens: 2048,
       });
 
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
-        }
-      }
-
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
+      await pipeStreamToSSE(stream, res);
     } catch (error) {
       console.error("Story generation error:", error);
       res.status(500).json({ error: "Failed to generate story" });
@@ -1858,15 +1866,7 @@ ATURAN FORMAT JAWABAN:
         stream: true,
       });
 
-      for await (const chunk of stream) {
-        const text = chunk.choices[0]?.delta?.content;
-        if (text) {
-          res.write(`data: ${JSON.stringify({ text })}\n\n`);
-        }
-      }
-
-      res.write(`data: [DONE]\n\n`);
-      res.end();
+      await pipeStreamToSSE(stream, res, "text");
     } catch (error) {
       console.error("Guide chat error:", error);
       res.status(500).json({ error: "Failed to process guide chat" });

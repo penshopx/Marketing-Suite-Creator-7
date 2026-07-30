@@ -71,7 +71,11 @@ export default function CsBotScript() {
         deliverableType: string; content: string; projectName: string; title: string;
       };
       if (deliverableType === "cs_bot_script") {
-        setProduk(projectName);
+        // Extract price and product name from script content
+        const priceMatch = content.match(/Rp[\s]?[\d.,]+(?:\s*(?:rb|ribu|k|juta|M))?/i);
+        if (priceMatch) setHarga(priceMatch[0].replace(/\s+/g, " ").trim());
+        const produkMatch = content.match(/(?:produk|nama produk)[:\s]+([^\n,.(]{3,60})/i);
+        setProduk(produkMatch ? produkMatch[1].trim() : projectName);
         setDeskripsiProduk(content.slice(0, 300));
       }
       setWorkroomBanner(`${projectName} — ${title}`);

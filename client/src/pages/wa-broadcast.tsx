@@ -79,7 +79,12 @@ export default function WaBroadcast() {
         deliverableType: string; content: string; projectName: string; title: string;
       };
       if (deliverableType === "wa_broadcast") {
-        setProduk(projectName);
+        // Extract price (e.g. "Rp 150.000" or "Rp150rb")
+        const priceMatch = content.match(/Rp[\s]?[\d.,]+(?:\s*(?:rb|ribu|k|juta|M))?/i);
+        if (priceMatch) setHarga(priceMatch[0].replace(/\s+/g, " ").trim());
+        // Extract explicit product name, fall back to project name
+        const produkMatch = content.match(/(?:produk|nama produk)[:\s]+([^\n,.(]{3,60})/i);
+        setProduk(produkMatch ? produkMatch[1].trim() : projectName);
         setUsp(content.split("\n").filter(Boolean)[0]?.slice(0, 150) ?? "");
       }
       setWorkroomBanner(`${projectName} — ${title}`);
