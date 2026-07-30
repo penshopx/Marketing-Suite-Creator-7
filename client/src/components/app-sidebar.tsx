@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -289,6 +290,31 @@ function MainNav() {
   );
 }
 
+function BusinessProfileIndicator() {
+  const { user } = useAuth();
+  const { data: profile } = useQuery<{ businessName?: string; businessType?: string }>({
+    queryKey: ["/api/business-profile"],
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  if (!user || !profile?.businessName) return null;
+
+  return (
+    <Link href="/settings">
+      <div className="px-2 py-2 rounded-lg bg-purple-500/10 border border-purple-300/40 dark:border-purple-700/40 cursor-pointer hover:bg-purple-500/15 transition-colors">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+          <span className="text-xs font-semibold text-purple-700 dark:text-purple-400 truncate">
+            {profile.businessName}
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-0.5 ml-4">AI pakai profil bisnis ini</p>
+      </div>
+    </Link>
+  );
+}
+
 function CampaignIndicator() {
   const { campaign, clear } = useCampaignStore();
   if (!campaign.produk && !campaign.niche) return null;
@@ -376,6 +402,11 @@ export function AppSidebar() {
         {/* Execution Plan Progress */}
         <div className="px-2 pb-1">
           <ExecutionPlanProgress />
+        </div>
+
+        {/* Business Profile Indicator */}
+        <div className="px-2 pb-1">
+          <BusinessProfileIndicator />
         </div>
 
         {/* Active Campaign Indicator */}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,8 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Wand2, Loader2, Sparkles } from "lucide-react";
+import { Wand2, Loader2, Sparkles, Building2 } from "lucide-react";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
+import { useAuth } from "@/hooks/use-auth";
 
 interface AIAutoFillButtonProps {
   toolName: string;
@@ -41,6 +43,13 @@ export function AIAutoFillButton({
   const [open, setOpen] = useState(false);
   const [brief, setBrief] = useState("");
   const { campaign, isActive } = useCampaignStore();
+  const { user } = useAuth();
+  const { data: businessProfile } = useQuery<{ businessName?: string; businessType?: string; industry?: string }>({
+    queryKey: ["/api/business-profile"],
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const hasProfile = !!(businessProfile?.businessName);
 
   const campaignContext: Record<string, string> = {};
   if (isActive) {
@@ -65,6 +74,18 @@ export function AIAutoFillButton({
     }
   };
 
+  const dialogProps = {
+    hasCampaign,
+    campaignContext,
+    hasProfile,
+    businessProfile,
+    brief,
+    setBrief,
+    isAutoFilling,
+    onFill: handleFill,
+    onCancel: () => setOpen(false),
+  };
+
   if (compact) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
@@ -76,23 +97,11 @@ export function AIAutoFillButton({
             disabled={isAutoFilling}
             data-testid={`btn-ai-autofill-${toolName}`}
           >
-            {isAutoFilling ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Wand2 className="h-3 w-3" />
-            )}
+            {isAutoFilling ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
             AI Isi Otomatis
           </Button>
         </DialogTrigger>
-        <AIAutoFillDialogContent
-          hasCampaign={hasCampaign}
-          campaignContext={campaignContext}
-          brief={brief}
-          setBrief={setBrief}
-          isAutoFilling={isAutoFilling}
-          onFill={handleFill}
-          onCancel={() => setOpen(false)}
-        />
+        <AIAutoFillDialogContent {...dialogProps} />
       </Dialog>
     );
   }
@@ -106,23 +115,11 @@ export function AIAutoFillButton({
           disabled={isAutoFilling}
           data-testid={`btn-ai-autofill-${toolName}`}
         >
-          {isAutoFilling ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Wand2 className="h-4 w-4" />
-          )}
+          {isAutoFilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
           {isAutoFilling ? "AI sedang mengisi..." : "✨ AI Isi Otomatis"}
         </Button>
       </DialogTrigger>
-      <AIAutoFillDialogContent
-        hasCampaign={hasCampaign}
-        campaignContext={campaignContext}
-        brief={brief}
-        setBrief={setBrief}
-        isAutoFilling={isAutoFilling}
-        onFill={handleFill}
-        onCancel={() => setOpen(false)}
-      />
+      <AIAutoFillDialogContent {...dialogProps} />
     </Dialog>
   );
 }
@@ -130,6 +127,8 @@ export function AIAutoFillButton({
 interface DialogContentProps {
   hasCampaign: boolean;
   campaignContext: Record<string, string>;
+  hasProfile: boolean;
+  businessProfile?: { businessName?: string; businessType?: string; industry?: string };
   brief: string;
   setBrief: (v: string) => void;
   isAutoFilling: boolean;
@@ -140,12 +139,17 @@ interface DialogContentProps {
 function AIAutoFillDialogContent({
   hasCampaign,
   campaignContext,
+  hasProfile,
+  businessProfile,
   brief,
   setBrief,
   isAutoFilling,
   onFill,
   onCancel,
 }: DialogContentProps) {
+  const hasContext = hasCampaign || hasProfile;
+  const canSubmit = hasContext || brief.trim().length > 0;
+
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
@@ -158,7 +162,24 @@ function AIAutoFillDialogContent({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-4 py-2">
+      <div className="space-y-3 py-2">
+        {/* Business profile context — shown automatically when profile exists */}
+        {hasProfile && businessProfile?.businessName && (
+          <div className="rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-800 p-3 space-y-1">
+            <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5" />
+              Profil Bisnis Aktif — AI akan otomatis pakai konteks ini
+            </p>
+            <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+              {businessProfile.businessName}
+              {businessProfile.businessType && (
+                <span className="text-muted-foreground font-normal"> · {businessProfile.businessType}</span>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Active campaign context */}
         {hasCampaign && (
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
             <p className="text-xs font-semibold text-primary">📦 Konteks Campaign Aktif</p>
@@ -175,23 +196,25 @@ function AIAutoFillDialogContent({
 
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            {hasCampaign ? "Brief tambahan (opsional)" : "Brief produk/bisnis Anda *"}
+            {hasContext ? "Brief tambahan (opsional)" : "Brief produk/bisnis Anda *"}
           </label>
           <Textarea
             placeholder={
-              hasCampaign
-                ? "Contoh: Fokus ke audience ibu muda, budget iklan Rp 50rb/hari..."
+              hasContext
+                ? "Contoh: Fokus ke audience ibu muda, budget iklan Rp 50rb/hari, atau detail spesifik lainnya..."
                 : "Contoh: Saya jual serum vitamin C untuk wanita 25-35 tahun, harga Rp 149rb, keunggulannya hasil terasa dalam 7 hari..."
             }
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
-            rows={4}
+            rows={3}
             className="resize-none"
             data-testid="input-autofill-brief"
           />
-          {!hasCampaign && (
+          {!hasContext && (
             <p className="text-xs text-muted-foreground">
-              💡 Semakin detail brief = semakin relevan isian AI
+              💡 Semakin detail brief = semakin relevan isian AI. Atau isi{" "}
+              <a href="/settings" className="underline text-purple-600 dark:text-purple-400">Profil Bisnis</a>{" "}
+              agar tidak perlu tulis brief setiap saat.
             </p>
           )}
         </div>
@@ -205,7 +228,7 @@ function AIAutoFillDialogContent({
           size="sm"
           className="bg-purple-600 hover:bg-purple-700 text-white"
           onClick={onFill}
-          disabled={isAutoFilling || (!hasCampaign && !brief.trim())}
+          disabled={isAutoFilling || !canSubmit}
           data-testid="btn-confirm-autofill"
         >
           {isAutoFilling ? (
