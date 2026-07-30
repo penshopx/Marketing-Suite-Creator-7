@@ -64,6 +64,7 @@ import WaBroadcast from "@/pages/wa-broadcast";
 import CsBotScript from "@/pages/cs-bot-script";
 import CustomerJourney from "@/pages/customer-journey";
 import Workroom from "@/pages/workroom";
+import Settings from "@/pages/settings";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -124,6 +125,7 @@ function Router() {
       <Route path="/cs-bot-script" component={CsBotScript} />
       <Route path="/customer-journey" component={CustomerJourney} />
       <Route path="/workroom" component={Workroom} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

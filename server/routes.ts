@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
 import { db } from "./db";
-import { workroomProjects, workroomDeliverables } from "@shared/schema";
+import { workroomProjects, workroomDeliverables, businessProfiles } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 const genAI = process.env.GEMINI_API_KEY 
@@ -3921,6 +3921,68 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     res.end();
   });
 
+  // ─── Business Profile ────────────────────────────────────────────────────
+  app.get("/api/business-profile", async (req: Request, res: Response) => {
+    const userId = (req.session as any)?.simpleUser?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const [profile] = await db
+        .select()
+        .from(businessProfiles)
+        .where(eq(businessProfiles.userId, userId))
+        .limit(1);
+      if (!profile) {
+        // Return empty profile shape
+        return res.json({
+          businessName: "", businessType: "", industry: "", productsServices: "",
+          targetAudience: "", valueProposition: "", tone: "", location: "",
+          monthlyBudget: "", goals: "", competitors: "", additionalContext: "",
+        });
+      }
+      return res.json(profile);
+    } catch (err) {
+      console.error("business-profile GET error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/business-profile", async (req: Request, res: Response) => {
+    const userId = (req.session as any)?.simpleUser?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const {
+        businessName = "", businessType = "", industry = "", productsServices = "",
+        targetAudience = "", valueProposition = "", tone = "", location = "",
+        monthlyBudget = "", goals = "", competitors = "", additionalContext = "",
+      } = req.body as Record<string, string>;
+
+      // Upsert: try insert, on conflict update
+      const [existing] = await db
+        .select({ id: businessProfiles.id })
+        .from(businessProfiles)
+        .where(eq(businessProfiles.userId, userId))
+        .limit(1);
+
+      if (existing) {
+        const [updated] = await db
+          .update(businessProfiles)
+          .set({ businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, location, monthlyBudget, goals, competitors, additionalContext, updatedAt: new Date() })
+          .where(eq(businessProfiles.userId, userId))
+          .returning();
+        return res.json(updated);
+      } else {
+        const [created] = await db
+          .insert(businessProfiles)
+          .values({ userId, businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, location, monthlyBudget, goals, competitors, additionalContext })
+          .returning();
+        return res.json(created);
+      }
+    } catch (err) {
+      console.error("business-profile POST error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
   // AI Auto-Fill endpoint — fills any tool's form fields with AI
   app.post("/api/ai-autofill", async (req, res) => {
     try {
@@ -3929,6 +3991,37 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
         userBrief?: string;
         campaignContext?: Record<string, string>;
       };
+
+      // Load business profile for personalization
+      const userId = (req.session as any)?.simpleUser?.id;
+      let businessProfile: Record<string, string> | null = null;
+      if (userId) {
+        try {
+          const [profile] = await db
+            .select()
+            .from(businessProfiles)
+            .where(eq(businessProfiles.userId, userId))
+            .limit(1);
+          if (profile && (profile.businessName || profile.productsServices || profile.targetAudience)) {
+            businessProfile = {
+              businessName: profile.businessName,
+              businessType: profile.businessType,
+              industry: profile.industry,
+              productsServices: profile.productsServices,
+              targetAudience: profile.targetAudience,
+              valueProposition: profile.valueProposition,
+              tone: profile.tone,
+              location: profile.location,
+              monthlyBudget: profile.monthlyBudget,
+              goals: profile.goals,
+              competitors: profile.competitors,
+              additionalContext: profile.additionalContext,
+            };
+          }
+        } catch {
+          // profile load failure is non-fatal
+        }
+      }
 
       // Tool-specific field definitions
       const TOOL_CONFIGS: Record<string, { description: string; fields: Record<string, string> }> = {
@@ -4041,6 +4134,27 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
       }
 
       const contextParts: string[] = [];
+
+      // Business profile context (highest priority — always injected if available)
+      if (businessProfile) {
+        const profileLines: string[] = [];
+        if (businessProfile.businessName) profileLines.push(`- Nama Bisnis: ${businessProfile.businessName}`);
+        if (businessProfile.businessType) profileLines.push(`- Jenis Bisnis: ${businessProfile.businessType}`);
+        if (businessProfile.industry) profileLines.push(`- Industri/Niche: ${businessProfile.industry}`);
+        if (businessProfile.productsServices) profileLines.push(`- Produk/Layanan: ${businessProfile.productsServices}`);
+        if (businessProfile.targetAudience) profileLines.push(`- Target Audience: ${businessProfile.targetAudience}`);
+        if (businessProfile.valueProposition) profileLines.push(`- USP/Value Prop: ${businessProfile.valueProposition}`);
+        if (businessProfile.tone) profileLines.push(`- Tone/Gaya: ${businessProfile.tone}`);
+        if (businessProfile.location) profileLines.push(`- Lokasi Target: ${businessProfile.location}`);
+        if (businessProfile.monthlyBudget) profileLines.push(`- Budget Bulanan: ${businessProfile.monthlyBudget}`);
+        if (businessProfile.goals) profileLines.push(`- Tujuan Marketing: ${businessProfile.goals}`);
+        if (businessProfile.competitors) profileLines.push(`- Kompetitor: ${businessProfile.competitors}`);
+        if (businessProfile.additionalContext) profileLines.push(`- Konteks Tambahan: ${businessProfile.additionalContext}`);
+        if (profileLines.length > 0) {
+          contextParts.push(`**Profil Bisnis User (gunakan sebagai dasar utama):**\n${profileLines.join("\n")}`);
+        }
+      }
+
       if (Object.keys(campaignContext).length > 0) {
         contextParts.push("**Konteks Campaign Aktif:**");
         for (const [k, v] of Object.entries(campaignContext)) {
