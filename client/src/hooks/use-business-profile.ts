@@ -1,30 +1,41 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
+// Matches actual DB columns in business_profiles table.
+// isDefault is a virtual field added server-side (most-recently-updated profile = active).
 export interface BusinessProfile {
   id: number;
   userId: string;
-  profileName: string;
   businessName: string;
-  productCategory: string;
-  usp: string;
+  businessType: string;
+  industry: string;
+  productsServices: string;
   targetAudience: string;
+  valueProposition: string;
+  tone: string;
+  location: string;
   monthlyBudget: string;
-  mainPlatforms: string[];
-  isDefault: boolean;
+  goals: string;
+  competitors: string;
+  additionalContext: string;
+  isDefault: boolean; // virtual — computed server-side
   createdAt: string;
   updatedAt: string;
 }
 
 export interface UpsertBusinessProfile {
-  profileName?: string;
   businessName: string;
-  productCategory?: string;
-  usp?: string;
+  businessType?: string;
+  industry?: string;
+  productsServices?: string;
   targetAudience?: string;
+  valueProposition?: string;
+  tone?: string;
+  location?: string;
   monthlyBudget?: string;
-  mainPlatforms?: string[];
-  isDefault?: boolean;
+  goals?: string;
+  competitors?: string;
+  additionalContext?: string;
 }
 
 // Get all profiles for the current user
@@ -116,7 +127,7 @@ export function useDeleteBusinessProfile() {
   });
 }
 
-// Set a profile as the default
+// Set a profile as active (touches updatedAt so it sorts first = becomes active)
 export function useSetDefaultProfile() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -130,10 +141,10 @@ export function useSetDefaultProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/business-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/business-profile"] });
-      toast({ title: "Profil default diubah", description: "Profil ini sekarang aktif untuk semua AI tools." });
+      toast({ title: "Profil diaktifkan", description: "Profil ini sekarang aktif untuk semua AI tools." });
     },
     onError: () => {
-      toast({ title: "Gagal", description: "Tidak bisa mengubah profil default.", variant: "destructive" });
+      toast({ title: "Gagal", description: "Tidak bisa mengubah profil aktif.", variant: "destructive" });
     },
   });
 }

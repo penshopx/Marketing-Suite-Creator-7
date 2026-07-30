@@ -7,17 +7,23 @@ import { z } from "zod";
 export * from "./models/auth";
 
 // ─── Business Profiles ───────────────────────────────────────────────────────
+// Schema mirrors the actual DB columns (created before the simplified schema was drafted).
+// isDefault is NOT a DB column — it is computed server-side (most-recently-updated = active).
 export const businessProfiles = pgTable("business_profiles", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(), // references users.id
-  profileName: text("profile_name").notNull().default("Profil Utama"),
+  userId: varchar("user_id").notNull(),
   businessName: text("business_name").notNull().default(""),
-  productCategory: text("product_category").default(""),
-  usp: text("usp").default(""),
+  businessType: text("business_type").default(""),
+  industry: text("industry").default(""),
+  productsServices: text("products_services").default(""),
   targetAudience: text("target_audience").default(""),
+  valueProposition: text("value_proposition").default(""),
+  tone: text("tone").default(""),
+  location: text("location").default(""),
   monthlyBudget: text("monthly_budget").default(""),
-  mainPlatforms: jsonb("main_platforms").$type<string[]>().default([]),
-  isDefault: boolean("is_default").default(false).notNull(),
+  goals: text("goals").default(""),
+  competitors: text("competitors").default(""),
+  additionalContext: text("additional_context").default(""),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });

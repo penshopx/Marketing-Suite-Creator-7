@@ -45,21 +45,27 @@ async function getBusinessProfileContext(req: Request): Promise<string> {
   const userId = (req as any).user?.claims?.sub;
   if (!userId) return "";
   try {
+    // Most-recently-updated profile is treated as active
     const rows = await db
       .select()
       .from(businessProfiles)
-      .where(and(eq(businessProfiles.userId, userId), eq(businessProfiles.isDefault, true)))
+      .where(eq(businessProfiles.userId, userId))
+      .orderBy(desc(businessProfiles.updatedAt))
       .limit(1);
     if (rows.length === 0) return "";
     const p = rows[0];
     const lines: string[] = [];
     if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
-    if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
-    if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
+    if (p.businessType) lines.push(`Tipe Bisnis: ${p.businessType}`);
+    if (p.industry) lines.push(`Industri: ${p.industry}`);
+    if (p.productsServices) lines.push(`Produk/Layanan: ${p.productsServices}`);
     if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
+    if (p.valueProposition) lines.push(`Value Proposition/USP: ${p.valueProposition}`);
+    if (p.tone) lines.push(`Tone Komunikasi: ${p.tone}`);
     if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
-    const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
-    if (platforms) lines.push(`Platform Utama: ${platforms}`);
+    if (p.goals) lines.push(`Goals: ${p.goals}`);
+    if (p.competitors) lines.push(`Kompetitor: ${p.competitors}`);
+    if (p.additionalContext) lines.push(`Konteks Tambahan: ${p.additionalContext}`);
     if (lines.length === 0) return "";
     return `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
   } catch {
@@ -110,21 +116,27 @@ export async function registerRoutes(
     const userId = (req as any).user?.claims?.sub;
     if (userId) {
       try {
+        // Most-recently-updated profile is treated as active
         const rows = await db
           .select()
           .from(businessProfiles)
-          .where(and(eq(businessProfiles.userId, userId), eq(businessProfiles.isDefault, true)))
+          .where(eq(businessProfiles.userId, userId))
+          .orderBy(desc(businessProfiles.updatedAt))
           .limit(1);
         if (rows.length > 0) {
           const p = rows[0];
           const lines: string[] = [];
           if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
-          if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
-          if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
+          if (p.businessType) lines.push(`Tipe Bisnis: ${p.businessType}`);
+          if (p.industry) lines.push(`Industri: ${p.industry}`);
+          if (p.productsServices) lines.push(`Produk/Layanan: ${p.productsServices}`);
           if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
+          if (p.valueProposition) lines.push(`Value Proposition/USP: ${p.valueProposition}`);
+          if (p.tone) lines.push(`Tone Komunikasi: ${p.tone}`);
           if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
-          const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
-          if (platforms) lines.push(`Platform Utama: ${platforms}`);
+          if (p.goals) lines.push(`Goals: ${p.goals}`);
+          if (p.competitors) lines.push(`Kompetitor: ${p.competitors}`);
+          if (p.additionalContext) lines.push(`Konteks Tambahan: ${p.additionalContext}`);
           if (lines.length > 0) {
             (req as any).bpCtx = `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
           }
@@ -4459,7 +4471,6 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
           const [latestProject] = await db
             .select()
             .from(workroomProjects)
-            .where(eq(workroomProjects.userId, userId))
             .orderBy(desc(workroomProjects.updatedAt))
             .limit(1);
 
@@ -4477,7 +4488,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
                 const preview = d.content!.length > 250
                   ? d.content!.slice(0, 250) + "..."
                   : d.content!;
-                return `- ${d.type} [fase ${d.phase}]: ${preview}`;
+                return `- ${d.deliverableType} [fase ${d.phase}]: ${preview}`;
               })
               .join("\n");
 
@@ -4563,9 +4574,10 @@ Format respons (JSON only, no markdown):
     if (!userId) return res.json(null);
     try {
       const rows = await db.select().from(businessProfiles)
-        .where(and(eq(businessProfiles.userId, userId), eq(businessProfiles.isDefault, true)))
+        .where(eq(businessProfiles.userId, userId))
+        .orderBy(desc(businessProfiles.updatedAt))
         .limit(1);
-      res.json(rows[0] ?? null);
+      res.json(rows[0] ? { ...rows[0], isDefault: true } : null);
     } catch (err) {
       console.error("Business profile GET error:", err);
       res.status(500).json({ error: "Gagal mengambil profil bisnis" });
@@ -4579,8 +4591,9 @@ Format respons (JSON only, no markdown):
     try {
       const rows = await db.select().from(businessProfiles)
         .where(eq(businessProfiles.userId, userId))
-        .orderBy(desc(businessProfiles.createdAt));
-      res.json(rows);
+        .orderBy(desc(businessProfiles.updatedAt));
+      // First profile (most-recently-updated) is treated as active/default
+      res.json(rows.map((r, i) => ({ ...r, isDefault: i === 0 })));
     } catch (err) {
       console.error("Business profiles list error:", err);
       res.status(500).json({ error: "Gagal mengambil daftar profil bisnis" });
@@ -4592,29 +4605,27 @@ Format respons (JSON only, no markdown):
     const userId = (req as any).user?.claims?.sub;
     if (!userId) return res.status(401).json({ error: "Login diperlukan" });
     try {
-      const { profileName, businessName, productCategory, usp, targetAudience, monthlyBudget, mainPlatforms, isDefault } = req.body;
+      const { businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, location, monthlyBudget, goals, competitors, additionalContext } = req.body;
       if (!businessName?.trim()) return res.status(400).json({ error: "Nama bisnis wajib diisi" });
-
-      // If setting as default, unset other defaults first
-      if (isDefault) {
-        await db.update(businessProfiles)
-          .set({ isDefault: false })
-          .where(eq(businessProfiles.userId, userId));
-      }
 
       const [profile] = await db.insert(businessProfiles).values({
         userId,
-        profileName: profileName || "Profil Utama",
         businessName: businessName.trim(),
-        productCategory: productCategory || "",
-        usp: usp || "",
+        businessType: businessType || "",
+        industry: industry || "",
+        productsServices: productsServices || "",
         targetAudience: targetAudience || "",
+        valueProposition: valueProposition || "",
+        tone: tone || "",
+        location: location || "",
         monthlyBudget: monthlyBudget || "",
-        mainPlatforms: Array.isArray(mainPlatforms) ? mainPlatforms : [],
-        isDefault: Boolean(isDefault),
+        goals: goals || "",
+        competitors: competitors || "",
+        additionalContext: additionalContext || "",
       }).returning();
 
-      res.json(profile);
+      // New profile gets highest updatedAt (just inserted), so it becomes active
+      res.json({ ...profile, isDefault: true });
     } catch (err) {
       console.error("Business profile create error:", err);
       res.status(500).json({ error: "Gagal membuat profil bisnis" });
@@ -4627,33 +4638,31 @@ Format respons (JSON only, no markdown):
     if (!userId) return res.status(401).json({ error: "Login diperlukan" });
     try {
       const id = parseInt(req.params.id);
-      const { profileName, businessName, productCategory, usp, targetAudience, monthlyBudget, mainPlatforms, isDefault } = req.body;
+      const { businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, location, monthlyBudget, goals, competitors, additionalContext } = req.body;
       if (!businessName?.trim()) return res.status(400).json({ error: "Nama bisnis wajib diisi" });
-
-      // If setting as default, unset other defaults first
-      if (isDefault) {
-        await db.update(businessProfiles)
-          .set({ isDefault: false })
-          .where(and(eq(businessProfiles.userId, userId)));
-      }
 
       const [updated] = await db.update(businessProfiles)
         .set({
-          profileName: profileName || "Profil Utama",
           businessName: businessName.trim(),
-          productCategory: productCategory || "",
-          usp: usp || "",
+          businessType: businessType || "",
+          industry: industry || "",
+          productsServices: productsServices || "",
           targetAudience: targetAudience || "",
+          valueProposition: valueProposition || "",
+          tone: tone || "",
+          location: location || "",
           monthlyBudget: monthlyBudget || "",
-          mainPlatforms: Array.isArray(mainPlatforms) ? mainPlatforms : [],
-          isDefault: Boolean(isDefault),
+          goals: goals || "",
+          competitors: competitors || "",
+          additionalContext: additionalContext || "",
           updatedAt: new Date() as any,
         })
         .where(and(eq(businessProfiles.id, id), eq(businessProfiles.userId, userId)))
         .returning();
 
       if (!updated) return res.status(404).json({ error: "Profil tidak ditemukan" });
-      res.json(updated);
+      // Editing a profile makes it the most-recently-updated = active
+      res.json({ ...updated, isDefault: true });
     } catch (err) {
       console.error("Business profile update error:", err);
       res.status(500).json({ error: "Gagal memperbarui profil bisnis" });
@@ -4676,22 +4685,18 @@ Format respons (JSON only, no markdown):
   });
 
   // POST /api/business-profiles/:id/set-default — activate a profile
+  // "Active" = most-recently-updated, so we just touch updatedAt to make it sort first.
   app.post("/api/business-profiles/:id/set-default", async (req, res) => {
     const userId = (req as any).user?.claims?.sub;
     if (!userId) return res.status(401).json({ error: "Login diperlukan" });
     try {
       const id = parseInt(req.params.id);
-      // Unset all defaults for this user
-      await db.update(businessProfiles)
-        .set({ isDefault: false })
-        .where(eq(businessProfiles.userId, userId));
-      // Set the selected one as default
       const [updated] = await db.update(businessProfiles)
-        .set({ isDefault: true })
+        .set({ updatedAt: new Date() as any })
         .where(and(eq(businessProfiles.id, id), eq(businessProfiles.userId, userId)))
         .returning();
       if (!updated) return res.status(404).json({ error: "Profil tidak ditemukan" });
-      res.json(updated);
+      res.json({ ...updated, isDefault: true });
     } catch (err) {
       console.error("Business profile set-default error:", err);
       res.status(500).json({ error: "Gagal mengaktifkan profil bisnis" });

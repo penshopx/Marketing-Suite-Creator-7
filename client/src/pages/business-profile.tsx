@@ -5,18 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Building2,
   Plus,
   Trash2,
   Star,
-  StarOff,
   Pencil,
   Sparkles,
   CheckCircle2,
   Loader2,
-  X,
   Info,
 } from "lucide-react";
 import {
@@ -39,50 +36,44 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useBusinessProfiles, useCreateBusinessProfile, useUpdateBusinessProfile, useDeleteBusinessProfile, useSetDefaultProfile, type BusinessProfile, type UpsertBusinessProfile } from "@/hooks/use-business-profile";
 
-const PLATFORMS = [
-  { id: "meta_ads", label: "Meta Ads" },
-  { id: "instagram", label: "Instagram" },
-  { id: "tiktok", label: "TikTok" },
-  { id: "google_ads", label: "Google Ads" },
-  { id: "youtube", label: "YouTube" },
-  { id: "linkedin", label: "LinkedIn" },
-  { id: "shopee", label: "Shopee" },
-  { id: "tokopedia", label: "Tokopedia" },
-];
-
-const PRODUCT_CATEGORIES = [
+const BUSINESS_TYPES = [
+  "E-commerce (Jualan Produk Fisik)",
   "Produk Digital (kursus, ebook, template)",
   "Software / SaaS",
-  "Produk Fisik",
-  "Jasa / Layanan",
-  "E-Commerce / Marketplace",
+  "Jasa / Layanan Profesional",
   "Afiliasi / Dropship",
-  "Fashion & Lifestyle",
-  "Kesehatan & Kecantikan",
-  "Makanan & Minuman",
+  "Marketplace / Platform",
   "Lainnya",
 ];
 
 interface ProfileFormData {
-  profileName: string;
   businessName: string;
-  productCategory: string;
-  usp: string;
+  businessType: string;
+  industry: string;
+  productsServices: string;
   targetAudience: string;
+  valueProposition: string;
+  tone: string;
+  location: string;
   monthlyBudget: string;
-  mainPlatforms: string[];
-  isDefault: boolean;
+  goals: string;
+  competitors: string;
+  additionalContext: string;
 }
 
 const emptyForm: ProfileFormData = {
-  profileName: "Profil Utama",
   businessName: "",
-  productCategory: "",
-  usp: "",
+  businessType: "",
+  industry: "",
+  productsServices: "",
   targetAudience: "",
+  valueProposition: "",
+  tone: "",
+  location: "",
   monthlyBudget: "",
-  mainPlatforms: [],
-  isDefault: true,
+  goals: "",
+  competitors: "",
+  additionalContext: "",
 };
 
 function ProfileForm({
@@ -97,17 +88,7 @@ function ProfileForm({
   isSaving: boolean;
 }) {
   const [form, setForm] = useState<ProfileFormData>(initial);
-
-  const set = (k: keyof ProfileFormData, v: any) => setForm((f) => ({ ...f, [k]: v }));
-
-  const togglePlatform = (id: string) => {
-    set(
-      "mainPlatforms",
-      form.mainPlatforms.includes(id)
-        ? form.mainPlatforms.filter((p) => p !== id)
-        : [...form.mainPlatforms, id]
-    );
-  };
+  const set = (k: keyof ProfileFormData, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,16 +98,8 @@ function ProfileForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Row 1: Nama bisnis + Tipe bisnis */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="profileName">Nama Profil</Label>
-          <Input
-            id="profileName"
-            value={form.profileName}
-            onChange={(e) => set("profileName", e.target.value)}
-            placeholder="e.g. Produk A, Brand B..."
-          />
-        </div>
         <div className="space-y-1.5">
           <Label htmlFor="businessName">
             Nama Bisnis / Produk <span className="text-destructive">*</span>
@@ -139,86 +112,133 @@ function ProfileForm({
             required
           />
         </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="businessType">Tipe Bisnis</Label>
+          <select
+            id="businessType"
+            value={form.businessType}
+            onChange={(e) => set("businessType", e.target.value)}
+            className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">-- Pilih tipe --</option>
+            {BUSINESS_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="productCategory">Kategori Produk</Label>
-        <select
-          id="productCategory"
-          value={form.productCategory}
-          onChange={(e) => set("productCategory", e.target.value)}
-          className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-        >
-          <option value="">-- Pilih kategori --</option>
-          {PRODUCT_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+      {/* Row 2: Industri + Produk/Layanan */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="industry">Industri / Niche</Label>
+          <Input
+            id="industry"
+            value={form.industry}
+            onChange={(e) => set("industry", e.target.value)}
+            placeholder="e.g. Kopi specialty, Fashion muslimah, SaaS HR"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="productsServices">Produk / Layanan Utama</Label>
+          <Input
+            id="productsServices"
+            value={form.productsServices}
+            onChange={(e) => set("productsServices", e.target.value)}
+            placeholder="e.g. Kopi arabika single origin 250g"
+          />
+        </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="usp">
-          USP — Unique Selling Proposition
-        </Label>
-        <Textarea
-          id="usp"
-          value={form.usp}
-          onChange={(e) => set("usp", e.target.value)}
-          placeholder="Apa yang paling membedakan produk/bisnis ini dari kompetitor? (1-3 kalimat)"
-          rows={2}
-        />
-      </div>
-
+      {/* Target Audience */}
       <div className="space-y-1.5">
         <Label htmlFor="targetAudience">Target Audience</Label>
         <Textarea
           id="targetAudience"
           value={form.targetAudience}
           onChange={(e) => set("targetAudience", e.target.value)}
-          placeholder="e.g. Pria/Wanita 25-40 tahun, pebisnis online, tertarik digital marketing, income Rp 5-20jt/bulan"
+          placeholder="e.g. Pria/Wanita 25-40 tahun, pekerja kantoran, income Rp 5-20jt/bulan, suka kopi berkualitas"
           rows={2}
         />
       </div>
 
+      {/* Value Proposition */}
       <div className="space-y-1.5">
-        <Label htmlFor="monthlyBudget">Budget Bulanan Iklan</Label>
-        <Input
-          id="monthlyBudget"
-          value={form.monthlyBudget}
-          onChange={(e) => set("monthlyBudget", e.target.value)}
-          placeholder="e.g. Rp 3.000.000 / bulan"
+        <Label htmlFor="valueProposition">Value Proposition / USP</Label>
+        <Textarea
+          id="valueProposition"
+          value={form.valueProposition}
+          onChange={(e) => set("valueProposition", e.target.value)}
+          placeholder="Apa keunggulan utama yang membedakan dari kompetitor? (1-3 kalimat)"
+          rows={2}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Platform Utama</Label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {PLATFORMS.map((p) => (
-            <label
-              key={p.id}
-              className="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
-            >
-              <Checkbox
-                checked={form.mainPlatforms.includes(p.id)}
-                onCheckedChange={() => togglePlatform(p.id)}
-              />
-              <span className="text-sm">{p.label}</span>
-            </label>
-          ))}
+      {/* Row: Tone + Lokasi */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="tone">Tone Komunikasi</Label>
+          <Input
+            id="tone"
+            value={form.tone}
+            onChange={(e) => set("tone", e.target.value)}
+            placeholder="e.g. Profesional tapi hangat, casual & fun, edukatif"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="location">Lokasi / Area Pasar</Label>
+          <Input
+            id="location"
+            value={form.location}
+            onChange={(e) => set("location", e.target.value)}
+            placeholder="e.g. Indonesia (nasional), Jabodetabek, Southeast Asia"
+          />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-1">
-        <Checkbox
-          id="isDefault"
-          checked={form.isDefault}
-          onCheckedChange={(v) => set("isDefault", Boolean(v))}
+      {/* Row: Budget + Goals */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="monthlyBudget">Budget Bulanan Iklan</Label>
+          <Input
+            id="monthlyBudget"
+            value={form.monthlyBudget}
+            onChange={(e) => set("monthlyBudget", e.target.value)}
+            placeholder="e.g. Rp 3.000.000 / bulan"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="goals">Goals / Tujuan Marketing</Label>
+          <Input
+            id="goals"
+            value={form.goals}
+            onChange={(e) => set("goals", e.target.value)}
+            placeholder="e.g. Awareness, first purchase, repeat order"
+          />
+        </div>
+      </div>
+
+      {/* Competitors */}
+      <div className="space-y-1.5">
+        <Label htmlFor="competitors">Kompetitor Utama</Label>
+        <Input
+          id="competitors"
+          value={form.competitors}
+          onChange={(e) => set("competitors", e.target.value)}
+          placeholder="e.g. Kopi Kenangan, Fore Coffee, Starbucks"
         />
-        <Label htmlFor="isDefault" className="cursor-pointer font-normal">
-          Jadikan profil aktif (digunakan oleh semua AI tools)
-        </Label>
+      </div>
+
+      {/* Additional Context */}
+      <div className="space-y-1.5">
+        <Label htmlFor="additionalContext">Konteks Tambahan (opsional)</Label>
+        <Textarea
+          id="additionalContext"
+          value={form.additionalContext}
+          onChange={(e) => set("additionalContext", e.target.value)}
+          placeholder="Info lain yang penting bagi AI: promo aktif, seasonal campaign, produk baru, dll."
+          rows={2}
+        />
       </div>
 
       <DialogFooter className="pt-2">
@@ -245,8 +265,6 @@ function ProfileCard({
   onDelete: (p: BusinessProfile) => void;
   onSetDefault: (id: number) => void;
 }) {
-  const platforms = Array.isArray(profile.mainPlatforms) ? profile.mainPlatforms : [];
-
   return (
     <Card className={`relative ${profile.isDefault ? "border-primary/60 bg-primary/5" : ""}`}>
       {profile.isDefault && (
@@ -259,19 +277,21 @@ function ProfileCard({
           <Building2 className="h-4 w-4 text-primary" />
           {profile.businessName || "(tanpa nama)"}
         </CardTitle>
-        <CardDescription className="text-xs">{profile.profileName}</CardDescription>
+        {profile.businessType && (
+          <CardDescription className="text-xs">{profile.businessType}</CardDescription>
+        )}
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        {profile.productCategory && (
+        {profile.industry && (
           <div>
-            <span className="text-muted-foreground">Kategori: </span>
-            <span>{profile.productCategory}</span>
+            <span className="text-muted-foreground">Industri: </span>
+            <span>{profile.industry}</span>
           </div>
         )}
-        {profile.usp && (
+        {profile.valueProposition && (
           <div>
             <span className="text-muted-foreground">USP: </span>
-            <span className="line-clamp-2">{profile.usp}</span>
+            <span className="line-clamp-2">{profile.valueProposition}</span>
           </div>
         )}
         {profile.targetAudience && (
@@ -284,15 +304,6 @@ function ProfileCard({
           <div>
             <span className="text-muted-foreground">Budget: </span>
             <span>{profile.monthlyBudget}</span>
-          </div>
-        )}
-        {platforms.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1">
-            {platforms.map((p) => (
-              <Badge key={p} variant="secondary" className="text-xs">
-                {PLATFORMS.find((x) => x.id === p)?.label ?? p}
-              </Badge>
-            ))}
           </div>
         )}
 
@@ -362,7 +373,6 @@ export default function BusinessProfilePage() {
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-
   const activeProfile = profiles.find((p) => p.isDefault);
 
   return (
@@ -395,7 +405,7 @@ export default function BusinessProfilePage() {
               Tidak perlu lagi menjelaskan produk dari awal setiap sesi.
             </p>
             <p>
-              Kalau kamu punya beberapa produk/brand, buat profil terpisah dan aktifkan yang relevan sebelum mulai bekerja.
+              Kalau kamu punya beberapa produk/brand, buat profil terpisah dan klik <strong>Aktifkan</strong> pada profil yang relevan sebelum mulai bekerja.
             </p>
           </div>
         </CardContent>
@@ -411,7 +421,8 @@ export default function BusinessProfilePage() {
                 Profil aktif:{" "}
               </span>
               <span className="text-green-700 dark:text-green-300">
-                {activeProfile.businessName} ({activeProfile.profileName})
+                {activeProfile.businessName}
+                {activeProfile.industry ? ` — ${activeProfile.industry}` : ""}
               </span>
               <span className="text-green-600 dark:text-green-400 ml-1">
                 — AI tools akan menggunakan profil ini.
@@ -471,21 +482,20 @@ export default function BusinessProfilePage() {
             initial={
               editingProfile
                 ? {
-                    profileName: editingProfile.profileName,
                     businessName: editingProfile.businessName,
-                    productCategory: editingProfile.productCategory || "",
-                    usp: editingProfile.usp || "",
+                    businessType: editingProfile.businessType || "",
+                    industry: editingProfile.industry || "",
+                    productsServices: editingProfile.productsServices || "",
                     targetAudience: editingProfile.targetAudience || "",
+                    valueProposition: editingProfile.valueProposition || "",
+                    tone: editingProfile.tone || "",
+                    location: editingProfile.location || "",
                     monthlyBudget: editingProfile.monthlyBudget || "",
-                    mainPlatforms: Array.isArray(editingProfile.mainPlatforms)
-                      ? editingProfile.mainPlatforms
-                      : [],
-                    isDefault: editingProfile.isDefault,
+                    goals: editingProfile.goals || "",
+                    competitors: editingProfile.competitors || "",
+                    additionalContext: editingProfile.additionalContext || "",
                   }
-                : {
-                    ...emptyForm,
-                    isDefault: profiles.length === 0,
-                  }
+                : emptyForm
             }
             onSubmit={handleSave}
             onCancel={() => setDialogOpen(false)}
