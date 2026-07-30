@@ -4403,6 +4403,47 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
             targetAudience: "Target audience video",
           },
         },
+        "ai-banners": {
+          description: "AI Banner Creator — buat banner marketing visual",
+          fields: {
+            headline: "Headline utama banner (max 8 kata, kuat dan menarik)",
+            subheadline: "Subheadline pendukung (max 12 kata)",
+            brandName: "Nama brand atau produk",
+            colorScheme: "Skema warna yang diinginkan (contoh: biru dan emas, atau pastel cerah)",
+          },
+        },
+        "audience-overlap": {
+          description: "Audience Overlap Analyzer — analisis tumpang tindih interest",
+          fields: {
+            niche: "Niche atau kategori bisnis/produk yang dianalisa",
+            interests: "Daftar 5-8 Facebook interest yang relevan, dipisahkan koma (contoh: Digital Marketing, Entrepreneurship, ...)",
+          },
+        },
+        "auto-rule": {
+          description: "Auto Rule Builder untuk Meta Ads automation rules",
+          fields: {
+            niche: "Niche atau kategori produk yang diiklankan",
+            budget: "Budget harian dalam Rupiah (hanya angka, contoh: 150000)",
+            targetRoas: "Target ROAS yang ingin dicapai (hanya angka, contoh: 3)",
+            targetCpa: "Target biaya per lead/CPA dalam Rupiah (hanya angka, contoh: 25000)",
+          },
+        },
+        "ai-images": {
+          description: "AI Image Creator — generate gambar marketing dengan AI",
+          fields: {
+            prompt: "Deskripsi detail gambar yang ingin dibuat dalam Bahasa Inggris — sertakan gaya visual, subjek utama, latar belakang, dan nuansa warna yang diinginkan",
+          },
+        },
+        "prompt-framework": {
+          description: "Prompt Framework RISEN Builder — buat prompt AI yang efektif",
+          fields: {
+            role: "Peran/expertise yang harus dimainkan AI (contoh: copywriter dengan 10 tahun pengalaman di digital marketing Indonesia)",
+            instruction: "Tugas spesifik yang harus dikerjakan AI",
+            steps: "Langkah-langkah yang harus diikuti AI (format: 1) ..., 2) ..., 3) ...)",
+            endgoal: "Hasil akhir yang diinginkan dari output AI ini",
+            narrowing: "Batasan format, panjang, bahasa, dan hal yang harus dihindari",
+          },
+        },
       };
 
       const config = TOOL_CONFIGS[toolName];

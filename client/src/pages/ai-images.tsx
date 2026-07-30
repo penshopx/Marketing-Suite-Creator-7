@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Image, Loader2, Download, Sparkles, Wand2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface GeneratedImage {
   id: string;
@@ -22,6 +25,11 @@ export default function AIImages() {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.prompt !== undefined) setPrompt(fields.prompt);
+  };
 
   const stylePrompts: Record<string, string> = {
     realistic: "photorealistic, high quality, detailed",
@@ -107,13 +115,24 @@ export default function AIImages() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wand2 className="h-5 w-5" />
-                    Create Image
-                  </CardTitle>
-                  <CardDescription>
-                    Describe the image you want to create
-                  </CardDescription>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Wand2 className="h-5 w-5" />
+                        Create Image
+                      </CardTitle>
+                      <CardDescription>
+                        Describe the image you want to create
+                      </CardDescription>
+                    </div>
+                    <AIAutoFillButton
+                      toolName="ai-images"
+                      onFill={handleAutoFill}
+                      isAutoFilling={isAutoFilling}
+                      triggerAutoFill={triggerAutoFill}
+                      compact
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -122,8 +141,8 @@ export default function AIImages() {
                       id="prompt"
                       placeholder="A professional product photo of a modern smartphone on a clean white background..."
                       value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      className="min-h-[120px]"
+                      onChange={(e) => { setPrompt(e.target.value); markManualEdit("prompt"); }}
+                      className={cn("min-h-[120px]", aiFilledFields.has("prompt") && AI_FIELD_CLASS)}
                       data-testid="input-image-prompt"
                     />
                   </div>

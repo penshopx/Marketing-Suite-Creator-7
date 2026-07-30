@@ -12,6 +12,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface AutoRule {
   id: string;
@@ -74,6 +77,14 @@ export default function AutoRule() {
   const [result, setResult] = useState<AutoRuleResult | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.niche !== undefined) setNiche(fields.niche);
+    if (fields.budget !== undefined) setBudget(fields.budget);
+    if (fields.targetRoas !== undefined) setTargetRoas(fields.targetRoas);
+    if (fields.targetCpa !== undefined) setTargetCpa(fields.targetCpa);
+  };
 
   const handleGenerate = async () => {
     if (!budget) {
@@ -140,7 +151,16 @@ export default function AutoRule() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Parameter Campaign</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base">Parameter Campaign</CardTitle>
+              <AIAutoFillButton
+                toolName="auto-rule"
+                onFill={handleAutoFill}
+                isAutoFilling={isAutoFilling}
+                triggerAutoFill={triggerAutoFill}
+                compact
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -148,9 +168,9 @@ export default function AutoRule() {
               <Input
                 placeholder="e.g. skincare, kursus digital, dropship"
                 value={niche}
-                onChange={(e) => setNiche(e.target.value)}
+                onChange={(e) => { setNiche(e.target.value); markManualEdit("niche"); }}
                 data-testid="input-niche-rule"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("niche") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -173,9 +193,9 @@ export default function AutoRule() {
               <Input
                 placeholder="e.g. 500000"
                 value={budget}
-                onChange={(e) => setBudget(e.target.value)}
+                onChange={(e) => { setBudget(e.target.value); markManualEdit("budget"); }}
                 data-testid="input-budget-rule"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("budget") && AI_FIELD_CLASS)}
               />
             </div>
             {(objective === "purchase") && (
@@ -184,9 +204,9 @@ export default function AutoRule() {
                 <Input
                   placeholder="e.g. 3"
                   value={targetRoas}
-                  onChange={(e) => setTargetRoas(e.target.value)}
+                  onChange={(e) => { setTargetRoas(e.target.value); markManualEdit("targetRoas"); }}
                   data-testid="input-roas-rule"
-                  className="mt-1"
+                  className={cn("mt-1", aiFilledFields.has("targetRoas") && AI_FIELD_CLASS)}
                 />
               </div>
             )}
@@ -196,9 +216,9 @@ export default function AutoRule() {
                 <Input
                   placeholder="e.g. 30000"
                   value={targetCpa}
-                  onChange={(e) => setTargetCpa(e.target.value)}
+                  onChange={(e) => { setTargetCpa(e.target.value); markManualEdit("targetCpa"); }}
                   data-testid="input-cpa-rule"
-                  className="mt-1"
+                  className={cn("mt-1", aiFilledFields.has("targetCpa") && AI_FIELD_CLASS)}
                 />
               </div>
             )}

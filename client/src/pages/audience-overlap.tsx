@@ -13,6 +13,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
 import { CampaignContextBar } from "@/components/campaign-context-bar";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface OverlapPair {
   interest1: string;
@@ -50,6 +53,15 @@ export default function AudienceOverlap() {
   const { toast } = useToast();
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.niche !== undefined) setNiche(fields.niche);
+    if (fields.interests !== undefined) {
+      const list = fields.interests.split(",").map((i) => i.trim()).filter(Boolean);
+      if (list.length >= 2) setInterests([...list, ""]);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -156,7 +168,16 @@ export default function AudienceOverlap() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Daftar Interests</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base">Daftar Interests</CardTitle>
+              <AIAutoFillButton
+                toolName="audience-overlap"
+                onFill={handleAutoFill}
+                isAutoFilling={isAutoFilling}
+                triggerAutoFill={triggerAutoFill}
+                compact
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
@@ -176,6 +197,17 @@ export default function AudienceOverlap() {
             </div>
 
             <div>
+              <Label>Niche / Produk (opsional)</Label>
+              <Input
+                placeholder="e.g. skincare, kursus digital, dropship"
+                value={niche}
+                onChange={(e) => { setNiche(e.target.value); markManualEdit("niche"); }}
+                data-testid="input-niche-overlap"
+                className={cn("mt-1", aiFilledFields.has("niche") && AI_FIELD_CLASS)}
+              />
+            </div>
+
+            <div>
               <Label>Interests (2–10)</Label>
               <div className="mt-1 space-y-2">
                 {interests.map((val, i) => (
@@ -183,9 +215,9 @@ export default function AudienceOverlap() {
                     <Input
                       placeholder={`Interest ${i + 1}...`}
                       value={val}
-                      onChange={(e) => updateInterest(i, e.target.value)}
+                      onChange={(e) => { updateInterest(i, e.target.value); markManualEdit(`interest-${i}`); }}
                       data-testid={`input-interest-${i}`}
-                      className="flex-1"
+                      className={cn("flex-1", aiFilledFields.has("interests") && i < interests.length - 1 && AI_FIELD_CLASS)}
                     />
                     {interests.length > 2 && (
                       <Button

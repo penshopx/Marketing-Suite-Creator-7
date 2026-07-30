@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Palette, Loader2, Download, Sparkles, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface GeneratedBanner {
   id: string;
@@ -41,6 +44,14 @@ export default function AIBanners() {
   const [isLoading, setIsLoading] = useState(false);
   const [banners, setBanners] = useState<GeneratedBanner[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.headline !== undefined) setHeadline(fields.headline);
+    if (fields.subheadline !== undefined) setSubheadline(fields.subheadline);
+    if (fields.brandName !== undefined) setBrandName(fields.brandName);
+    if (fields.colorScheme !== undefined) setColorScheme(fields.colorScheme);
+  };
 
   const handleGenerate = async () => {
     if (!headline.trim()) {
@@ -121,8 +132,19 @@ export default function AIBanners() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Banner Settings</CardTitle>
-                  <CardDescription>Configure your banner design</CardDescription>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <CardTitle>Banner Settings</CardTitle>
+                      <CardDescription>Configure your banner design</CardDescription>
+                    </div>
+                    <AIAutoFillButton
+                      toolName="ai-banners"
+                      onFill={handleAutoFill}
+                      isAutoFilling={isAutoFilling}
+                      triggerAutoFill={triggerAutoFill}
+                      compact
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -131,8 +153,9 @@ export default function AIBanners() {
                       id="headline"
                       placeholder="50% OFF Summer Sale"
                       value={headline}
-                      onChange={(e) => setHeadline(e.target.value)}
+                      onChange={(e) => { setHeadline(e.target.value); markManualEdit("headline"); }}
                       data-testid="input-headline"
+                      className={cn(aiFilledFields.has("headline") && AI_FIELD_CLASS)}
                     />
                   </div>
 
@@ -142,8 +165,9 @@ export default function AIBanners() {
                       id="subheadline"
                       placeholder="Limited time offer"
                       value={subheadline}
-                      onChange={(e) => setSubheadline(e.target.value)}
+                      onChange={(e) => { setSubheadline(e.target.value); markManualEdit("subheadline"); }}
                       data-testid="input-subheadline"
+                      className={cn(aiFilledFields.has("subheadline") && AI_FIELD_CLASS)}
                     />
                   </div>
 
@@ -153,8 +177,9 @@ export default function AIBanners() {
                       id="brandName"
                       placeholder="Your Brand"
                       value={brandName}
-                      onChange={(e) => setBrandName(e.target.value)}
+                      onChange={(e) => { setBrandName(e.target.value); markManualEdit("brandName"); }}
                       data-testid="input-brand"
+                      className={cn(aiFilledFields.has("brandName") && AI_FIELD_CLASS)}
                     />
                   </div>
 
@@ -198,8 +223,9 @@ export default function AIBanners() {
                       id="colorScheme"
                       placeholder="e.g., blue and gold, pastel colors"
                       value={colorScheme}
-                      onChange={(e) => setColorScheme(e.target.value)}
+                      onChange={(e) => { setColorScheme(e.target.value); markManualEdit("colorScheme"); }}
                       data-testid="input-colors"
+                      className={cn(aiFilledFields.has("colorScheme") && AI_FIELD_CLASS)}
                     />
                   </div>
 

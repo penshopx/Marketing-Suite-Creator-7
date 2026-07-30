@@ -14,6 +14,9 @@ import {
   BookOpen, DollarSign, Settings, Target, ChevronDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const categories = [
   { id: "all", name: "Semua" },
@@ -761,6 +764,18 @@ export default function PromptFramework() {
   const [selectedPrompt, setSelectedPrompt] = useState<typeof prompts[0] | null>(null);
   const [risenValues, setRisenValues] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    setRisenValues((prev) => ({
+      ...prev,
+      ...(fields.role !== undefined && { role: fields.role }),
+      ...(fields.instruction !== undefined && { instruction: fields.instruction }),
+      ...(fields.steps !== undefined && { steps: fields.steps }),
+      ...(fields.endgoal !== undefined && { endgoal: fields.endgoal }),
+      ...(fields.narrowing !== undefined && { narrowing: fields.narrowing }),
+    }));
+  };
 
   const filtered = prompts.filter(p => {
     const matchesSearch = !search || 
@@ -935,14 +950,25 @@ export default function PromptFramework() {
         <TabsContent value="risen" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-yellow-500" />
-                Prompt Builder — Framework RISEN
-              </CardTitle>
-              <CardDescription>
-                Isi setiap elemen RISEN untuk membuat prompt yang sempurna. 
-                Semakin detail kamu mengisi, semakin baik output AI yang kamu dapatkan.
-              </CardDescription>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-yellow-500" />
+                    Prompt Builder — Framework RISEN
+                  </CardTitle>
+                  <CardDescription>
+                    Isi setiap elemen RISEN untuk membuat prompt yang sempurna. 
+                    Semakin detail kamu mengisi, semakin baik output AI yang kamu dapatkan.
+                  </CardDescription>
+                </div>
+                <AIAutoFillButton
+                  toolName="prompt-framework"
+                  onFill={handleAutoFill}
+                  isAutoFilling={isAutoFilling}
+                  triggerAutoFill={triggerAutoFill}
+                  compact
+                />
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {risenBuilder.fields.map(field => (
@@ -954,8 +980,11 @@ export default function PromptFramework() {
                     id={field.id}
                     placeholder={field.placeholder}
                     value={risenValues[field.id] || ""}
-                    onChange={e => setRisenValues(prev => ({ ...prev, [field.id]: e.target.value }))}
-                    className="min-h-[70px] text-sm resize-none"
+                    onChange={e => {
+                      setRisenValues(prev => ({ ...prev, [field.id]: e.target.value }));
+                      markManualEdit(field.id);
+                    }}
+                    className={cn("min-h-[70px] text-sm resize-none", aiFilledFields.has(field.id) && AI_FIELD_CLASS)}
                     data-testid={`textarea-risen-${field.id}`}
                   />
                 </div>
