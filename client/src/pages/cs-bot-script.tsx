@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sparkles, Bot, Loader2, Copy, CheckCircle2, Download,
-  MessageSquare, BookOpen, AlertCircle, ChevronRight, Info, Zap, ArrowRight,
+  MessageSquare, BookOpen, AlertCircle, ChevronRight, Info, Zap, ArrowRight, X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
@@ -89,18 +89,41 @@ export default function CsBotScript() {
     if (fields.target) setTarget(fields.target);
   };
 
+  // Single hydration effect: precedence = URL params > Workroom prefill > campaign defaults
   useEffect(() => {
+    // 1. Check and consume Workroom prefill
+    const workroomFilled = { produk: false, deskripsiProduk: false };
+    try {
+      const raw = sessionStorage.getItem("workroom_prefill");
+      if (raw) {
+        sessionStorage.removeItem("workroom_prefill");
+        const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
+          deliverableType: string; content: string; projectName: string; title: string;
+        };
+        if (deliverableType === "cs_bot_script") {
+          if (title) { setProduk(title); workroomFilled.produk = true; }
+          setDeskripsiProduk(`[Dari Workroom: ${projectName}]\n${content}`.slice(0, 2000));
+          workroomFilled.deskripsiProduk = true;
+          setWorkroomBanner(`${projectName} — ${title}`);
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+
+    // 2. URL params (override everything, including Workroom)
     const params = new URLSearchParams(window.location.search);
     const p = params.get("produk");
     const h = params.get("harga");
     const t = params.get("target");
     if (p) setProduk(p);
-    else if (campaign.produk) setProduk(campaign.produk);
+    else if (!workroomFilled.produk && campaign.produk) setProduk(campaign.produk);
     if (h) setHarga(h);
     else if (campaign.harga) setHarga(campaign.harga);
     if (t) setTarget(t);
     else if (campaign.target) setTarget(campaign.target);
-    if (campaign.usp) setDeskripsiProduk(campaign.usp);
+    // Campaign USP only when Workroom didn't fill deskripsiProduk
+    if (!workroomFilled.deskripsiProduk && campaign.usp) setDeskripsiProduk(campaign.usp);
   }, []);
 
   const handleGenerate = async () => {
@@ -198,6 +221,20 @@ export default function CsBotScript() {
           />
         </div>
       </div>
+
+      {workroomBanner && (
+        <div className="flex items-center gap-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 px-4 py-3 text-sm">
+          <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold text-purple-700 dark:text-purple-300">Data dari Workroom termuat:</span>{" "}
+            <span className="text-purple-600 dark:text-purple-400 truncate">{workroomBanner}</span>
+            <span className="text-muted-foreground ml-2 text-xs">— Form sudah terisi, sesuaikan atau langsung generate.</span>
+          </div>
+          <button onClick={() => setWorkroomBanner(null)} className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <CampaignContextBar
         toolId="cs-bot-script"

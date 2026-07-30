@@ -15,7 +15,7 @@ import {
   Clapperboard, Loader2, Sparkles, ChevronRight, Copy,
   CheckCircle2, RefreshCw, Download, Zap, Hash,
   Clock, Eye, Volume2, Play, Film, List,
-  Camera, MessageSquare,
+  Camera, MessageSquare, X,
 } from "lucide-react";
 import { SiTiktok, SiInstagram, SiYoutube } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
@@ -104,11 +104,18 @@ export default function VideoScript() {
         deliverableType: string; content: string; projectName: string; title: string;
       };
       if (deliverableType === "video_script") {
-        setTopik(title);
+        if (title) setTopik(title);
         setProduk(projectName);
+        // Store script content as context in targetAudience field isn't ideal;
+        // Put a note in topik so user knows it came from Workroom
+        setTopik(`[Dari Workroom: ${projectName}] ${title}`.slice(0, 200));
+        setWorkroomBanner(`${projectName} — ${title}`);
+        // Also store the full script content via targetAudience as context hint
+        if (content) setTargetAudience(`Berdasarkan script Workroom: ${content}`.slice(0, 300));
       }
-      setWorkroomBanner(`${projectName} — ${title}`);
-    } catch { /* ignore */ }
+    } catch {
+      // ignore parse errors
+    }
   }, []);
 
   const handleAutoFill = (fields: Record<string, string>) => {
@@ -228,6 +235,20 @@ export default function VideoScript() {
           </Badge>
         </div>
 
+        {workroomBanner && (
+          <div className="flex items-center gap-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 px-4 py-3 text-sm">
+            <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="font-semibold text-purple-700 dark:text-purple-300">Data dari Workroom termuat:</span>{" "}
+              <span className="text-purple-600 dark:text-purple-400 truncate">{workroomBanner}</span>
+              <span className="text-muted-foreground ml-2 text-xs">— Form sudah terisi, sesuaikan atau langsung generate.</span>
+            </div>
+            <button onClick={() => setWorkroomBanner(null)} className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Platform Selector */}
         <div className="grid grid-cols-3 gap-3">
           {platforms.map((p) => {
@@ -263,12 +284,6 @@ export default function VideoScript() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {workroomBanner && (
-                  <div className="flex items-center gap-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/20 px-3 py-2 text-xs text-purple-700 dark:text-purple-300">
-                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>Pre-filled dari Workroom: <strong>{workroomBanner}</strong></span>
-                  </div>
-                )}
                 <AIAutoFillButton
                   toolName="video-script"
                   onFill={handleAutoFill}
