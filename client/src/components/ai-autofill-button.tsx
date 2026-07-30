@@ -29,6 +29,7 @@ interface WorkroomProject {
   status: string;
   currentPhase: number;
   updatedAt: string;
+  deliverableCount?: number;
 }
 
 interface AIAutoFillButtonProps {
@@ -274,6 +275,11 @@ function AIAutoFillDialogContent({
                     {p.name}
                     {p.currentPhase > 0 && (
                       <span className="ml-1.5 text-muted-foreground">· Fase {p.currentPhase}</span>
+                    )}
+                    {p.deliverableCount !== undefined && (
+                      <span className="ml-1.5 text-muted-foreground">
+                        · {p.deliverableCount} deliverable{p.deliverableCount !== 1 ? "s" : ""}
+                      </span>
                     )}
                   </SelectItem>
                 ))}

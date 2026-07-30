@@ -6,7 +6,7 @@ import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_in
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
 import { db } from "./db";
 import { workroomProjects, workroomDeliverables, businessProfiles } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray, count } from "drizzle-orm";
 import type { Express, Request, Response, NextFunction } from "express";
 
 const genAI = process.env.GEMINI_API_KEY 
@@ -3847,7 +3847,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     ],
   };
 
-  // GET /api/workroom/projects — list projects for the current user
+  // GET /api/workroom/projects — list projects for the current user (with deliverable count)
   app.get("/api/workroom/projects", async (req, res) => {
     try {
       const userId = (req as any).user?.claims?.sub ?? "";
@@ -3856,7 +3856,15 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
         .from(workroomProjects)
         .where(eq(workroomProjects.userId, userId))
         .orderBy(desc(workroomProjects.updatedAt));
-      res.json(projects);
+      if (projects.length === 0) return res.json([]);
+      // Attach deliverable counts in one query
+      const counts = await db
+        .select({ projectId: workroomDeliverables.projectId, total: count() })
+        .from(workroomDeliverables)
+        .where(inArray(workroomDeliverables.projectId, projects.map(p => p.id)))
+        .groupBy(workroomDeliverables.projectId);
+      const countMap = new Map(counts.map(c => [c.projectId, Number(c.total)]));
+      res.json(projects.map(p => ({ ...p, deliverableCount: countMap.get(p.id) ?? 0 })));
     } catch (err) {
       console.error("Workroom list error:", err);
       res.status(500).json({ error: "Gagal memuat proyek" });
