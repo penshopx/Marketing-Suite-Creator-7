@@ -37,6 +37,21 @@ function fail(label: string, detail?: string) {
   failed++;
 }
 
+// ─── Wait for server ─────────────────────────────────────────────────────────
+async function waitForServer(maxMs = 30_000): Promise<void> {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    try {
+      const r = await fetch(`${BASE}/api/auth/user`);
+      if (r.status < 500) return; // server is up (401 is fine)
+    } catch { /* not ready yet */ }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  console.error("Server did not become ready within 30s — aborting.");
+  process.exit(1);
+}
+await waitForServer();
+
 // ─── Login ────────────────────────────────────────────────────────────────────
 console.log("\n[0] Login");
 const loginRes = await fetch(`${BASE}/api/auth/login`, {
