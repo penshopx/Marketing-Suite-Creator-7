@@ -30,7 +30,7 @@ export default function CampaignAnalyzer() {
   const [objective, setObjective] = useState("conversions");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +43,7 @@ export default function CampaignAnalyzer() {
       };
       if (deliverableType === "kpi_framework") {
         setAdCopy(content.slice(0, 400));
+        protectWorkroomFields(["adCopy"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch { /* ignore */ }

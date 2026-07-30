@@ -171,6 +171,7 @@ export const workroomProjects = pgTable("workroom_projects", {
   currentPhase: integer("current_phase").default(0).notNull(), // 0=not started, 1-4=phase number
   status: text("status").default("active").notNull(), // active, completed, archived
   shareToken: varchar("share_token", { length: 64 }),
+  shareExpiresAt: timestamp("share_expires_at"),   // null = permanent; Task #50
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });

@@ -54,7 +54,7 @@ export default function InterestFinder() {
   const { toast } = useToast();
   const { campaign, save, addInterests, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
 
   const handleAutoFill = (fields: Record<string, string>) => {
     if (fields.keyword) setKeyword(fields.keyword);
@@ -83,10 +83,12 @@ export default function InterestFinder() {
         // Use project name as keyword, existing interest data as audience description context
         if (projectName && !niche) setKeyword(projectName);
         setDeskripsiAudience(`[Riset awal dari Workroom]\n${content.slice(0, 600)}`);
+        protectWorkroomFields(["keyword", "audienceDescription"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       } else if (deliverableType === "audience_persona") {
         if (projectName && !niche) setKeyword(projectName);
         setDeskripsiAudience(`[Persona dari Workroom]\n${content.slice(0, 600)}`);
+        protectWorkroomFields(["keyword", "audienceDescription"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch {

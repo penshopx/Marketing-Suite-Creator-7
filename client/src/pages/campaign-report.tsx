@@ -111,7 +111,7 @@ export default function CampaignReport() {
   const [waCopied, setWaCopied] = useState(false);
   const [waFmt, setWaFmt] = useState<"ringkas" | "detail">("ringkas");
   const { toast } = useToast();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -124,6 +124,7 @@ export default function CampaignReport() {
       };
       if (deliverableType === "tracking_setup") {
         setNamaBisnis(projectName);
+        protectWorkroomFields(["namaBisnis"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch { /* ignore */ }

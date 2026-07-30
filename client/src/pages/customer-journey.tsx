@@ -62,7 +62,7 @@ export default function CustomerJourney() {
   const { toast } = useToast();
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,6 +77,7 @@ export default function CustomerJourney() {
         setProduk(projectName);
         const kompMatch = content.match(/kompetitor[:\s]+([^\n]+)/i);
         if (kompMatch) setKompetitor(kompMatch[1].trim().slice(0, 100));
+        protectWorkroomFields(["productName", "kompetitor"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch { /* ignore */ }

@@ -89,7 +89,7 @@ export default function CSClosing() {
   const [history, setHistory] = useState<GeneratedScript[]>([]);
   const [activeSection, setActiveSection] = useState("opening");
   const { toast } = useToast();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -103,6 +103,7 @@ export default function CSClosing() {
       if (deliverableType === "cs_closing") {
         setProductName(projectName);
         setProductBenefit(content.split("\n").filter(Boolean)[0]?.slice(0, 200) ?? "");
+        protectWorkroomFields(["productName", "productBenefit"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch { /* ignore */ }

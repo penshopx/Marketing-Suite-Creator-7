@@ -4145,19 +4145,22 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
   app.post("/api/workroom/projects/:id/share", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = (req as any).user?.claims?.sub ?? "";
+      const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
       if (!userId) return res.status(401).json({ error: "Login diperlukan" });
       const [project] = await db.select().from(workroomProjects)
         .where(eq(workroomProjects.id, id));
       if (!project) return res.status(404).json({ error: "Project tidak ditemukan" });
       if (project.userId !== userId) return res.status(403).json({ error: "Forbidden" });
-      let token = (project as any).shareToken as string | null;
-      if (!token) {
-        token = require("crypto").randomUUID().replace(/-/g, "");
-        await db.update(workroomProjects).set({ shareToken: token } as any)
-          .where(eq(workroomProjects.id, id));
-      }
-      res.json({ token, shareUrl: `/api/workroom/share/${token}` });
+      // Task #50: accept optional expiresInDays; 0 or missing = permanent
+      const { expiresInDays } = req.body as { expiresInDays?: number };
+      const shareExpiresAt = (expiresInDays && expiresInDays > 0)
+        ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+        : null;
+      const token = require("crypto").randomUUID().replace(/-/g, "");
+      await db.update(workroomProjects)
+        .set({ shareToken: token, shareExpiresAt } as any)
+        .where(eq(workroomProjects.id, id));
+      res.json({ token, shareUrl: `/api/workroom/share/${token}`, shareExpiresAt });
     } catch (err) {
       console.error("Share project error:", err);
       res.status(500).json({ error: "Gagal membuat link berbagi" });
@@ -4172,6 +4175,14 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
       const project = projects.find((p: any) => p.shareToken === token);
       if (!project) {
         return res.status(404).send("<!DOCTYPE html><html><body><h2>Brief tidak ditemukan</h2><p>Link mungkin sudah tidak valid atau dicabut oleh pemiliknya.</p></body></html>");
+      }
+      // Task #50: check expiry
+      if ((project as any).shareExpiresAt && new Date() > new Date((project as any).shareExpiresAt)) {
+        return res.status(410).send(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"/><title>Link Kedaluwarsa</title>
+<style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;margin:0}
+.box{text-align:center;padding:40px;background:#fff;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.08);max-width:400px}
+h2{color:#ef4444;margin-bottom:12px}p{color:#64748b;font-size:14px}</style></head>
+<body><div class="box"><h2>⏰ Link Sudah Kedaluwarsa</h2><p>Link campaign brief ini sudah tidak aktif karena melewati tanggal kedaluwarsa yang ditentukan oleh pemiliknya.</p></div></body></html>`);
       }
       const delivs = await db.select().from(workroomDeliverables)
         .where(eq(workroomDeliverables.projectId, project.id))

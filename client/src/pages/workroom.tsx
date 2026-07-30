@@ -206,6 +206,7 @@ function DeliverableCard({
   const [showHistory, setShowHistory] = useState(false);
   const [revisions, setRevisions] = useState<WorkroomRevision[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const MAX_REVISIONS = 5;
   const { toast } = useToast();
 
   const handleRevise = async () => {
@@ -342,7 +343,9 @@ function DeliverableCard({
               }}
             >
               {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3" />}
-              Riwayat
+              Riwayat{showHistory && revisions.length >= MAX_REVISIONS && (
+                <span className="ml-1 text-[9px] font-semibold text-amber-600 dark:text-amber-400">{revisions.length}/{MAX_REVISIONS}</span>
+              )}
             </Button>
 
             {/* Use in tool */}
@@ -388,9 +391,16 @@ function DeliverableCard({
           {/* Revision history panel — Task #28 */}
           {showHistory && (
             <div className="space-y-2 pt-1 border-t mt-1">
-              <p className="text-[11px] text-muted-foreground font-medium">
-                Riwayat Revisi ({revisions.length} snapshot tersimpan):
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-muted-foreground font-medium">
+                  Riwayat Revisi ({revisions.length}/{MAX_REVISIONS} tersimpan)
+                </p>
+                {revisions.length >= MAX_REVISIONS && (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                    ⚠ Penuh — versi tertua akan diganti saat revisi berikutnya
+                  </span>
+                )}
+              </div>
               {revisions.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">Belum ada riwayat. Riwayat otomatis tersimpan setiap kali revisi AI dijalankan.</p>
               ) : (
@@ -554,6 +564,7 @@ export default function Workroom() {
 
   // Tab state
   const [tab, setTab] = useState<WorkroomTab>("projects");
+  const [shareExpiry, setShareExpiry] = useState<"7" | "30" | "90" | "0">("30"); // Task #50
 
   // ── Project Hub state ──
   const [projects, setProjects] = useState<WorkroomProject[]>([]);
@@ -845,19 +856,25 @@ export default function Workroom() {
   const handleShareBrief = async () => {
     if (!selectedProject) return;
     try {
+      const expiresInDays = parseInt(shareExpiry, 10); // 0 = permanent
       const r = await fetch(`/api/workroom/projects/${selectedProject.id}/share`, {
         method: "POST",
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expiresInDays }),
       });
       if (!r.ok) throw new Error("Share failed");
-      const { token, shareUrl } = await r.json() as { token: string; shareUrl: string };
+      const { token, shareUrl, shareExpiresAt } = await r.json() as { token: string; shareUrl: string; shareExpiresAt: string | null };
       const fullUrl = window.location.origin + shareUrl;
       await navigator.clipboard.writeText(fullUrl);
       // Task #47: update local state so "Cabut Link" button appears immediately
-      setSelectedProject((p) => p ? { ...p, shareToken: token } : p);
+      setSelectedProject((p) => p ? { ...p, shareToken: token, shareExpiresAt: shareExpiresAt ? new Date(shareExpiresAt) : null } as any : p);
+      const expiryNote = shareExpiresAt
+        ? `Kadaluwarsa: ${new Date(shareExpiresAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
+        : "Link permanen (tidak kedaluwarsa)";
       toast({
         title: "Link disalin ke clipboard ✓",
-        description: "Siapa saja dengan link ini bisa melihat campaign brief (read-only).",
+        description: expiryNote,
         duration: 4000,
       });
     } catch {
@@ -1018,15 +1035,28 @@ export default function Workroom() {
                   Cabut Link
                 </Button>
               ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs"
-                  onClick={handleShareBrief}
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  Bagikan Link
-                </Button>
+                <div className="flex items-center gap-1">
+                  {/* Task #50: duration picker */}
+                  <select
+                    value={shareExpiry}
+                    onChange={(e) => setShareExpiry(e.target.value as typeof shareExpiry)}
+                    className="h-8 text-xs border rounded-md px-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="7">7 hari</option>
+                    <option value="30">30 hari</option>
+                    <option value="90">90 hari</option>
+                    <option value="0">Permanen</option>
+                  </select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                    onClick={handleShareBrief}
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    Bagikan Link
+                  </Button>
+                </div>
               )}
             </div>
           )}
