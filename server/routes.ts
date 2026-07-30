@@ -5,6 +5,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "./storage";
 import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
+import { db } from "./db";
+import { workroomProjects, workroomDeliverables } from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 const genAI = process.env.GEMINI_API_KEY 
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -3493,6 +3496,400 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
       write({ error: "Workroom session gagal. Coba lagi." });
       res.end();
     }
+  });
+
+  // ============================================================
+  // WORKROOM — Campaign Project Hub (Persistent Projects + Deliverables)
+  // ============================================================
+
+  const PHASE_NAMES: Record<number, string> = {
+    1: "Riset & Intelijen",
+    2: "Kreasi Konten",
+    3: "Campaign Launch",
+    4: "Analitik & Konversi",
+  };
+
+  const PHASE_AGENTS: Record<number, Array<{
+    id: string; name: string; emoji: string;
+    deliverables: Array<{ type: string; targetTool: string; targetToolName: string }>;
+    systemPrompt: string;
+  }>> = {
+    1: [
+      {
+        id: "research", name: "OpenClaw-Research", emoji: "🔬",
+        deliverables: [
+          { type: "audience_persona", targetTool: "/audience-builder", targetToolName: "Audience Builder" },
+          { type: "interest_list", targetTool: "/interest-finder", targetToolName: "Interest Finder" },
+        ],
+        systemPrompt: `Kamu adalah OpenClaw-Research, spesialis riset & intelijen pasar dalam AI Marketing Team.
+Berdasarkan brief kampanye yang diberikan, hasilkan 2 deliverable konkret dalam format JSON array berikut.
+PENTING: Kembalikan HANYA JSON array, tanpa markdown, tanpa teks penjelasan.
+
+Format:
+[
+  {
+    "type": "audience_persona",
+    "title": "Audience Persona: [nama persona]",
+    "content": "[profil lengkap audience persona: demografi, psikografi, pain point, motivasi, platform favorit, behavior online, contoh minat spesifik]"
+  },
+  {
+    "type": "interest_list",
+    "title": "Interest & Keyword List untuk Targeting",
+    "content": "[daftar 20-30 interest/keyword spesifik untuk Facebook/Instagram/TikTok targeting, beserta volume & relevansi]"
+  }
+]
+
+Bahasa Indonesia. Konkret, spesifik, langsung bisa dipakai.`,
+      },
+    ],
+    2: [
+      {
+        id: "creative", name: "OpenClaw-Creative", emoji: "🎨",
+        deliverables: [
+          { type: "ad_copy", targetTool: "/ad-creator", targetToolName: "Ad Creator" },
+          { type: "hook", targetTool: "/hook-generator", targetToolName: "Hook Generator" },
+          { type: "video_script", targetTool: "/video-script", targetToolName: "Video Script" },
+        ],
+        systemPrompt: `Kamu adalah OpenClaw-Creative, spesialis kreasi konten & iklan dalam AI Marketing Team.
+Berdasarkan brief kampanye, hasilkan 3 deliverable dalam format JSON array.
+PENTING: Kembalikan HANYA JSON array, tanpa markdown, tanpa teks penjelasan.
+
+Format:
+[
+  {
+    "type": "ad_copy",
+    "title": "Ad Copy — [Platform]",
+    "content": "[headline primary text, description, CTA lengkap untuk Meta Ads / TikTok. Sertakan 2-3 variasi]"
+  },
+  {
+    "type": "hook",
+    "title": "Hook Pembuka — 5 Variasi",
+    "content": "[5 hook kuat untuk video/copy yang grab attention dalam 3 detik, dengan penjelasan mengapa efektif]"
+  },
+  {
+    "type": "video_script",
+    "title": "Video Script — [30/60 detik]",
+    "content": "[script video ad lengkap: hook, problem, solusi, CTA, dengan catatan visual dan VO]"
+  }
+]
+
+Bahasa Indonesia. Persuasif, conversion-focused.`,
+      },
+      {
+        id: "crm", name: "OpenClaw-CRM", emoji: "🤝",
+        deliverables: [
+          { type: "wa_broadcast", targetTool: "/wa-broadcast", targetToolName: "WA Broadcast" },
+          { type: "cs_bot_script", targetTool: "/cs-bot-script", targetToolName: "CS Bot Script" },
+        ],
+        systemPrompt: `Kamu adalah OpenClaw-CRM, spesialis customer relationship dalam AI Marketing Team.
+Berdasarkan brief kampanye, hasilkan 2 deliverable dalam format JSON array.
+PENTING: Kembalikan HANYA JSON array, tanpa markdown, tanpa teks penjelasan.
+
+Format:
+[
+  {
+    "type": "wa_broadcast",
+    "title": "WA Broadcast Sequence — [Nama Kampanye]",
+    "content": "[3-5 pesan WA broadcast yang berbeda untuk follow-up leads: welcome message, value message, offer message, urgency message, closing message]"
+  },
+  {
+    "type": "cs_bot_script",
+    "title": "CS Bot Script — FAQ & Handling Objection",
+    "content": "[script lengkap untuk CS/bot: greeting, FAQ answers, handling 5 objeksi umum, closing script]"
+  }
+]
+
+Bahasa Indonesia. Natural, conversational, high-converting.`,
+      },
+    ],
+    3: [
+      {
+        id: "media", name: "OpenClaw-Media", emoji: "📡",
+        deliverables: [
+          { type: "media_plan", targetTool: "/meta-ads", targetToolName: "Meta Ads" },
+          { type: "budget_allocation", targetTool: "/campaign-launcher", targetToolName: "Campaign Launcher" },
+        ],
+        systemPrompt: `Kamu adalah OpenClaw-Media, spesialis media planning & buying dalam AI Marketing Team.
+Berdasarkan brief kampanye, hasilkan 2 deliverable dalam format JSON array.
+PENTING: Kembalikan HANYA JSON array, tanpa markdown, tanpa teks penjelasan.
+
+Format:
+[
+  {
+    "type": "media_plan",
+    "title": "Media Plan — [Nama Kampanye]",
+    "content": "[rencana media lengkap: platform mix (Meta/TikTok/Google), objective per platform, format iklan, placement, targeting approach, timeline per minggu]"
+  },
+  {
+    "type": "budget_allocation",
+    "title": "Budget Allocation & Bidding Strategy",
+    "content": "[alokasi budget per platform dalam persentase dan estimasi Rp, bidding strategy per campaign, KPI per budget, projected reach & conversion]"
+  }
+]
+
+Bahasa Indonesia. Terstruktur, terukur, langsung implementable.`,
+      },
+      {
+        id: "execution", name: "OpenClaw-Execution", emoji: "🚀",
+        deliverables: [
+          { type: "launch_checklist", targetTool: "/execution-plan", targetToolName: "Execution Plan" },
+          { type: "campaign_brief", targetTool: "/campaign-launcher", targetToolName: "Campaign Launcher" },
+        ],
+        systemPrompt: `Kamu adalah OpenClaw-Execution, spesialis campaign launch dalam AI Marketing Team.
+Kamu memastikan eksekusi kampanye berjalan sempurna dari pre-launch hingga go-live.
+Berdasarkan brief kampanye, hasilkan 2 deliverable dalam format JSON array.
+PENTING: Kembalikan HANYA JSON array, tanpa markdown, tanpa teks penjelasan.
+
+Format:
+[
+  {
+    "type": "launch_checklist",
+    "title": "Launch Checklist — Pre, During & Post Launch",
+    "content": "[checklist lengkap: pre-launch (tracking setup, creative approval, audience setup), D-day launch (monitoring, backup plan), post-launch (optimasi hari 1-7)]"
+  },
+  {
+    "type": "campaign_brief",
+    "title": "Campaign Launch Brief — [Nama Kampanye]",
+    "content": "[brief lengkap kampanye: objective, target audience, USP, key message, timeline, success metrics, escalation protocol]"
+  }
+]
+
+Bahasa Indonesia. Operasional, detail, actionable.`,
+      },
+    ],
+    4: [
+      {
+        id: "analytics", name: "OpenClaw-Analytics", emoji: "📊",
+        deliverables: [
+          { type: "kpi_framework", targetTool: "/campaign-analyzer", targetToolName: "Campaign Analyzer" },
+          { type: "tracking_setup", targetTool: "/campaign-report", targetToolName: "Campaign Report" },
+        ],
+        systemPrompt: `Kamu adalah OpenClaw-Analytics, spesialis analitik & performa dalam AI Marketing Team.
+Berdasarkan brief kampanye, hasilkan 2 deliverable dalam format JSON array.
+PENTING: Kembalikan HANYA JSON array, tanpa markdown, tanpa teks penjelasan.
+
+Format:
+[
+  {
+    "type": "kpi_framework",
+    "title": "KPI Framework — [Nama Kampanye]",
+    "content": "[framework KPI lengkap: KPI utama & secondary, target angka spesifik, benchmark industri, threshold untuk scale/stop campaign, ritme review (daily/weekly)]"
+  },
+  {
+    "type": "tracking_setup",
+    "title": "Tracking & Reporting Setup",
+    "content": "[panduan setup tracking: Meta Pixel events, UTM parameters, custom conversions, dashboard reporting template, metric yang harus dipantau tiap hari]"
+  }
+]
+
+Bahasa Indonesia. Berbasis data, dengan angka target spesifik.`,
+      },
+      {
+        id: "conversion", name: "OpenClaw-Conversion", emoji: "💰",
+        deliverables: [
+          { type: "cs_closing", targetTool: "/cs-closing", targetToolName: "CS Closing" },
+          { type: "customer_journey", targetTool: "/customer-journey", targetToolName: "Customer Journey" },
+        ],
+        systemPrompt: `Kamu adalah OpenClaw-Conversion, spesialis CS & closing dalam AI Marketing Team.
+Kamu fokus mengoptimalkan konversi leads menjadi buyer melalui script closing dan customer journey optimization.
+Berdasarkan brief kampanye, hasilkan 2 deliverable dalam format JSON array.
+PENTING: Kembalikan HANYA JSON array, tanpa markdown, tanpa teks penjelasan.
+
+Format:
+[
+  {
+    "type": "cs_closing",
+    "title": "CS Closing Script — [Nama Produk]",
+    "content": "[script closing lengkap: opening yang warm, discovery questions, presenting solution, handling objeksi (harga/waktu/butuh pikir), closing technique, follow-up script]"
+  },
+  {
+    "type": "customer_journey",
+    "title": "Customer Journey Map — Awareness to Advocacy",
+    "content": "[peta perjalanan customer: setiap touchpoint dari awareness → interest → desire → action → retention, pain point di setiap tahap, dan solusi optimasinya]"
+  }
+]
+
+Bahasa Indonesia. Human, persuasif, conversion-focused.`,
+      },
+    ],
+  };
+
+  // GET /api/workroom/projects — list all projects
+  app.get("/api/workroom/projects", async (req, res) => {
+    try {
+      const projects = await db.select().from(workroomProjects).orderBy(desc(workroomProjects.updatedAt));
+      res.json(projects);
+    } catch (err) {
+      console.error("Workroom list error:", err);
+      res.status(500).json({ error: "Gagal memuat proyek" });
+    }
+  });
+
+  // POST /api/workroom/projects — create project
+  app.post("/api/workroom/projects", async (req, res) => {
+    try {
+      const { name, brief } = req.body;
+      if (!name?.trim() || !brief?.trim()) {
+        return res.status(400).json({ error: "Nama dan brief wajib diisi" });
+      }
+      const [project] = await db.insert(workroomProjects).values({
+        name: name.trim(),
+        brief: brief.trim(),
+        currentPhase: 0,
+        status: "active",
+      }).returning();
+      res.json(project);
+    } catch (err) {
+      console.error("Workroom create error:", err);
+      res.status(500).json({ error: "Gagal membuat proyek" });
+    }
+  });
+
+  // GET /api/workroom/projects/:id — get project + deliverables
+  app.get("/api/workroom/projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [project] = await db.select().from(workroomProjects).where(eq(workroomProjects.id, id));
+      if (!project) return res.status(404).json({ error: "Proyek tidak ditemukan" });
+      const delivs = await db.select().from(workroomDeliverables)
+        .where(eq(workroomDeliverables.projectId, id))
+        .orderBy(workroomDeliverables.phase, workroomDeliverables.id);
+      res.json({ project, deliverables: delivs });
+    } catch (err) {
+      console.error("Workroom get error:", err);
+      res.status(500).json({ error: "Gagal memuat proyek" });
+    }
+  });
+
+  // DELETE /api/workroom/projects/:id
+  app.delete("/api/workroom/projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await db.delete(workroomProjects).where(eq(workroomProjects.id, id));
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Workroom delete error:", err);
+      res.status(500).json({ error: "Gagal menghapus proyek" });
+    }
+  });
+
+  // PATCH /api/workroom/deliverables/:id — update status or content
+  app.patch("/api/workroom/deliverables/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, content } = req.body;
+      const updates: Record<string, string> = { updatedAt: new Date().toISOString() };
+      if (status) updates.status = status;
+      if (content) updates.content = content;
+      const [updated] = await db.update(workroomDeliverables)
+        .set(updates as any)
+        .where(eq(workroomDeliverables.id, id))
+        .returning();
+      res.json(updated);
+    } catch (err) {
+      console.error("Workroom deliverable patch error:", err);
+      res.status(500).json({ error: "Gagal memperbarui deliverable" });
+    }
+  });
+
+  // POST /api/workroom/projects/:id/generate-phase — SSE generation for a phase
+  app.post("/api/workroom/projects/:id/generate-phase", async (req, res) => {
+    const projectId = parseInt(req.params.id);
+    const { phase } = req.body;
+    const phaseNum = parseInt(phase);
+
+    if (!phaseNum || phaseNum < 1 || phaseNum > 4) {
+      return res.status(400).json({ error: "Fase tidak valid (1-4)" });
+    }
+
+    const agents = PHASE_AGENTS[phaseNum];
+    if (!agents) return res.status(400).json({ error: "Konfigurasi fase tidak ditemukan" });
+
+    const [project] = await db.select().from(workroomProjects).where(eq(workroomProjects.id, projectId));
+    if (!project) return res.status(404).json({ error: "Proyek tidak ditemukan" });
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const write = (data: object) => {
+      if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // Delete existing deliverables for this phase (allow regeneration)
+    await db.delete(workroomDeliverables).where(
+      and(
+        eq(workroomDeliverables.projectId, projectId),
+        eq(workroomDeliverables.phase, phaseNum)
+      )
+    );
+
+    // Run all agents for this phase in parallel
+    await Promise.all(agents.map(async (agent) => {
+      write({ type: "agent_start", agentId: agent.id, agentName: agent.name });
+
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: agent.systemPrompt },
+            { role: "user", content: `Brief kampanye:\n\n"${project.brief}"\n\nNama proyek: ${project.name}\n\nHasilkan deliverable konkret untuk kampanye ini.` },
+          ],
+          max_completion_tokens: 3000,
+        });
+
+        const raw = completion.choices[0]?.message?.content ?? "";
+        
+        // Extract JSON from response
+        let deliverableData: Array<{ type: string; title: string; content: string }> = [];
+        try {
+          // Try to find JSON array in response
+          const jsonMatch = raw.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            deliverableData = JSON.parse(jsonMatch[0]);
+          }
+        } catch {
+          // Fallback: create a single deliverable with raw content
+          deliverableData = [{
+            type: agent.deliverables[0]?.type ?? "report",
+            title: `Laporan ${agent.name}`,
+            content: raw,
+          }];
+        }
+
+        // Save each deliverable to DB
+        const saved = [];
+        for (const d of deliverableData) {
+          const delivDef = agent.deliverables.find((def) => def.type === d.type);
+          const [row] = await db.insert(workroomDeliverables).values({
+            projectId,
+            phase: phaseNum,
+            agentId: agent.id,
+            agentName: agent.name,
+            deliverableType: d.type,
+            title: d.title,
+            content: d.content,
+            status: "draft",
+            targetTool: delivDef?.targetTool ?? null,
+            targetToolName: delivDef?.targetToolName ?? null,
+          }).returning();
+          saved.push(row);
+        }
+
+        write({ type: "agent_done", agentId: agent.id, deliverables: saved });
+      } catch (err) {
+        console.error(`OpenClaw ${agent.id} generation error:`, err);
+        write({ type: "agent_error", agentId: agent.id, error: "Gagal generate" });
+      }
+    }));
+
+    // Update project currentPhase
+    await db.update(workroomProjects)
+      .set({ currentPhase: Math.max(project.currentPhase, phaseNum), updatedAt: new Date() as any })
+      .where(eq(workroomProjects.id, projectId));
+
+    write({ type: "done", phase: phaseNum });
+    res.end();
   });
 
   return httpServer;

@@ -130,6 +130,46 @@ export const insertAudioHistorySchema = createInsertSchema(audioHistory).omit({
 export type AudioHistory = typeof audioHistory.$inferSelect;
 export type InsertAudioHistory = z.infer<typeof insertAudioHistorySchema>;
 
+// ─── Workroom Campaign Projects ──────────────────────────────────────────────
+
+export const workroomProjects = pgTable("workroom_projects", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  brief: text("brief").notNull(),
+  currentPhase: integer("current_phase").default(0).notNull(), // 0=not started, 1-4=phase number
+  status: text("status").default("active").notNull(), // active, completed, archived
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const workroomDeliverables = pgTable("workroom_deliverables", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => workroomProjects.id, { onDelete: "cascade" }),
+  phase: integer("phase").notNull(), // 1, 2, 3, 4
+  agentId: text("agent_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  deliverableType: text("deliverable_type").notNull(), // e.g. "audience_persona", "ad_copy"
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  status: text("status").default("draft").notNull(), // draft, under_review, approved, exported
+  targetTool: text("target_tool"), // URL path e.g. "/audience-builder"
+  targetToolName: text("target_tool_name"), // Display name e.g. "Audience Builder"
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertWorkroomProjectSchema = createInsertSchema(workroomProjects).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export const insertWorkroomDeliverableSchema = createInsertSchema(workroomDeliverables).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+
+export type WorkroomProject = typeof workroomProjects.$inferSelect;
+export type InsertWorkroomProject = z.infer<typeof insertWorkroomProjectSchema>;
+export type WorkroomDeliverable = typeof workroomDeliverables.$inferSelect;
+export type InsertWorkroomDeliverable = z.infer<typeof insertWorkroomDeliverableSchema>;
+
 // Platform options for ads
 export const adPlatforms = [
   "meta_ads",
