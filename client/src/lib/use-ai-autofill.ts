@@ -9,6 +9,7 @@ export interface UseAIAutoFillResult {
     toolName: string,
     userBrief: string,
     campaignContext?: Record<string, string>,
+    workroomProjectId?: number,
   ) => Promise<Record<string, string> | null>;
   markManualEdit: (field: string) => void;
   clearAIFields: () => void;
@@ -21,7 +22,7 @@ export interface UseAIAutoFillResult {
  *   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
  *
  *   // On button click
- *   const values = await triggerAutoFill("ad-creator", userBrief, campaignCtx);
+ *   const values = await triggerAutoFill("ad-creator", userBrief, campaignCtx, workroomProjectId);
  *   if (values) { setProductName(values.productName ?? ""); ... }
  *
  *   // In the input's className
@@ -33,6 +34,9 @@ export interface UseAIAutoFillResult {
  * Task #15 protection: fields the user has manually edited are tracked in manuallyEditedFields.
  * triggerAutoFill filters out those keys from the returned fields so handleAutoFill won't
  * overwrite them. The protection resets every time the user explicitly triggers a fresh fill.
+ *
+ * Task #14: accepts optional workroomProjectId to inject Workroom deliverable history as
+ * additional context into the AI auto-fill prompt.
  */
 export function useAIAutoFill(): UseAIAutoFillResult {
   const [isAutoFilling, setIsAutoFilling] = useState(false);
@@ -47,6 +51,7 @@ export function useAIAutoFill(): UseAIAutoFillResult {
       toolName: string,
       userBrief: string,
       campaignContext?: Record<string, string>,
+      workroomProjectId?: number,
     ): Promise<Record<string, string> | null> => {
       // Capture and reset the protected set before the fill so this fill
       // respects edits from a *previous* auto-fill session, then clears for
@@ -59,7 +64,7 @@ export function useAIAutoFill(): UseAIAutoFillResult {
         const response = await fetch("/api/ai-autofill", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ toolName, userBrief, campaignContext }),
+          body: JSON.stringify({ toolName, userBrief, campaignContext, workroomProjectId }),
         });
         if (!response.ok) throw new Error("Auto-fill failed");
         const data = await response.json();

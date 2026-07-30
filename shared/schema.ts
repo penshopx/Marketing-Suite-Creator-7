@@ -165,6 +165,7 @@ export type InsertAudioHistory = z.infer<typeof insertAudioHistorySchema>;
 
 export const workroomProjects = pgTable("workroom_projects", {
   id: serial("id").primaryKey(),
+  userId: varchar("user_id").default("").notNull(), // references users.id; "" for legacy rows
   name: text("name").notNull(),
   brief: text("brief").notNull(),
   currentPhase: integer("current_phase").default(0).notNull(), // 0=not started, 1-4=phase number

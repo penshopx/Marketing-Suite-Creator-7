@@ -12,9 +12,24 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Wand2, Loader2, Sparkles, Building2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Wand2, Loader2, Sparkles, Building2, FolderOpen } from "lucide-react";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
 import { useAuth } from "@/hooks/use-auth";
+
+interface WorkroomProject {
+  id: number;
+  name: string;
+  status: string;
+  currentPhase: number;
+  updatedAt: string;
+}
 
 interface AIAutoFillButtonProps {
   toolName: string;
@@ -24,6 +39,7 @@ interface AIAutoFillButtonProps {
     toolName: string,
     userBrief: string,
     campaignContext?: Record<string, string>,
+    workroomProjectId?: number,
   ) => Promise<Record<string, string> | null>;
   /** Optional compact variant — renders as a small badge-like button */
   compact?: boolean;
@@ -32,6 +48,9 @@ interface AIAutoFillButtonProps {
 /**
  * Drop-in button that opens a brief-input dialog and fires the AI Auto-Fill flow.
  * Place it near the top of any tool form.
+ *
+ * Task #14: supports optional Workroom project context selector. When a project is
+ * selected its deliverables are sent to the server and injected into the AI prompt.
  */
 export function AIAutoFillButton({
   toolName,
@@ -42,13 +61,22 @@ export function AIAutoFillButton({
 }: AIAutoFillButtonProps) {
   const [open, setOpen] = useState(false);
   const [brief, setBrief] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>(undefined);
   const { campaign, isActive } = useCampaignStore();
   const { user } = useAuth();
+
   const { data: businessProfile } = useQuery<{ businessName?: string; businessType?: string; industry?: string }>({
     queryKey: ["/api/business-profile"],
     enabled: !!user,
     staleTime: 60_000,
   });
+
+  const { data: workroomProjects = [] } = useQuery<WorkroomProject[]>({
+    queryKey: ["/api/workroom/projects"],
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+
   const hasProfile = !!(businessProfile?.businessName);
 
   const campaignContext: Record<string, string> = {};
@@ -65,9 +93,16 @@ export function AIAutoFillButton({
 
   const hasCampaign = isActive && Object.keys(campaignContext).length > 0;
 
+  const selectedProject = workroomProjects.find((p) => p.id === selectedProjectId);
+
   const handleFill = async () => {
     setOpen(false);
-    const fields = await triggerAutoFill(toolName, brief, hasCampaign ? campaignContext : undefined);
+    const fields = await triggerAutoFill(
+      toolName,
+      brief,
+      hasCampaign ? campaignContext : undefined,
+      selectedProjectId,
+    );
     if (fields) {
       onFill(fields);
       setBrief("");
@@ -79,6 +114,10 @@ export function AIAutoFillButton({
     campaignContext,
     hasProfile,
     businessProfile,
+    workroomProjects,
+    selectedProjectId,
+    selectedProject,
+    onSelectProject: setSelectedProjectId,
     brief,
     setBrief,
     isAutoFilling,
@@ -99,6 +138,11 @@ export function AIAutoFillButton({
           >
             {isAutoFilling ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
             AI Isi Otomatis
+            {selectedProject && (
+              <span className="ml-1 text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1 rounded">
+                {selectedProject.name}
+              </span>
+            )}
           </Button>
         </DialogTrigger>
         <AIAutoFillDialogContent {...dialogProps} />
@@ -117,6 +161,11 @@ export function AIAutoFillButton({
         >
           {isAutoFilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
           {isAutoFilling ? "AI sedang mengisi..." : "✨ AI Isi Otomatis"}
+          {selectedProject && !isAutoFilling && (
+            <Badge variant="secondary" className="ml-1 text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-0">
+              Dari Workroom: {selectedProject.name}
+            </Badge>
+          )}
         </Button>
       </DialogTrigger>
       <AIAutoFillDialogContent {...dialogProps} />
@@ -129,6 +178,10 @@ interface DialogContentProps {
   campaignContext: Record<string, string>;
   hasProfile: boolean;
   businessProfile?: { businessName?: string; businessType?: string; industry?: string };
+  workroomProjects: WorkroomProject[];
+  selectedProjectId: number | undefined;
+  selectedProject: WorkroomProject | undefined;
+  onSelectProject: (id: number | undefined) => void;
   brief: string;
   setBrief: (v: string) => void;
   isAutoFilling: boolean;
@@ -141,13 +194,17 @@ function AIAutoFillDialogContent({
   campaignContext,
   hasProfile,
   businessProfile,
+  workroomProjects,
+  selectedProjectId,
+  selectedProject,
+  onSelectProject,
   brief,
   setBrief,
   isAutoFilling,
   onFill,
   onCancel,
 }: DialogContentProps) {
-  const hasContext = hasCampaign || hasProfile;
+  const hasContext = hasCampaign || hasProfile || !!selectedProjectId;
   const canSubmit = hasContext || brief.trim().length > 0;
 
   return (
@@ -191,6 +248,43 @@ function AIAutoFillDialogContent({
                 </Badge>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Workroom project selector */}
+        {workroomProjects.length > 0 && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+              <FolderOpen className="h-3.5 w-3.5" />
+              Konteks dari Workroom (opsional)
+            </label>
+            <Select
+              value={selectedProjectId !== undefined ? String(selectedProjectId) : "none"}
+              onValueChange={(v) => onSelectProject(v === "none" ? undefined : parseInt(v))}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Pilih proyek Workroom..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none" className="text-xs text-muted-foreground">
+                  — Tidak pakai konteks Workroom —
+                </SelectItem>
+                {workroomProjects.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)} className="text-xs">
+                    {p.name}
+                    {p.currentPhase > 0 && (
+                      <span className="ml-1.5 text-muted-foreground">· Fase {p.currentPhase}</span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedProject && (
+              <p className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                AI akan membaca deliverable proyek ini sebagai referensi
+              </p>
+            )}
           </div>
         )}
 
