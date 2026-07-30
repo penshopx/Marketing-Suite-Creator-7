@@ -4761,9 +4761,21 @@ ${delivHTML}
 
       const systemPrompt = `Anda adalah AI Marketing Assistant yang ahli mengisi form tool marketing secara cerdas dan relevan. Selalu balas dalam JSON valid.${(req as any).bpCtx || ""}`;
 
+      // Task #16: when user has a business profile but sent no other context,
+      // explicitly tell the AI to use the profile from the system prompt
+      // instead of falling back to an invented placeholder product.
+      let contextSection: string;
+      if (contextParts.length > 0) {
+        contextSection = contextParts.join("\n\n");
+      } else if ((req as any).bpCtx) {
+        contextSection = "Gunakan data bisnis dari profil pengguna yang ada di system prompt (bagian [KONTEKS BISNIS PENGGUNA]) untuk mengisi semua field dengan informasi yang konkret, spesifik, dan relevan untuk bisnis tersebut. Jangan mengarang produk fiktif.";
+      } else {
+        contextSection = "Tidak ada konteks bisnis tersedia. Buat contoh produk yang masuk akal dan konsisten di semua field.";
+      }
+
       const userPrompt = `Tool: ${config.description}
 
-${contextParts.length > 0 ? contextParts.join("\n\n") : "Tidak ada konteks campaign. Gunakan contoh produk yang masuk akal dan relevan."}
+${contextSection}
 
 Tugas: Isi semua field form berikut dengan nilai yang **realistis, spesifik, dan actionable** untuk tool ini.
 
