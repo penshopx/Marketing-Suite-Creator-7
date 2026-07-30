@@ -1,11 +1,18 @@
 /**
  * Streaming smoke test — runs against the live dev server.
  *
- * Checks that:
- *   1. POST /api/auth/login succeeds and returns a session cookie
- *   2. POST /api/chat returns proper SSE tokens: data: {"content":"..."}
- *   3. The stream terminates with data: {"done":true}  (not the old "[DONE]" format)
- *   4. No { error: "..." } event is emitted during a normal response
+ * Covers three SSE endpoints that all use pipeStreamToSSE():
+ *   • POST /api/chat        → tokens as {"content":"..."}, terminates with {"done":true}
+ *   • POST /api/expert-chat → same format
+ *   • POST /api/guide-chat  → tokens as {"text":"..."},    terminates with {"done":true}
+ *                             (was broken: used to send `data: [DONE]` which the SSE
+ *                              client silently dropped — fixed by Task #23)
+ *
+ * Checks per endpoint:
+ *   1. HTTP 200 with Content-Type: text/event-stream
+ *   2. At least one content/text token received
+ *   3. Stream ends with {"done":true}  (never the legacy "[DONE]" string)
+ *   4. No {"error":"..."} event emitted during a normal response
  *
  * Exit 0 = all checks passed.  Exit 1 = at least one check failed.
  *
@@ -30,8 +37,8 @@ function fail(label: string, detail?: string) {
   failed++;
 }
 
-// ─── Step 1: login ────────────────────────────────────────────────────────────
-console.log("\n[1] Login");
+// ─── Login ────────────────────────────────────────────────────────────────────
+console.log("\n[0] Login");
 const loginRes = await fetch(`${BASE}/api/auth/login`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
@@ -47,113 +54,118 @@ if (loginRes.status >= 200 && loginRes.status < 400) {
   process.exit(1);
 }
 
-const setCookie = loginRes.headers.get("set-cookie") ?? "";
-const sessionCookie = setCookie.split(";")[0]; // "connect.sid=..."
+const sessionCookie = (loginRes.headers.get("set-cookie") ?? "").split(";")[0];
 
-// ─── Step 2: streaming chat ───────────────────────────────────────────────────
-console.log("\n[2] Streaming /api/chat");
-const chatRes = await fetch(`${BASE}/api/chat`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Cookie: sessionCookie,
-  },
-  body: JSON.stringify({ message: "Satu kata saja" }),
-});
+// ─── SSE helper ───────────────────────────────────────────────────────────────
+async function testSSEEndpoint(opts: {
+  label: string;
+  url: string;
+  body: unknown;
+  tokenKey: string;   // "content" or "text"
+}): Promise<void> {
+  console.log(`\n[${opts.label}] ${opts.url}`);
 
-if (chatRes.status === 200) {
-  ok(`POST /api/chat → 200`);
-} else {
-  fail(`POST /api/chat → ${chatRes.status}`);
-  process.exit(1);
-}
+  const res = await fetch(`${BASE}${opts.url}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: sessionCookie },
+    body: JSON.stringify(opts.body),
+  });
 
-const contentType = chatRes.headers.get("content-type") ?? "";
-if (contentType.includes("text/event-stream")) {
-  ok(`Content-Type: text/event-stream`);
-} else {
-  fail(`Content-Type`, `expected text/event-stream, got "${contentType}"`);
-}
+  if (res.status === 200) {
+    ok(`HTTP 200`);
+  } else {
+    fail(`HTTP status`, `expected 200, got ${res.status}`);
+    return;
+  }
 
-// ─── Step 3: parse SSE frames ─────────────────────────────────────────────────
-console.log("\n[3] SSE frame validation");
-const reader = chatRes.body!.getReader();
-const decoder = new TextDecoder();
-let buffer = "";
-let tokenCount = 0;
-let sawDone = false;
-let sawLegacyDone = false; // the old `[DONE]` format
-let sawError = false;
+  const ct = res.headers.get("content-type") ?? "";
+  if (ct.includes("text/event-stream")) {
+    ok(`Content-Type: text/event-stream`);
+  } else {
+    fail(`Content-Type`, `expected text/event-stream, got "${ct}"`);
+  }
 
-const MAX_WAIT_MS = 30_000;
-const deadline = Date.now() + MAX_WAIT_MS;
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let tokenCount = 0;
+  let sawDone = false;
+  let sawLegacyDone = false;
+  let sawError = false;
+  const deadline = Date.now() + 30_000;
 
-outer: while (Date.now() < deadline) {
-  const { done, value } = await reader.read();
-  if (done) break;
+  outer: while (Date.now() < deadline) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
 
-  buffer += decoder.decode(value, { stream: true });
-  const lines = buffer.split("\n");
-  buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const raw = line.slice(6).trim();
 
-  for (const line of lines) {
-    if (!line.startsWith("data: ")) continue;
-    const raw = line.slice(6).trim();
+      if (raw === "[DONE]") { sawLegacyDone = true; break outer; }
 
-    // Old format — should never appear after Task #23 fix
-    if (raw === "[DONE]") {
-      sawLegacyDone = true;
-      break outer;
-    }
+      let parsed: Record<string, unknown>;
+      try { parsed = JSON.parse(raw); } catch { continue; }
 
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      // Malformed frame — skip (stream-sse.ts also skips these)
-      continue;
-    }
-
-    if (parsed.error) {
-      sawError = true;
-      fail(`Unexpected SSE error frame`, String(parsed.error));
-      break outer;
-    }
-
-    if (parsed.content !== undefined) {
-      tokenCount++;
-    }
-
-    if (parsed.done === true) {
-      sawDone = true;
-      break outer;
+      if (parsed.error) { sawError = true; fail(`SSE error frame`, String(parsed.error)); break outer; }
+      if (parsed[opts.tokenKey] !== undefined) tokenCount++;
+      if (parsed.done === true) { sawDone = true; break outer; }
     }
   }
+
+  reader.releaseLock();
+
+  tokenCount > 0
+    ? ok(`Received ${tokenCount} "${opts.tokenKey}" token(s)`)
+    : fail(`No "${opts.tokenKey}" tokens received`);
+
+  sawDone
+    ? ok(`Terminated with {"done":true}`)
+    : fail(`Missing {"done":true} terminator`);
+
+  sawLegacyDone
+    ? fail(`Legacy [DONE] terminator detected — pipeStreamToSSE fix missing`)
+    : ok(`No legacy [DONE] terminator`);
+
+  if (!sawError) ok(`No SSE error frames`);
 }
 
-reader.releaseLock();
+// ─── Run all four endpoints ────────────────────────────────────────────────────
+await testSSEEndpoint({
+  label: "1: chat",
+  url: "/api/chat",
+  body: { message: "Satu kata saja" },
+  tokenKey: "content",
+});
 
-if (tokenCount > 0) {
-  ok(`Received ${tokenCount} content token(s)`);
-} else {
-  fail(`No content tokens received`);
-}
+await testSSEEndpoint({
+  label: "2: expert-chat",
+  url: "/api/expert-chat",
+  body: { message: "Satu kata saja", expertType: "marketing" },
+  tokenKey: "content",
+});
 
-if (sawDone) {
-  ok(`Stream terminated with {"done":true}`);
-} else {
-  fail(`Stream did not send {"done":true} terminator`);
-}
+await testSSEEndpoint({
+  label: "3: guide-chat (was [DONE] bug)",
+  url: "/api/guide-chat",
+  body: { message: "Halo", history: [], context: { isAuthenticated: true, userName: "Test" } },
+  tokenKey: "text",
+});
 
-if (sawLegacyDone) {
-  fail(`Stream sent legacy [DONE] terminator — guide-chat fix may be missing`);
-} else {
-  ok(`No legacy [DONE] terminator`);
-}
-
-if (!sawError) {
-  ok(`No SSE error frames`);
-}
+await testSSEEndpoint({
+  label: "4: generate-story",
+  url: "/api/generate-story",
+  body: {
+    storyType: "before_after",
+    emotion: "inspired",
+    productName: "Kopi Premium",
+    productBenefit: "Meningkatkan fokus kerja",
+  },
+  tokenKey: "content",
+});
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 console.log(`\n── Result: ${passed} passed, ${failed} failed ──\n`);
