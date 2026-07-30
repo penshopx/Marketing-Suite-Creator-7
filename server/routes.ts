@@ -3878,7 +3878,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     try {
       const id = parseInt(req.params.id);
       const { status, content } = req.body;
-      const updates: Record<string, string> = { updatedAt: new Date().toISOString() };
+      const updates: Record<string, unknown> = { updatedAt: new Date() };
       if (status) updates.status = status;
       if (content) updates.content = content;
       const [updated] = await db.update(workroomDeliverables)
@@ -3889,6 +3889,62 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     } catch (err) {
       console.error("Workroom deliverable patch error:", err);
       res.status(500).json({ error: "Gagal memperbarui deliverable" });
+    }
+  });
+
+  // POST /api/workroom/deliverables/:id/revise — AI revision (Tasks #11 / #20 / #21)
+  app.post("/api/workroom/deliverables/:id/revise", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { revisionInstructions } = req.body as { revisionInstructions?: string };
+      if (!revisionInstructions?.trim()) {
+        return res.status(400).json({ error: "Instruksi revisi tidak boleh kosong" });
+      }
+
+      // Load deliverable + its project for context
+      const [deliverable] = await db
+        .select()
+        .from(workroomDeliverables)
+        .where(eq(workroomDeliverables.id, id));
+      if (!deliverable) return res.status(404).json({ error: "Deliverable tidak ditemukan" });
+
+      const [project] = await db
+        .select()
+        .from(workroomProjects)
+        .where(eq(workroomProjects.id, deliverable.projectId));
+
+      const projectContext = project
+        ? `Campaign: "${project.name}"\nBrief: ${project.brief}`
+        : "";
+
+      // Use gpt-4o for quality on par with original Workroom generation (Task #21)
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `Kamu adalah senior marketing copywriter Indonesia yang merevisi konten kampanye dengan kualitas tinggi. Pertahankan format, panjang, dan struktur asli kecuali instruksi meminta perubahan spesifik. Balas HANYA dengan konten yang sudah direvisi, tanpa penjelasan tambahan.${(req as any).bpCtx || ""}`,
+          },
+          {
+            role: "user",
+            content: `${projectContext ? projectContext + "\n\n" : ""}Tipe deliverable: ${deliverable.deliverableType}\nJudul: ${deliverable.title}\n\n---KONTEN ASLI---\n${deliverable.content}\n---AKHIR KONTEN---\n\nInstruksi revisi: ${revisionInstructions}`,
+          },
+        ],
+        max_completion_tokens: 4000,
+      });
+
+      const revisedContent = completion.choices[0]?.message?.content?.trim() ?? deliverable.content;
+
+      const [updated] = await db
+        .update(workroomDeliverables)
+        .set({ content: revisedContent, updatedAt: new Date() } as any)
+        .where(eq(workroomDeliverables.id, id))
+        .returning();
+
+      res.json(updated);
+    } catch (err) {
+      console.error("Workroom revise error:", err);
+      res.status(500).json({ error: "Gagal merevisi deliverable" });
     }
   });
 
@@ -4352,6 +4408,48 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
           contextParts.push(`- ${k}: ${v}`);
         }
       }
+
+      // Task #14 — Inject latest Workroom deliverables as additional context
+      const userId = (req as any).user?.claims?.sub;
+      if (userId) {
+        try {
+          const [latestProject] = await db
+            .select()
+            .from(workroomProjects)
+            .where(eq(workroomProjects.userId, userId))
+            .orderBy(desc(workroomProjects.updatedAt))
+            .limit(1);
+
+          if (latestProject) {
+            const delivs = await db
+              .select()
+              .from(workroomDeliverables)
+              .where(eq(workroomDeliverables.projectId, latestProject.id))
+              .orderBy(workroomDeliverables.phase, workroomDeliverables.id)
+              .limit(5);
+
+            const snippets = delivs
+              .filter((d) => d.content && d.content.length > 20)
+              .map((d) => {
+                const preview = d.content!.length > 250
+                  ? d.content!.slice(0, 250) + "..."
+                  : d.content!;
+                return `- ${d.type} [fase ${d.phase}]: ${preview}`;
+              })
+              .join("\n");
+
+            if (snippets) {
+              contextParts.push(
+                `**Riwayat Workroom Campaign "${latestProject.name}":**\n${snippets}`,
+              );
+            }
+          }
+        } catch (e) {
+          // Non-fatal — autofill still works without history
+          console.warn("Workroom context load failed (non-fatal):", e);
+        }
+      }
+
       if (userBrief.trim()) {
         contextParts.push(`**Brief dari User:**\n${userBrief}`);
       }

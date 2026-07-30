@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import {
   CheckCircle2, AlertCircle, Download, Zap,
   DollarSign, Target, Eye, MousePointer, ShoppingCart,
   ArrowUp, ArrowDown, Calendar, FileText,
-  MessageCircle, Send,
+  MessageCircle, Send, Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -112,6 +112,22 @@ export default function CampaignReport() {
   const [waFmt, setWaFmt] = useState<"ringkas" | "detail">("ringkas");
   const { toast } = useToast();
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("workroom_prefill");
+      if (!raw) return;
+      sessionStorage.removeItem("workroom_prefill");
+      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
+        deliverableType: string; content: string; projectName: string; title: string;
+      };
+      if (deliverableType === "tracking_setup") {
+        setNamaBisnis(projectName);
+        setWorkroomBanner(`${projectName} — ${title}`);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   const handleAutoFill = (fields: Record<string, string>) => {
     if (fields.businessName) setNamaBisnis(fields.businessName);
@@ -322,6 +338,12 @@ export default function CampaignReport() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {workroomBanner && (
+                  <div className="flex items-center gap-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/20 px-3 py-2 text-xs text-purple-700 dark:text-purple-300">
+                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>Pre-filled dari Workroom: <strong>{workroomBanner}</strong></span>
+                  </div>
+                )}
                 <AIAutoFillButton toolName="campaign-report" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama Bisnis / Kampanye</Label>

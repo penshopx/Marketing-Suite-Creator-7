@@ -2,3 +2,6 @@
 - [Workroom Phase Generation](workroom-phase-generation.md) — gpt-5 needs max_completion_tokens≥8000; stream:true required; ~43s per phase; server restart needed after routes.ts changes.
 - [AI Auto-Fill Pattern](ai-autofill-pattern.md) — shared hook + button component for AI form pre-fill; endpoint at POST /api/ai-autofill.
 - [Business Profile Context Injection](business-profile-injection.md) — middleware in registerRoutes sets (req as any).bpCtx; all AI routes append it to system messages; table: business_profiles.
+- [Workroom Revise Endpoint](workroom-revise-endpoint.md) — POST /api/workroom/deliverables/:id/revise uses gpt-4o (non-streaming); returns full updated deliverable row; client onUpdate callback propagates to card state.
+- [Workroom Prefill Pattern](workroom-prefill-pattern.md) — sessionStorage key "workroom_prefill" carries {deliverableType, content, projectName, title}; read+clear on mount useEffect; show purple workroomBanner; now covers 12 tool pages.
+- [AI AutoFill Manual-Edit Protection](autofill-manual-edit-protection.md) — use-ai-autofill.ts tracks manuallyEditedRef (useRef<Set>); triggerAutoFill snapshots+clears it, filters returned fields; markManualEdit adds to ref + removes purple highlight.

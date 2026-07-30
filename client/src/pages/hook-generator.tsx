@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,23 @@ export default function HookGenerator() {
   const [history, setHistory] = useState<HookResponse[]>([]);
   const { toast } = useToast();
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("workroom_prefill");
+      if (!raw) return;
+      sessionStorage.removeItem("workroom_prefill");
+      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
+        deliverableType: string; content: string; projectName: string; title: string;
+      };
+      if (deliverableType === "hook") {
+        setTopic(title);
+        setKeyMessage(content.split("\n").filter(Boolean)[0]?.slice(0, 150) ?? "");
+      }
+      setWorkroomBanner(`${projectName} — ${title}`);
+    } catch { /* ignore */ }
+  }, []);
 
   const handleAutoFill = (fields: Record<string, string>) => {
     if (fields.topic) setTopic(fields.topic);
@@ -201,7 +218,13 @@ export default function HookGenerator() {
                     <CardDescription>Isi minimal topik / produknya</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <AIAutoFillButton
+                    {workroomBanner && (
+                      <div className="flex items-center gap-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/20 px-3 py-2 text-xs text-purple-700 dark:text-purple-300">
+                        <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>Pre-filled dari Workroom: <strong>{workroomBanner}</strong></span>
+                      </div>
+                    )}
+                   <AIAutoFillButton
                       toolName="hook-generator"
                       onFill={handleAutoFill}
                       isAutoFilling={isAutoFilling}

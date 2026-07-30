@@ -60,6 +60,23 @@ export default function CsBotScript() {
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("workroom_prefill");
+      if (!raw) return;
+      sessionStorage.removeItem("workroom_prefill");
+      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
+        deliverableType: string; content: string; projectName: string; title: string;
+      };
+      if (deliverableType === "cs_bot_script") {
+        setProduk(projectName);
+        setDeskripsiProduk(content.slice(0, 300));
+      }
+      setWorkroomBanner(`${projectName} — ${title}`);
+    } catch { /* ignore */ }
+  }, []);
 
   const handleAutoFill = (fields: Record<string, string>) => {
     if (fields.produk) setProduk(fields.produk);
@@ -162,6 +179,12 @@ export default function CsBotScript() {
           <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
             Terinspirasi Cekat.AI
           </Badge>
+          {workroomBanner && (
+            <div className="flex items-center gap-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/20 px-3 py-2 text-xs text-purple-700 dark:text-purple-300">
+              <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>Pre-filled dari Workroom: <strong>{workroomBanner}</strong></span>
+            </div>
+          )}
           <AIAutoFillButton
             toolName="cs-bot-script"
             onFill={handleAutoFill}

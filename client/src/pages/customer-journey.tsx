@@ -63,6 +63,24 @@ export default function CustomerJourney() {
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("workroom_prefill");
+      if (!raw) return;
+      sessionStorage.removeItem("workroom_prefill");
+      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
+        deliverableType: string; content: string; projectName: string; title: string;
+      };
+      if (deliverableType === "customer_journey") {
+        setProduk(projectName);
+        const kompMatch = content.match(/kompetitor[:\s]+([^\n]+)/i);
+        if (kompMatch) setKompetitor(kompMatch[1].trim().slice(0, 100));
+        setWorkroomBanner(`${projectName} — ${title}`);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   const handleAutoFill = (fields: Record<string, string>) => {
     if (fields.productName) setProduk(fields.productName);
@@ -193,6 +211,12 @@ export default function CustomerJourney() {
             <CardTitle className="text-base">Detail Bisnis</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {workroomBanner && (
+              <div className="flex items-center gap-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/20 px-3 py-2 text-xs text-purple-700 dark:text-purple-300">
+                <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Pre-filled dari Workroom: <strong>{workroomBanner}</strong></span>
+              </div>
+            )}
             <AIAutoFillButton toolName="customer-journey" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
             <div>
               <Label>Produk / Bisnis *</Label>
