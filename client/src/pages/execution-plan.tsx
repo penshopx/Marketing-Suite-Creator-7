@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import {
   Target, CheckCircle2, Clock, Zap, TrendingUp, 
   Star, AlertTriangle, ChevronDown, ChevronUp, 
   Lightbulb, Calendar, BarChart3, Trophy, BookOpen,
-  DollarSign
+  DollarSign, Sparkles
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { NextSteps } from "@/components/next-steps";
@@ -319,7 +319,43 @@ export default function ExecutionPlan() {
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>(() => loadLS(TASKS_KEY, {}));
   const [expandedDay, setExpandedDay] = useState<number | null>(1);
   const [notes, setNotes] = useState<Record<number, string>>(() => loadLS(NOTES_KEY, {}));
+  const [productBrief, setProductBrief] = useState(() => localStorage.getItem("exec_product_brief") ?? "");
+  const [loadingNotesDay, setLoadingNotesDay] = useState<number | null>(null);
   const { toast } = useToast();
+
+  const fillNotesWithAI = useCallback(async (dayNum: number, dayTitle: string, dayObjective: string) => {
+    if (!productBrief.trim()) {
+      toast({ title: "Isi brief produk dulu", description: "Tuliskan nama dan deskripsi produkmu di kolom di atas tracker." });
+      return;
+    }
+    setLoadingNotesDay(dayNum);
+    try {
+      const res = await fetch("/api/ai-autofill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          toolName: "execution-plan-notes",
+          userBrief: `Produk: ${productBrief}\nHari ${dayNum}: ${dayTitle}\nTujuan hari ini: ${dayObjective}`,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const suggestion = data.fields?.notes;
+      if (suggestion) {
+        setNotes(prev => {
+          const next = { ...prev, [dayNum]: suggestion };
+          localStorage.setItem(NOTES_KEY, JSON.stringify(next));
+          return next;
+        });
+        toast({ title: "Saran AI disimpan ✓", duration: 2000 });
+      }
+    } catch {
+      toast({ title: "Gagal memuat saran AI", variant: "destructive" });
+    } finally {
+      setLoadingNotesDay(null);
+    }
+  }, [productBrief, toast]);
 
   const toggleDay = (dayNum: number) => {
     setCompletedDays(prev => {
@@ -385,6 +421,20 @@ export default function ExecutionPlan() {
         </TabsList>
 
         <TabsContent value="tracker" className="space-y-3 mt-4">
+          {/* Product brief input — AI uses this to personalise daily notes */}
+          <div className="flex gap-2 items-start p-3 rounded-lg border border-dashed border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20">
+            <Sparkles className="h-4 w-4 text-purple-500 mt-2.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Brief Produkmu (untuk Saran AI)</p>
+              <Textarea
+                placeholder="Contoh: E-book panduan investasi saham untuk pemula, harga Rp 149.000, target ibu muda 25-40 tahun yang ingin mulai investasi modal kecil..."
+                value={productBrief}
+                onChange={e => { setProductBrief(e.target.value); localStorage.setItem("exec_product_brief", e.target.value); }}
+                className="min-h-[60px] text-xs resize-none border-purple-200 dark:border-purple-800"
+              />
+            </div>
+          </div>
+
           {days.map((dayData) => {
             const taskProg = getDayTaskProgress(dayData.day);
             const isExpanded = expandedDay === dayData.day;
@@ -506,6 +556,20 @@ export default function ExecutionPlan() {
                         data-testid={`textarea-notes-${dayData.day}`}
                       />
                     </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-950"
+                      onClick={() => fillNotesWithAI(dayData.day, dayData.title, dayData.objective)}
+                      disabled={loadingNotesDay === dayData.day}
+                    >
+                      {loadingNotesDay === dayData.day ? (
+                        <><Zap className="h-3.5 w-3.5 animate-pulse" /> Memuat saran AI...</>
+                      ) : (
+                        <><Sparkles className="h-3.5 w-3.5" /> Saran AI untuk Catatan</>
+                      )}
+                    </Button>
 
                     <Button
                       className={`w-full ${isDone ? "bg-green-600 hover:bg-green-700" : ""}`}

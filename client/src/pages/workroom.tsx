@@ -14,7 +14,7 @@ import {
   ChevronDown, ChevronRight, Send, Sparkles, Zap, CheckCircle2,
   Loader2, RefreshCw, Bot, Network, Crown, Plus, Trash2, ArrowRight,
   ArrowLeft, Copy, ExternalLink, Clock, FolderOpen, Rocket, TrendingUp,
-  Check, XCircle, AlertCircle, Eye, ChevronUp, DollarSign, Download,
+  Check, XCircle, AlertCircle, Eye, ChevronUp, DollarSign, Download, Share2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -25,8 +25,19 @@ interface WorkroomProject {
   brief: string;
   currentPhase: number;
   status: string;
+  shareToken?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// Revision snapshot (Task #28)
+interface WorkroomRevision {
+  id: number;
+  deliverableId: number;
+  content: string;
+  revisionInstructions: string | null;
+  versionNumber: number;
+  createdAt: string;
 }
 
 interface WorkroomDeliverable {
@@ -191,6 +202,10 @@ function DeliverableCard({
   const [showRevise, setShowRevise] = useState(false);
   const [revisionText, setRevisionText] = useState("");
   const [isRevising, setIsRevising] = useState(false);
+  // Task #28 — revision history
+  const [showHistory, setShowHistory] = useState(false);
+  const [revisions, setRevisions] = useState<WorkroomRevision[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const { toast } = useToast();
 
   const handleRevise = async () => {
@@ -308,6 +323,28 @@ function DeliverableCard({
               Revisi AI
             </Button>
 
+            {/* Revision history — Task #28 */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs gap-1"
+              onClick={async () => {
+                if (!showHistory) {
+                  setLoadingHistory(true);
+                  try {
+                    const r = await fetch(`/api/workroom/deliverables/${deliverable.id}/revisions`, { credentials: "include" });
+                    if (r.ok) setRevisions(await r.json());
+                  } finally {
+                    setLoadingHistory(false);
+                  }
+                }
+                setShowHistory((p) => !p);
+              }}
+            >
+              {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3" />}
+              Riwayat
+            </Button>
+
             {/* Use in tool */}
             {deliverable.targetTool && (
               <Button
@@ -345,6 +382,62 @@ function DeliverableCard({
                   {isRevising ? <><Loader2 className="w-3 h-3 animate-spin" /> Merevisi...</> : <><Send className="w-3 h-3" /> Revisi</>}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* Revision history panel — Task #28 */}
+          {showHistory && (
+            <div className="space-y-2 pt-1 border-t mt-1">
+              <p className="text-[11px] text-muted-foreground font-medium">
+                Riwayat Revisi ({revisions.length} snapshot tersimpan):
+              </p>
+              {revisions.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">Belum ada riwayat. Riwayat otomatis tersimpan setiap kali revisi AI dijalankan.</p>
+              ) : (
+                <div className="space-y-2">
+                  {revisions.map((rev) => (
+                    <div key={rev.id} className="border rounded-lg p-2.5 bg-muted/30 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          v{rev.versionNumber} ·{" "}
+                          {new Date(rev.createdAt).toLocaleString("id-ID", {
+                            day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                          })}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-[10px] gap-1 px-2"
+                          onClick={async () => {
+                            const r = await fetch(
+                              `/api/workroom/deliverables/${deliverable.id}/revert/${rev.id}`,
+                              { method: "POST", credentials: "include" }
+                            );
+                            if (r.ok) {
+                              const updated = await r.json();
+                              onUpdate?.(updated);
+                              setShowHistory(false);
+                              toast({ title: `Dipulihkan ke v${rev.versionNumber} ✓`, duration: 2000 });
+                            } else {
+                              toast({ title: "Gagal memulihkan", variant: "destructive" });
+                            }
+                          }}
+                        >
+                          <RefreshCw className="w-2.5 h-2.5" /> Pulihkan
+                        </Button>
+                      </div>
+                      {rev.revisionInstructions && (
+                        <p className="text-[10px] text-muted-foreground italic line-clamp-1">
+                          &ldquo;{rev.revisionInstructions}&rdquo;
+                        </p>
+                      )}
+                      <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap leading-relaxed line-clamp-3">
+                        {rev.content.slice(0, 200)}{rev.content.length > 200 ? "…" : ""}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -474,6 +567,7 @@ export default function Workroom() {
 
   // New project dialog
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+  const [exportApprovedOnly, setExportApprovedOnly] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectBrief, setNewProjectBrief] = useState("");
   const [creatingProject, setCreatingProject] = useState(false);
@@ -635,7 +729,9 @@ export default function Workroom() {
   const exportBrief = () => {
     if (!selectedProject) return;
     const project = selectedProject;
-    const allDelivs = deliverables;
+    const allDelivs = exportApprovedOnly
+      ? deliverables.filter(d => d.status === "approved" || d.status === "exported")
+      : deliverables;
     const exportDate = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
     const phaseColors: Record<number, string> = { 1: "#3b82f6", 2: "#ec4899", 3: "#f97316", 4: "#22c55e" };
@@ -745,6 +841,28 @@ export default function Workroom() {
     toast({ title: "Brief berhasil diekspor ✓", description: "File HTML siap dibuka di browser atau dicetak sebagai PDF." });
   };
 
+  // Task #30 — generate + copy shareable brief link
+  const handleShareBrief = async () => {
+    if (!selectedProject) return;
+    try {
+      const r = await fetch(`/api/workroom/projects/${selectedProject.id}/share`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!r.ok) throw new Error("Share failed");
+      const { shareUrl } = await r.json() as { token: string; shareUrl: string };
+      const fullUrl = window.location.origin + shareUrl;
+      await navigator.clipboard.writeText(fullUrl);
+      toast({
+        title: "Link disalin ke clipboard ✓",
+        description: "Siapa saja dengan link ini bisa melihat campaign brief (read-only).",
+        duration: 4000,
+      });
+    } catch {
+      toast({ title: "Gagal membuat link berbagi", variant: "destructive" });
+    }
+  };
+
   const handleUseInTool = (deliverable: WorkroomDeliverable) => {
     if (!deliverable.targetTool) return;
     // Store prefill data in sessionStorage for the target tool to read
@@ -852,15 +970,35 @@ export default function Workroom() {
 
           {/* Export Brief button — visible only in project detail */}
           {showProjectDetail && tab === "projects" && deliverables.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs flex-shrink-0"
-              onClick={exportBrief}
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export Brief
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={exportApprovedOnly}
+                  onChange={e => setExportApprovedOnly(e.target.checked)}
+                  className="rounded"
+                />
+                Hanya approved
+              </label>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={exportBrief}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export Brief
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={handleShareBrief}
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                Bagikan Link
+              </Button>
+            </div>
           )}
 
           {/* Tab switcher */}

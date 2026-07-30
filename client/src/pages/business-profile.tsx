@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useBusinessProfiles, useCreateBusinessProfile, useUpdateBusinessProfile, useDeleteBusinessProfile, useSetDefaultProfile, type BusinessProfile, type UpsertBusinessProfile } from "@/hooks/use-business-profile";
+import { useToast } from "@/hooks/use-toast";
+
+interface WRProject { id: number; name: string; brief: string; }
+interface WRProjectWithCount extends WRProject { deliverableCount?: number; }
 
 const BUSINESS_TYPES = [
   "E-commerce (Jualan Produk Fisik)",
@@ -350,8 +354,64 @@ export default function BusinessProfilePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<BusinessProfile | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BusinessProfile | null>(null);
+  // Task #39 — prefill from Workroom
+  const [createInitial, setCreateInitial] = useState<ProfileFormData | null>(null);
+  const [prefillDialogOpen, setPrefillDialogOpen] = useState(false);
+  const [wrProjects, setWrProjects] = useState<WRProjectWithCount[]>([]);
+  const [wrLoading, setWrLoading] = useState(false);
+  const [prefillPending, setPrefillPending] = useState(false);
+  const { toast } = useToast();
+
+  const openPrefillDialog = async () => {
+    setWrLoading(true);
+    setPrefillDialogOpen(true);
+    try {
+      const r = await fetch("/api/workroom/projects", { credentials: "include" });
+      if (r.ok) setWrProjects(await r.json());
+    } finally {
+      setWrLoading(false);
+    }
+  };
+
+  const handlePrefillSelect = async (projectId: number) => {
+    setPrefillPending(true);
+    try {
+      const r = await fetch("/api/business-profiles/prefill-from-workroom", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ projectId }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const { fields, source } = await r.json() as { fields: Partial<ProfileFormData>; source: string };
+      const merged: ProfileFormData = {
+        businessName: fields.businessName || "",
+        businessType: fields.businessType || "",
+        industry: fields.industry || "",
+        productsServices: fields.productsServices || "",
+        targetAudience: fields.targetAudience || "",
+        valueProposition: fields.valueProposition || "",
+        tone: fields.tone || "",
+        location: fields.location || "",
+        monthlyBudget: fields.monthlyBudget || "",
+        goals: fields.goals || "",
+        competitors: fields.competitors || "",
+        additionalContext: fields.additionalContext || "",
+      };
+      setCreateInitial(merged);
+      setPrefillDialogOpen(false);
+      setEditingProfile(null);
+      setDialogOpen(true);
+      toast({ title: `Pre-fill dari "${source}" selesai ✓`, description: "Tinjau dan simpan profil yang sudah diisi AI.", duration: 4000 });
+    } catch {
+      toast({ title: "Gagal mengekstrak data dari Workroom", variant: "destructive" });
+    } finally {
+      setPrefillPending(false);
+    }
+  };
 
   const openCreate = () => {
+    setCreateInitial(null);
     setEditingProfile(null);
     setDialogOpen(true);
   };
@@ -388,10 +448,16 @@ export default function BusinessProfilePage() {
             Simpan informasi bisnis agar AI bisa personalisasi semua output secara otomatis.
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2 flex-shrink-0">
-          <Plus className="h-4 w-4" />
-          Tambah Profil
-        </Button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button onClick={openPrefillDialog} variant="outline" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Pre-fill dari Workroom
+          </Button>
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Tambah Profil
+          </Button>
+        </div>
       </div>
 
       {/* Info banner */}
@@ -467,6 +533,49 @@ export default function BusinessProfilePage() {
         </div>
       )}
 
+      {/* Task #39 — Pre-fill from Workroom dialog */}
+      <Dialog open={prefillDialogOpen} onOpenChange={setPrefillDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Pre-fill dari Workroom
+            </DialogTitle>
+            <DialogDescription>
+              Pilih proyek Workroom. AI akan mengekstrak informasi bisnis dari campaign brief dan deliverable-nya.
+            </DialogDescription>
+          </DialogHeader>
+          {wrLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : wrProjects.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Belum ada proyek Workroom. Buat dulu di MultiClaw Workroom.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {wrProjects.map((p) => (
+                <button
+                  key={p.id}
+                  className="w-full text-left border rounded-lg p-3 hover:bg-muted/50 transition-colors disabled:opacity-60 space-y-0.5"
+                  disabled={prefillPending}
+                  onClick={() => handlePrefillSelect(p.id)}
+                >
+                  <p className="font-medium text-sm">{p.name}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{p.brief}</p>
+                  {prefillPending && (
+                    <div className="flex items-center gap-1 text-[11px] text-primary mt-1">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Mengekstrak dengan AI...
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Create/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -495,10 +604,10 @@ export default function BusinessProfilePage() {
                     competitors: editingProfile.competitors || "",
                     additionalContext: editingProfile.additionalContext || "",
                   }
-                : emptyForm
+                : (createInitial ?? emptyForm)
             }
             onSubmit={handleSave}
-            onCancel={() => setDialogOpen(false)}
+            onCancel={() => { setDialogOpen(false); setCreateInitial(null); }}
             isSaving={isSaving}
           />
         </DialogContent>

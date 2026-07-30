@@ -4,9 +4,8 @@
  * Covers three SSE endpoints that all use pipeStreamToSSE():
  *   • POST /api/chat        → tokens as {"content":"..."}, terminates with {"done":true}
  *   • POST /api/expert-chat → same format
- *   • POST /api/guide-chat  → tokens as {"text":"..."},    terminates with {"done":true}
- *                             (was broken: used to send `data: [DONE]` which the SSE
- *                              client silently dropped — fixed by Task #23)
+ *   • POST /api/guide-chat  → tokens as {"content":"..."}, terminates with {"done":true}
+ *                             (was broken: key was "text" instead of "content" — fixed)
  *
  * Checks per endpoint:
  *   1. HTTP 200 with Content-Type: text/event-stream
@@ -164,10 +163,10 @@ await testSSEEndpoint({
 });
 
 await testSSEEndpoint({
-  label: "3: guide-chat (was [DONE] bug)",
+  label: "3: guide-chat (key fixed: content)",
   url: "/api/guide-chat",
   body: { message: "Halo", history: [], context: { isAuthenticated: true, userName: "Test" } },
-  tokenKey: "text",
+  tokenKey: "content",
 });
 
 await testSSEEndpoint({
@@ -181,6 +180,33 @@ await testSSEEndpoint({
   },
   tokenKey: "content",
 });
+
+// ─── [5] bpCtx field-name regression check ───────────────────────────────────
+// Catches someone renaming business_profile columns back to wrong names
+// (productCategory, usp, mainPlatforms) which break AI context injection.
+console.log("\n[5] GET /api/business-profile — bpCtx field-name regression");
+const bpRes = await fetch(`${BASE}/api/business-profile`, {
+  headers: { Cookie: sessionCookie },
+});
+if (bpRes.status === 200) {
+  const bp = await bpRes.json();
+  if (bp === null) {
+    ok("Business profile endpoint healthy (no profile set for test user)");
+  } else {
+    const keys = Object.keys(bp);
+    const CORRECT = ["businessType", "industry", "productsServices", "valueProposition", "tone"];
+    const LEGACY   = ["productCategory", "usp", "mainPlatforms"];
+    CORRECT.some(f => keys.includes(f))
+      ? ok(`Correct column names present (businessType/valueProposition/…)`)
+      : fail(`Missing expected bpCtx columns`, `keys: ${keys.join(", ")}`);
+    const foundLegacy = LEGACY.filter(k => keys.includes(k));
+    foundLegacy.length === 0
+      ? ok(`No legacy column names in business profile response`)
+      : fail(`Legacy bpCtx column names detected — regression!`, foundLegacy.join(", "));
+  }
+} else {
+  fail(`GET /api/business-profile → unexpected ${bpRes.status}`);
+}
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 console.log(`\n── Result: ${passed} passed, ${failed} failed ──\n`);

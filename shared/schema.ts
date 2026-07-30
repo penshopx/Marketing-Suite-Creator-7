@@ -170,6 +170,7 @@ export const workroomProjects = pgTable("workroom_projects", {
   brief: text("brief").notNull(),
   currentPhase: integer("current_phase").default(0).notNull(), // 0=not started, 1-4=phase number
   status: text("status").default("active").notNull(), // active, completed, archived
+  shareToken: varchar("share_token", { length: 64 }),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
@@ -190,6 +191,16 @@ export const workroomDeliverables = pgTable("workroom_deliverables", {
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
+// ─── Workroom Deliverable Revision History (Task #28) ────────────────────────
+export const workroomDeliverableRevisions = pgTable("workroom_deliverable_revisions", {
+  id: serial("id").primaryKey(),
+  deliverableId: integer("deliverable_id").notNull().references(() => workroomDeliverables.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  revisionInstructions: text("revision_instructions"),
+  versionNumber: integer("version_number").notNull().default(1),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
 export const insertWorkroomProjectSchema = createInsertSchema(workroomProjects).omit({
   id: true, createdAt: true, updatedAt: true,
 });
@@ -201,6 +212,7 @@ export type WorkroomProject = typeof workroomProjects.$inferSelect;
 export type InsertWorkroomProject = z.infer<typeof insertWorkroomProjectSchema>;
 export type WorkroomDeliverable = typeof workroomDeliverables.$inferSelect;
 export type InsertWorkroomDeliverable = z.infer<typeof insertWorkroomDeliverableSchema>;
+export type WorkroomDeliverableRevision = typeof workroomDeliverableRevisions.$inferSelect;
 
 
 // Platform options for ads

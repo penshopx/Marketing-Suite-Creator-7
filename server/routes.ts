@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
 import { db } from "./db";
-import { workroomProjects, workroomDeliverables, businessProfiles } from "@shared/schema";
+import { workroomProjects, workroomDeliverables, workroomDeliverableRevisions, businessProfiles } from "@shared/schema";
 import { eq, desc, and, inArray, count } from "drizzle-orm";
 import type { Express, Request, Response, NextFunction } from "express";
 
@@ -1899,7 +1899,7 @@ ATURAN FORMAT JAWABAN:
         stream: true,
       });
 
-      await pipeStreamToSSE(stream, res, "text");
+      await pipeStreamToSSE(stream, res, "content");
     } catch (error) {
       console.error("Guide chat error:", error);
       res.status(500).json({ error: "Failed to process guide chat" });
@@ -3993,6 +3993,24 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
 
       const revisedContent = completion.choices[0]?.message?.content?.trim() ?? deliverable.content;
 
+      // Task #28: Save current content as a revision snapshot before overwriting
+      const existingRevs = await db
+        .select({ id: workroomDeliverableRevisions.id })
+        .from(workroomDeliverableRevisions)
+        .where(eq(workroomDeliverableRevisions.deliverableId, id))
+        .orderBy(workroomDeliverableRevisions.createdAt);
+      await db.insert(workroomDeliverableRevisions).values({
+        deliverableId: id,
+        content: deliverable.content,
+        revisionInstructions: revisionInstructions ?? null,
+        versionNumber: existingRevs.length + 1,
+      });
+      // Keep at most 5 snapshots — delete oldest if over limit
+      if (existingRevs.length >= 5 && existingRevs[0]) {
+        await db.delete(workroomDeliverableRevisions)
+          .where(eq(workroomDeliverableRevisions.id, existingRevs[0].id));
+      }
+
       const [updated] = await db
         .update(workroomDeliverables)
         .set({ content: revisedContent, status: "draft", updatedAt: new Date() } as any)
@@ -4003,6 +4021,177 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     } catch (err) {
       console.error("Workroom revise error:", err);
       res.status(500).json({ error: "Gagal merevisi deliverable" });
+    }
+  });
+
+  // GET /api/workroom/deliverables/:id/revisions — list revision snapshots (Task #28)
+  app.get("/api/workroom/deliverables/:id/revisions", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = (req as any).user?.claims?.sub ?? "";
+      const [deliverable] = await db.select({ projectId: workroomDeliverables.projectId })
+        .from(workroomDeliverables).where(eq(workroomDeliverables.id, id));
+      if (!deliverable) return res.status(404).json({ error: "Not found" });
+      const [project] = await db.select({ userId: workroomProjects.userId })
+        .from(workroomProjects).where(eq(workroomProjects.id, deliverable.projectId));
+      if (!project || project.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+      const revisions = await db.select()
+        .from(workroomDeliverableRevisions)
+        .where(eq(workroomDeliverableRevisions.deliverableId, id))
+        .orderBy(desc(workroomDeliverableRevisions.createdAt))
+        .limit(5);
+      res.json(revisions);
+    } catch (err) {
+      console.error("Get revisions error:", err);
+      res.status(500).json({ error: "Gagal mengambil riwayat revisi" });
+    }
+  });
+
+  // POST /api/workroom/deliverables/:id/revert/:revisionId — revert to a snapshot (Task #28)
+  app.post("/api/workroom/deliverables/:id/revert/:revisionId", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const revisionId = parseInt(req.params.revisionId);
+      const userId = (req as any).user?.claims?.sub ?? "";
+      const [deliverable] = await db.select()
+        .from(workroomDeliverables).where(eq(workroomDeliverables.id, id));
+      if (!deliverable) return res.status(404).json({ error: "Not found" });
+      const [project] = await db.select({ userId: workroomProjects.userId })
+        .from(workroomProjects).where(eq(workroomProjects.id, deliverable.projectId));
+      if (!project || project.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+      const [revision] = await db.select()
+        .from(workroomDeliverableRevisions)
+        .where(eq(workroomDeliverableRevisions.id, revisionId));
+      if (!revision) return res.status(404).json({ error: "Revision not found" });
+      // Save current as a snapshot before reverting
+      const existingRevs = await db.select({ id: workroomDeliverableRevisions.id })
+        .from(workroomDeliverableRevisions)
+        .where(eq(workroomDeliverableRevisions.deliverableId, id));
+      await db.insert(workroomDeliverableRevisions).values({
+        deliverableId: id,
+        content: deliverable.content,
+        revisionInstructions: "Auto-saved sebelum revert",
+        versionNumber: existingRevs.length + 1,
+      });
+      const [updated] = await db
+        .update(workroomDeliverables)
+        .set({ content: revision.content, status: "draft", updatedAt: new Date() } as any)
+        .where(eq(workroomDeliverables.id, id))
+        .returning();
+      res.json(updated);
+    } catch (err) {
+      console.error("Revert error:", err);
+      res.status(500).json({ error: "Gagal memulihkan revisi" });
+    }
+  });
+
+  // POST /api/workroom/projects/:id/share — generate a shareable brief link (Task #30)
+  app.post("/api/workroom/projects/:id/share", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = (req as any).user?.claims?.sub ?? "";
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const [project] = await db.select().from(workroomProjects)
+        .where(eq(workroomProjects.id, id));
+      if (!project) return res.status(404).json({ error: "Project tidak ditemukan" });
+      if (project.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+      let token = (project as any).shareToken as string | null;
+      if (!token) {
+        token = require("crypto").randomUUID().replace(/-/g, "");
+        await db.update(workroomProjects).set({ shareToken: token } as any)
+          .where(eq(workroomProjects.id, id));
+      }
+      res.json({ token, shareUrl: `/api/workroom/share/${token}` });
+    } catch (err) {
+      console.error("Share project error:", err);
+      res.status(500).json({ error: "Gagal membuat link berbagi" });
+    }
+  });
+
+  // GET /api/workroom/share/:token — read-only public campaign brief (Task #30, no auth)
+  app.get("/api/workroom/share/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const projects = await db.select().from(workroomProjects);
+      const project = projects.find((p: any) => p.shareToken === token);
+      if (!project) {
+        return res.status(404).send("<!DOCTYPE html><html><body><h2>Brief tidak ditemukan</h2><p>Link mungkin sudah tidak valid atau dicabut oleh pemiliknya.</p></body></html>");
+      }
+      const delivs = await db.select().from(workroomDeliverables)
+        .where(eq(workroomDeliverables.projectId, project.id))
+        .orderBy(workroomDeliverables.phase, workroomDeliverables.createdAt);
+      const exportDate = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+      const escHtml = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      const delivHTML = [1,2,3,4].map(phase => {
+        const pd = delivs.filter((d: any) => d.phase === phase);
+        if (!pd.length) return "";
+        return `<h3 style="margin:24px 0 10px;font-size:15px;color:#3b82f6;border-bottom:2px solid #bfdbfe;padding-bottom:6px">Fase ${phase}</h3>
+${pd.map((d: any) => `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:10px">
+<strong style="font-size:13px">${escHtml(d.deliverableType)}</strong> <span style="color:#64748b;font-size:12px">${escHtml(d.title)}</span>
+<pre style="font-family:inherit;font-size:12px;line-height:1.6;color:#334155;white-space:pre-wrap;word-break:break-word;background:#f8fafc;border-radius:6px;padding:10px;border:1px solid #e2e8f0;margin-top:8px">${escHtml(d.content)}</pre>
+</div>`).join("")}`;
+      }).join("");
+      const html = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Campaign Brief — ${escHtml(project.name)}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1e293b;background:#f8fafc;padding:24px}
+.wrap{max-width:860px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 1px 8px rgba(0,0,0,.08)}
+</style></head><body><div class="wrap">
+<div style="font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🦂 MultiClaw Campaign Brief (Read-only)</div>
+<h1 style="font-size:24px;font-weight:800;margin-bottom:8px">${escHtml(project.name)}</h1>
+<p style="color:#475569;font-size:14px;line-height:1.6;margin-bottom:16px">${escHtml(project.brief)}</p>
+${delivHTML}
+<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center">Dibagikan via AI Marketing Tools · ${exportDate}</div>
+</div></body></html>`;
+      res.setHeader("Content-Type", "text/html;charset=utf-8");
+      res.send(html);
+    } catch (err) {
+      console.error("Public share error:", err);
+      res.status(500).send("Error");
+    }
+  });
+
+  // POST /api/business-profiles/prefill-from-workroom — AI-extract BP fields from Workroom (Task #39)
+  app.post("/api/business-profiles/prefill-from-workroom", async (req, res) => {
+    try {
+      const userId = (req as any).user?.claims?.sub ?? "";
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const { projectId } = req.body as { projectId: number };
+      if (!projectId) return res.status(400).json({ error: "projectId diperlukan" });
+      const [project] = await db.select().from(workroomProjects)
+        .where(eq(workroomProjects.id, projectId));
+      if (!project || project.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+      const delivs = await db.select().from(workroomDeliverables)
+        .where(eq(workroomDeliverables.projectId, projectId))
+        .orderBy(workroomDeliverables.phase);
+      const PRIORITY_TYPES = ["campaign_brief", "strategy", "audience_persona", "ad_copy", "hook", "landing_page"];
+      const prioritized = [...delivs].sort((a: any, b: any) => {
+        const ai = PRIORITY_TYPES.indexOf(a.deliverableType);
+        const bi = PRIORITY_TYPES.indexOf(b.deliverableType);
+        return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      });
+      const snippets = prioritized.slice(0, 3).map((d: any) =>
+        `[${d.deliverableType}] ${d.title}:\n${d.content.slice(0, 600)}`
+      ).join("\n\n");
+      const prompt = `Dari campaign berikut, ekstrak informasi bisnis sebagai JSON.\n\nCampaign: "${project.name}"\nBrief: ${project.brief}\n\n${snippets ? `Deliverables:\n${snippets}` : ""}\n\nEkstrak ke JSON (isi "" jika tidak ada informasi, JANGAN null):\n{"businessName":"","businessType":"","industry":"","productsServices":"","targetAudience":"","valueProposition":"","tone":"","location":"","monthlyBudget":"","goals":"","competitors":"","additionalContext":""}\n\nBalas HANYA JSON valid.`;
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5.4-mini",
+        messages: [
+          { role: "system", content: "Ekstrak info bisnis dari dokumen kampanye. Balas hanya JSON valid." },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 800,
+      });
+      let fields: Record<string, string> = {};
+      try {
+        const raw = completion.choices[0]?.message?.content?.trim() ?? "{}";
+        fields = JSON.parse(raw.replace(/^```json?\n?/, "").replace(/\n?```$/, ""));
+      } catch {
+        return res.status(500).json({ error: "Gagal parsing hasil AI" });
+      }
+      res.json({ fields, source: `${project.name} (${delivs.length} deliverables)` });
+    } catch (err) {
+      console.error("Prefill from workroom error:", err);
+      res.status(500).json({ error: "Gagal mengekstrak data dari Workroom" });
     }
   });
 
@@ -4491,6 +4680,12 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
             steps: "Langkah-langkah yang harus diikuti AI (format: 1) ..., 2) ..., 3) ...)",
             endgoal: "Hasil akhir yang diinginkan dari output AI ini",
             narrowing: "Batasan format, panjang, bahasa, dan hal yang harus dihindari",
+          },
+        },
+        "execution-plan-notes": {
+          description: "Saran catatan harian untuk Sistem Eksekusi 14 Hari berdasarkan produk user",
+          fields: {
+            notes: "Saran catatan praktis dan spesifik untuk hari ini — berikan 3-4 poin ringkas berisi: apa yang perlu difokuskan, tips menghindari hambatan umum hari ini, dan langkah konkret yang disesuaikan dengan produk user. Gunakan bullet point (•). Maksimal 5 kalimat total.",
           },
         },
       };
