@@ -6,6 +6,31 @@ import { z } from "zod";
 // Re-export auth models
 export * from "./models/auth";
 
+// ─── Business Profiles ───────────────────────────────────────────────────────
+export const businessProfiles = pgTable("business_profiles", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(), // references users.id
+  profileName: text("profile_name").notNull().default("Profil Utama"),
+  businessName: text("business_name").notNull().default(""),
+  productCategory: text("product_category").default(""),
+  usp: text("usp").default(""),
+  targetAudience: text("target_audience").default(""),
+  monthlyBudget: text("monthly_budget").default(""),
+  mainPlatforms: jsonb("main_platforms").$type<string[]>().default([]),
+  isDefault: boolean("is_default").default(false).notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertBusinessProfileSchema = createInsertSchema(businessProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type BusinessProfile = typeof businessProfiles.$inferSelect;
+export type InsertBusinessProfile = z.infer<typeof insertBusinessProfileSchema>;
+
 // Conversations for AI Chat
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
@@ -170,33 +195,6 @@ export type InsertWorkroomProject = z.infer<typeof insertWorkroomProjectSchema>;
 export type WorkroomDeliverable = typeof workroomDeliverables.$inferSelect;
 export type InsertWorkroomDeliverable = z.infer<typeof insertWorkroomDeliverableSchema>;
 
-// ─── Business Profile ────────────────────────────────────────────────────────
-
-export const businessProfiles = pgTable("business_profiles", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().unique(), // FK to users.id (1:1 per user)
-  businessName: text("business_name").default("").notNull(),
-  businessType: text("business_type").default("").notNull(), // e.g. "E-commerce", "Jasa", "SaaS"
-  industry: text("industry").default("").notNull(),           // niche / industri
-  productsServices: text("products_services").default("").notNull(),
-  targetAudience: text("target_audience").default("").notNull(),
-  valueProposition: text("value_proposition").default("").notNull(),
-  tone: text("tone").default("").notNull(),                   // "Formal" | "Santai" | "Playful" | "Inspiratif"
-  location: text("location").default("").notNull(),           // kota / wilayah target
-  monthlyBudget: text("monthly_budget").default("").notNull(),
-  goals: text("goals").default("").notNull(),
-  competitors: text("competitors").default("").notNull(),
-  additionalContext: text("additional_context").default("").notNull(),
-  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
-
-export const insertBusinessProfileSchema = createInsertSchema(businessProfiles).omit({
-  id: true, createdAt: true, updatedAt: true,
-});
-
-export type BusinessProfile = typeof businessProfiles.$inferSelect;
-export type InsertBusinessProfile = z.infer<typeof insertBusinessProfileSchema>;
 
 // Platform options for ads
 export const adPlatforms = [

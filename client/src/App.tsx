@@ -68,6 +68,7 @@ import Settings from "@/pages/settings";
 import { FloatingChatbot } from "@/components/floating-chatbot";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 import { ErrorBoundary } from "@/components/error-boundary";
+import BusinessProfile from "@/pages/business-profile";
 
 function Router() {
   return (
@@ -126,6 +127,7 @@ function Router() {
       <Route path="/customer-journey" component={CustomerJourney} />
       <Route path="/workroom" component={Workroom} />
       <Route path="/settings" component={Settings} />
+      <Route path="/business-profile" component={BusinessProfile} />
       <Route component={NotFound} />
     </Switch>
   );

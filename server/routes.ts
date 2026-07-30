@@ -1,4 +1,3 @@
-import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -8,6 +7,7 @@ import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_int
 import { db } from "./db";
 import { workroomProjects, workroomDeliverables, businessProfiles } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
+import type { Express, Request, Response, NextFunction } from "express";
 
 const genAI = process.env.GEMINI_API_KEY 
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -39,11 +39,67 @@ function isAdminUser(req: Request): boolean {
   return false;
 }
 
+/** Returns the formatted business-profile context block to inject into AI system messages.
+ *  Result is "" when the user has no saved profile or is not logged in. */
+async function getBusinessProfileContext(req: Request): Promise<string> {
+  const userId = (req as any).user?.claims?.sub;
+  if (!userId) return "";
+  try {
+    const rows = await db
+      .select()
+      .from(businessProfiles)
+      .where(and(eq(businessProfiles.userId, userId), eq(businessProfiles.isDefault, true)))
+      .limit(1);
+    if (rows.length === 0) return "";
+    const p = rows[0];
+    const lines: string[] = [];
+    if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
+    if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
+    if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
+    if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
+    if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
+    const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
+    if (platforms) lines.push(`Platform Utama: ${platforms}`);
+    if (lines.length === 0) return "";
+    return `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
+  } catch {
+    return "";
+  }
+}
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
+  // Middleware: attach business profile context to every request
+  app.use(async (req: Request, _res: Response, next: NextFunction) => {
+    const userId = (req as any).user?.claims?.sub;
+    if (userId) {
+      try {
+        const rows = await db
+          .select()
+          .from(businessProfiles)
+          .where(and(eq(businessProfiles.userId, userId), eq(businessProfiles.isDefault, true)))
+          .limit(1);
+        if (rows.length > 0) {
+          const p = rows[0];
+          const lines: string[] = [];
+          if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
+          if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
+          if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
+          if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
+          if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
+          const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
+          if (platforms) lines.push(`Platform Utama: ${platforms}`);
+          if (lines.length > 0) {
+            (req as any).bpCtx = `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
+          }
+        }
+      } catch { /* non-blocking */ }
+    }
+    next();
+  });
+
   // AI Chat endpoint with streaming
   app.post("/api/chat", async (req, res) => {
     try {
@@ -56,7 +112,7 @@ export async function registerRoutes(
       const messages = [
         {
           role: "system" as const,
-          content: "You are a helpful AI marketing assistant. You help with marketing strategy, content creation, ad copywriting, SEO, and business growth. Be concise, practical, and provide actionable advice.",
+          content: `You are a helpful AI marketing assistant. You help with marketing strategy, content creation, ad copywriting, SEO, and business growth. Be concise, practical, and provide actionable advice.${(req as any).bpCtx || ""}`,
         },
         ...history.map((m: { role: string; content: string }) => ({
           role: m.role as "user" | "assistant",
@@ -99,7 +155,7 @@ export async function registerRoutes(
       const messages = [
         {
           role: "system" as const,
-          content: systemPrompt || "You are an expert marketing consultant providing professional advice.",
+          content: (systemPrompt || "You are an expert marketing consultant providing professional advice.") + ((req as any).bpCtx || ""),
         },
         ...history.map((m: { role: string; content: string }) => ({
           role: m.role as "user" | "assistant",
@@ -180,7 +236,7 @@ Format: Start with the title, then the article content. Use markdown formatting 
       const stream = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are an expert content writer specializing in SEO-optimized articles that engage readers and rank well in search engines." },
+          { role: "system", content: `You are an expert content writer specializing in SEO-optimized articles that engage readers and rank well in search engines.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         stream: true,
@@ -280,7 +336,7 @@ Jawab HANYA dalam bentuk JSON valid berikut:
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are a world-class email copywriter who writes high-converting email sequences. Always respond with valid JSON." },
+          { role: "system", content: `You are a world-class email copywriter who writes high-converting email sequences. Always respond with valid JSON.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         max_completion_tokens: 6000,
@@ -389,7 +445,7 @@ Jawab HANYA dalam bentuk JSON valid berikut:
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are an expert content strategist for Indonesian social media brands. Always respond with valid JSON containing exactly 30 calendar items. Be concise." },
+          { role: "system", content: `You are an expert content strategist for Indonesian social media brands. Always respond with valid JSON containing exactly 30 calendar items. Be concise.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         max_completion_tokens: 16000,
@@ -497,7 +553,7 @@ Jawab HANYA dalam bentuk JSON valid:
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are a senior performance marketer specialized in A/B testing ad creatives. Always respond with valid JSON." },
+          { role: "system", content: `You are a senior performance marketer specialized in A/B testing ad creatives. Always respond with valid JSON.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         max_completion_tokens: 6000,
@@ -635,7 +691,7 @@ Jawab HANYA dalam bentuk JSON valid berikut:
           {
             role: "system",
             content:
-              "You are a world-class direct-response copywriter who writes scroll-stopping hooks for short-form video and ads. Always respond with valid JSON.",
+              `You are a world-class direct-response copywriter who writes scroll-stopping hooks for short-form video and ads. Always respond with valid JSON.${(req as any).bpCtx || ""}`,
           },
           { role: "user", content: prompt },
         ],
@@ -726,7 +782,7 @@ Return as JSON: { "headline": "", "primaryText": "", "description": "", "callToA
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are an expert advertising copywriter who creates high-converting ad copy. Always respond with valid JSON." },
+          { role: "system", content: `You are an expert advertising copywriter who creates high-converting ad copy. Always respond with valid JSON.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         max_completion_tokens: 4000,
@@ -815,7 +871,7 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
       const stream = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are a master storyteller who creates compelling brand narratives that connect with audiences emotionally and drive action." },
+          { role: "system", content: `You are a master storyteller who creates compelling brand narratives that connect with audiences emotionally and drive action.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         stream: true,
@@ -994,7 +1050,7 @@ Tuliskan HANYA kode HTML lengkap. Tanpa penjelasan.`;
         messages: [
           {
             role: "system",
-            content: "Kamu adalah expert web developer dan copywriter Indonesia yang membuat landing page high-converting. Selalu gunakan bahasa Indonesia yang natural dan persuasif. Return HANYA kode HTML valid dan lengkap, tanpa markdown, tanpa penjelasan.",
+            content: `Kamu adalah expert web developer dan copywriter Indonesia yang membuat landing page high-converting. Selalu gunakan bahasa Indonesia yang natural dan persuasif. Return HANYA kode HTML valid dan lengkap, tanpa markdown, tanpa penjelasan.${(req as any).bpCtx || ""}`,
           },
           { role: "user", content: prompt },
         ],
@@ -1108,7 +1164,7 @@ PENTING:
         messages: [
           {
             role: "system",
-            content: "Kamu adalah product research expert Indonesia yang memahami pasar digital lokal dan internasional. Selalu respond dengan JSON valid.",
+            content: `Kamu adalah product research expert Indonesia yang memahami pasar digital lokal dan internasional. Selalu respond dengan JSON valid.${(req as any).bpCtx || ""}`,
           },
           { role: "user", content: prompt },
         ],
@@ -1191,7 +1247,7 @@ Gunakan skor yang REALISTIS:
         messages: [
           {
             role: "system",
-            content: "Kamu adalah product validation expert Indonesia yang memberikan penilaian jujur dan akurat. Selalu respond dengan JSON valid.",
+            content: `Kamu adalah product validation expert Indonesia yang memberikan penilaian jujur dan akurat. Selalu respond dengan JSON valid.${(req as any).bpCtx || ""}`,
           },
           { role: "user", content: prompt },
         ],
@@ -1293,7 +1349,7 @@ PENTING:
         messages: [
           {
             role: "system",
-            content: "Kamu adalah CS expert yang ahli closing produk digital di Indonesia. Selalu respond dengan JSON valid.",
+            content: `Kamu adalah CS expert yang ahli closing produk digital di Indonesia. Selalu respond dengan JSON valid.${(req as any).bpCtx || ""}`,
           },
           { role: "user", content: prompt },
         ],
@@ -1383,7 +1439,7 @@ Buat setiap stage SANGAT PRAKTIS dan ACTIONABLE. Copy example harus bisa langsun
         messages: [
           {
             role: "system",
-            content: "Kamu adalah sales funnel expert Indonesia. Selalu respond dengan JSON valid sesuai format yang diminta.",
+            content: `Kamu adalah sales funnel expert Indonesia. Selalu respond dengan JSON valid sesuai format yang diminta.${(req as any).bpCtx || ""}`,
           },
           { role: "user", content: prompt },
         ],
@@ -1487,7 +1543,7 @@ Berikan analisis yang JUJUR dan AKURAT berdasarkan data yang ada. Jika data kura
         messages: [
           {
             role: "system",
-            content: "Kamu adalah ads scaling expert Indonesia. Selalu respond dengan JSON valid dan analisis yang akurat.",
+            content: `Kamu adalah ads scaling expert Indonesia. Selalu respond dengan JSON valid dan analisis yang akurat.${(req as any).bpCtx || ""}`,
           },
           { role: "user", content: prompt },
         ],
@@ -1533,7 +1589,7 @@ Berikan feedback yang actionable dan spesifik untuk membuat iklan lebih winning.
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are an expert ad copywriter and marketing analyst. Analyze ads critically and provide actionable feedback. Always respond with valid JSON." },
+          { role: "system", content: `You are an expert ad copywriter and marketing analyst. Analyze ads critically and provide actionable feedback. Always respond with valid JSON.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         max_completion_tokens: 2048,
@@ -1613,7 +1669,7 @@ Buat persona yang realistis dan relevan dengan produk di Indonesia.`;
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: "You are an expert marketing strategist who creates detailed buyer personas. Always respond with valid JSON." },
+          { role: "system", content: `You are an expert marketing strategist who creates detailed buyer personas. Always respond with valid JSON.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
         max_completion_tokens: 4096,
@@ -1780,7 +1836,7 @@ ATURAN FORMAT JAWABAN:
 
       // Build messages for OpenAI API
       const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: systemPrompt + ((req as any).bpCtx || "") },
       ];
 
       // Add history (filter out initial assistant greeting)
@@ -1884,7 +1940,10 @@ PENTING: Semua konten dalam Bahasa Indonesia. Copy harus natural, persuasif, dan
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah expert digital marketer Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.8,
       });
@@ -1951,7 +2010,10 @@ PENTING: Semua konten dalam Bahasa Indonesia. Sesuaikan tone dan style untuk set
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah content strategist Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.75,
       });
@@ -2069,7 +2131,10 @@ RETURN: Hanya return raw HTML yang langsung bisa dipakai — dimulai dari <!DOCT
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah web developer dan copywriter ahli. Gunakan konteks bisnis berikut untuk mempersonalisasi copy dan tone landing page:${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         temperature: 0.8,
         max_tokens: 8000,
       });
@@ -2143,7 +2208,10 @@ Format JSON:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah Meta Ads interest research expert Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         temperature: 0.7,
         response_format: { type: "json_object" },
       });
@@ -2213,7 +2281,10 @@ Format JSON:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah Meta Ads targeting expert Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         temperature: 0.6,
         response_format: { type: "json_object" },
       });
@@ -2297,7 +2368,10 @@ Format JSON:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah Meta Ads automation expert Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         temperature: 0.6,
         response_format: { type: "json_object" },
       });
@@ -2345,7 +2419,10 @@ Kembalikan versi HTML yang lebih baik dari original.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah web developer dan conversion rate optimizer Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         temperature: 0.7,
         max_tokens: 8000,
       });
@@ -2466,7 +2543,10 @@ ATURAN KERAS:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah Google Ads specialist Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.75,
       });
@@ -2598,7 +2678,10 @@ PANDUAN:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah digital advertising analyst senior Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.7,
       });
@@ -2703,7 +2786,10 @@ PENTING:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah pakar iklan marketplace Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.7,
       });
@@ -2808,7 +2894,10 @@ PENTING:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah competitive intelligence analyst Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.75,
       });
@@ -2907,7 +2996,10 @@ PENTING:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah video content strategist Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.8,
       });
@@ -2989,7 +3081,10 @@ PENTING:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah social media expert Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.7,
       });
@@ -3048,7 +3143,10 @@ Buat ${Math.ceil(parseInt(durasi) / 2)} pesan dengan interval yang strategis (ti
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah WhatsApp Marketing expert Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.75,
       });
@@ -3116,7 +3214,10 @@ Buat min 12 item Q&A, min 6 alur percakapan (termasuk 1 alur eskalasi), min 5 ob
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah CS automation expert Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.7,
       });
@@ -3187,7 +3288,10 @@ Balas dalam JSON PERSIS:
 
       const response = await openai.chat.completions.create({
         model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          ...((req as any).bpCtx ? [{ role: "system" as const, content: `Kamu adalah Customer Experience dan Marketing Strategy expert Indonesia.${(req as any).bpCtx}` }] : []),
+          { role: "user", content: prompt },
+        ],
         response_format: { type: "json_object" },
         temperature: 0.7,
       });
@@ -3200,9 +3304,7 @@ Balas dalam JSON PERSIS:
     }
   });
 
-  // ============================================================
-  // WORKROOM — Agentic AI Marketing Team (MultiClaw + OpenClaw)
-  // ============================================================
+  // --- WORKROOM: Agentic AI Marketing Team (MultiClaw + OpenClaw) ---
 
   const WORKROOM_AGENTS = [
     {
@@ -3428,7 +3530,7 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
       const introStream = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: MULTICLAW_INTRO_PROMPT },
+          { role: "system", content: MULTICLAW_INTRO_PROMPT + ((req as any).bpCtx || "") },
           { role: "user", content: message },
         ],
         stream: true,
@@ -3447,7 +3549,7 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
           const agentStream = await openai.chat.completions.create({
             model: "gpt-5",
             messages: [
-              { role: "system", content: agent.systemPrompt },
+              { role: "system", content: agent.systemPrompt + ((req as any).bpCtx || "") },
               {
                 role: "user",
                 content: `Brief marketing dari klien:\n\n"${message}"\n\nBerikan laporan lengkap dari perspektif ${agent.role}. Aktifkan semua sub-agen kamu.`,
@@ -3474,7 +3576,7 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
       const synthesisStream = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [
-          { role: "system", content: MULTICLAW_SYNTHESIS_PROMPT },
+          { role: "system", content: MULTICLAW_SYNTHESIS_PROMPT + ((req as any).bpCtx || "") },
           {
             role: "user",
             content: `Brief awal klien: "${message}"\n\nSemua 7 divisi OpenClaw telah melaporkan. Berikan sintesis dan Master Action Plan final.`,
@@ -3498,9 +3600,7 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
     }
   });
 
-  // ============================================================
-  // WORKROOM — Campaign Project Hub (Persistent Projects + Deliverables)
-  // ============================================================
+  // --- WORKROOM: Campaign Project Hub (Persistent Projects + Deliverables) ---
 
   const PHASE_NAMES: Record<number, string> = {
     1: "Riset & Intelijen",
@@ -3778,7 +3878,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     try {
       const id = parseInt(req.params.id);
       const { status, content } = req.body;
-      const updates: Record<string, unknown> = { updatedAt: new Date() };
+      const updates: Record<string, string> = { updatedAt: new Date().toISOString() };
       if (status) updates.status = status;
       if (content) updates.content = content;
       const [updated] = await db.update(workroomDeliverables)
@@ -3833,7 +3933,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
         const stream = await openai.chat.completions.create({
           model: "gpt-5",
           messages: [
-            { role: "system", content: agent.systemPrompt },
+            { role: "system", content: agent.systemPrompt + ((req as any).bpCtx || "") },
             { role: "user", content: `Brief kampanye:\n\n"${project.brief}"\n\nNama proyek: ${project.name}\n\nHasilkan deliverable konkret untuk kampanye ini.` },
           ],
           stream: true,
@@ -3921,68 +4021,6 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     res.end();
   });
 
-  // ─── Business Profile ────────────────────────────────────────────────────
-  app.get("/api/business-profile", async (req: Request, res: Response) => {
-    const userId = (req.session as any)?.simpleUser?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    try {
-      const [profile] = await db
-        .select()
-        .from(businessProfiles)
-        .where(eq(businessProfiles.userId, userId))
-        .limit(1);
-      if (!profile) {
-        // Return empty profile shape
-        return res.json({
-          businessName: "", businessType: "", industry: "", productsServices: "",
-          targetAudience: "", valueProposition: "", tone: "", location: "",
-          monthlyBudget: "", goals: "", competitors: "", additionalContext: "",
-        });
-      }
-      return res.json(profile);
-    } catch (err) {
-      console.error("business-profile GET error:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  });
-
-  app.post("/api/business-profile", async (req: Request, res: Response) => {
-    const userId = (req.session as any)?.simpleUser?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    try {
-      const {
-        businessName = "", businessType = "", industry = "", productsServices = "",
-        targetAudience = "", valueProposition = "", tone = "", location = "",
-        monthlyBudget = "", goals = "", competitors = "", additionalContext = "",
-      } = req.body as Record<string, string>;
-
-      // Upsert: try insert, on conflict update
-      const [existing] = await db
-        .select({ id: businessProfiles.id })
-        .from(businessProfiles)
-        .where(eq(businessProfiles.userId, userId))
-        .limit(1);
-
-      if (existing) {
-        const [updated] = await db
-          .update(businessProfiles)
-          .set({ businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, location, monthlyBudget, goals, competitors, additionalContext, updatedAt: new Date() })
-          .where(eq(businessProfiles.userId, userId))
-          .returning();
-        return res.json(updated);
-      } else {
-        const [created] = await db
-          .insert(businessProfiles)
-          .values({ userId, businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, location, monthlyBudget, goals, competitors, additionalContext })
-          .returning();
-        return res.json(created);
-      }
-    } catch (err) {
-      console.error("business-profile POST error:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  });
-
   // AI Auto-Fill endpoint — fills any tool's form fields with AI
   app.post("/api/ai-autofill", async (req, res) => {
     try {
@@ -3991,37 +4029,6 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
         userBrief?: string;
         campaignContext?: Record<string, string>;
       };
-
-      // Load business profile for personalization
-      const userId = (req.session as any)?.simpleUser?.id;
-      let businessProfile: Record<string, string> | null = null;
-      if (userId) {
-        try {
-          const [profile] = await db
-            .select()
-            .from(businessProfiles)
-            .where(eq(businessProfiles.userId, userId))
-            .limit(1);
-          if (profile && (profile.businessName || profile.productsServices || profile.targetAudience)) {
-            businessProfile = {
-              businessName: profile.businessName,
-              businessType: profile.businessType,
-              industry: profile.industry,
-              productsServices: profile.productsServices,
-              targetAudience: profile.targetAudience,
-              valueProposition: profile.valueProposition,
-              tone: profile.tone,
-              location: profile.location,
-              monthlyBudget: profile.monthlyBudget,
-              goals: profile.goals,
-              competitors: profile.competitors,
-              additionalContext: profile.additionalContext,
-            };
-          }
-        } catch {
-          // profile load failure is non-fatal
-        }
-      }
 
       // Tool-specific field definitions
       const TOOL_CONFIGS: Record<string, { description: string; fields: Record<string, string> }> = {
@@ -4339,26 +4346,6 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
 
       const contextParts: string[] = [];
 
-      // Business profile context (highest priority — always injected if available)
-      if (businessProfile) {
-        const profileLines: string[] = [];
-        if (businessProfile.businessName) profileLines.push(`- Nama Bisnis: ${businessProfile.businessName}`);
-        if (businessProfile.businessType) profileLines.push(`- Jenis Bisnis: ${businessProfile.businessType}`);
-        if (businessProfile.industry) profileLines.push(`- Industri/Niche: ${businessProfile.industry}`);
-        if (businessProfile.productsServices) profileLines.push(`- Produk/Layanan: ${businessProfile.productsServices}`);
-        if (businessProfile.targetAudience) profileLines.push(`- Target Audience: ${businessProfile.targetAudience}`);
-        if (businessProfile.valueProposition) profileLines.push(`- USP/Value Prop: ${businessProfile.valueProposition}`);
-        if (businessProfile.tone) profileLines.push(`- Tone/Gaya: ${businessProfile.tone}`);
-        if (businessProfile.location) profileLines.push(`- Lokasi Target: ${businessProfile.location}`);
-        if (businessProfile.monthlyBudget) profileLines.push(`- Budget Bulanan: ${businessProfile.monthlyBudget}`);
-        if (businessProfile.goals) profileLines.push(`- Tujuan Marketing: ${businessProfile.goals}`);
-        if (businessProfile.competitors) profileLines.push(`- Kompetitor: ${businessProfile.competitors}`);
-        if (businessProfile.additionalContext) profileLines.push(`- Konteks Tambahan: ${businessProfile.additionalContext}`);
-        if (profileLines.length > 0) {
-          contextParts.push(`**Profil Bisnis User (gunakan sebagai dasar utama):**\n${profileLines.join("\n")}`);
-        }
-      }
-
       if (Object.keys(campaignContext).length > 0) {
         contextParts.push("**Konteks Campaign Aktif:**");
         for (const [k, v] of Object.entries(campaignContext)) {
@@ -4373,7 +4360,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
         .map(([key, desc]) => `- "${key}": ${desc}`)
         .join("\n");
 
-      const systemPrompt = `Anda adalah AI Marketing Assistant yang ahli mengisi form tool marketing secara cerdas dan relevan. Selalu balas dalam JSON valid.`;
+      const systemPrompt = `Anda adalah AI Marketing Assistant yang ahli mengisi form tool marketing secara cerdas dan relevan. Selalu balas dalam JSON valid.${(req as any).bpCtx || ""}`;
 
       const userPrompt = `Tool: ${config.description}
 
@@ -4427,64 +4414,146 @@ Format respons (JSON only, no markdown):
     }
   });
 
-  // ─── AI Revision of Workroom Deliverable ────────────────────────────────────
-  app.post("/api/workroom/deliverables/:id/revise", async (req: Request, res: Response) => {
-    const userId = (req.session as any)?.simpleUser?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  // ─── Business Profile API ──────────────────────────────────────────────────
 
-    const deliverableId = parseInt(req.params.id);
-    if (isNaN(deliverableId)) return res.status(400).json({ error: "Invalid ID" });
-
-    const { revisionInstructions = "" } = req.body as { revisionInstructions: string };
-    if (!revisionInstructions.trim()) return res.status(400).json({ error: "Instruksi revisi wajib diisi" });
-
+  // GET /api/business-profile — get the active (default) profile for the current user
+  app.get("/api/business-profile", async (req, res) => {
+    const userId = (req as any).user?.claims?.sub;
+    if (!userId) return res.json(null);
     try {
-      const [deliverable] = await db
-        .select()
-        .from(workroomDeliverables)
-        .where(eq(workroomDeliverables.id, deliverableId))
+      const rows = await db.select().from(businessProfiles)
+        .where(and(eq(businessProfiles.userId, userId), eq(businessProfiles.isDefault, true)))
         .limit(1);
+      res.json(rows[0] ?? null);
+    } catch (err) {
+      console.error("Business profile GET error:", err);
+      res.status(500).json({ error: "Gagal mengambil profil bisnis" });
+    }
+  });
 
-      if (!deliverable) return res.status(404).json({ error: "Deliverable not found" });
+  // GET /api/business-profiles — list all profiles for the current user
+  app.get("/api/business-profiles", async (req, res) => {
+    const userId = (req as any).user?.claims?.sub;
+    if (!userId) return res.json([]);
+    try {
+      const rows = await db.select().from(businessProfiles)
+        .where(eq(businessProfiles.userId, userId))
+        .orderBy(desc(businessProfiles.createdAt));
+      res.json(rows);
+    } catch (err) {
+      console.error("Business profiles list error:", err);
+      res.status(500).json({ error: "Gagal mengambil daftar profil bisnis" });
+    }
+  });
 
-      const systemPrompt = `Kamu adalah AI Marketing Specialist yang bertugas merevisi deliverable marketing berdasarkan instruksi spesifik dari user. Pertahankan format dan struktur asli, hanya perbarui konten sesuai instruksi. Jangan tambahkan komentar atau penjelasan — hanya output konten yang sudah direvisi.`;
+  // POST /api/business-profiles — create a new profile
+  app.post("/api/business-profiles", async (req, res) => {
+    const userId = (req as any).user?.claims?.sub;
+    if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+    try {
+      const { profileName, businessName, productCategory, usp, targetAudience, monthlyBudget, mainPlatforms, isDefault } = req.body;
+      if (!businessName?.trim()) return res.status(400).json({ error: "Nama bisnis wajib diisi" });
 
-      const userPrompt = `Judul deliverable: ${deliverable.title}
-Tipe: ${deliverable.deliverableType}
+      // If setting as default, unset other defaults first
+      if (isDefault) {
+        await db.update(businessProfiles)
+          .set({ isDefault: false })
+          .where(eq(businessProfiles.userId, userId));
+      }
 
-Konten asli:
-${deliverable.content}
+      const [profile] = await db.insert(businessProfiles).values({
+        userId,
+        profileName: profileName || "Profil Utama",
+        businessName: businessName.trim(),
+        productCategory: productCategory || "",
+        usp: usp || "",
+        targetAudience: targetAudience || "",
+        monthlyBudget: monthlyBudget || "",
+        mainPlatforms: Array.isArray(mainPlatforms) ? mainPlatforms : [],
+        isDefault: Boolean(isDefault),
+      }).returning();
 
-Instruksi revisi dari user:
-${revisionInstructions}
+      res.json(profile);
+    } catch (err) {
+      console.error("Business profile create error:", err);
+      res.status(500).json({ error: "Gagal membuat profil bisnis" });
+    }
+  });
 
-Tugas: Revisi konten di atas sesuai instruksi. Pertahankan format, struktur, dan kedalaman detail yang sama. Output hanya konten yang sudah direvisi, tanpa penjelasan tambahan.`;
+  // PUT /api/business-profiles/:id — update an existing profile
+  app.put("/api/business-profiles/:id", async (req, res) => {
+    const userId = (req as any).user?.claims?.sub;
+    if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+    try {
+      const id = parseInt(req.params.id);
+      const { profileName, businessName, productCategory, usp, targetAudience, monthlyBudget, mainPlatforms, isDefault } = req.body;
+      if (!businessName?.trim()) return res.status(400).json({ error: "Nama bisnis wajib diisi" });
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_completion_tokens: 2000,
-      });
+      // If setting as default, unset other defaults first
+      if (isDefault) {
+        await db.update(businessProfiles)
+          .set({ isDefault: false })
+          .where(and(eq(businessProfiles.userId, userId)));
+      }
 
-      const revisedContent = completion.choices[0]?.message?.content?.trim() ?? deliverable.content;
-
-      const [updated] = await db
-        .update(workroomDeliverables)
+      const [updated] = await db.update(businessProfiles)
         .set({
-          content: revisedContent,
-          status: "draft",
-          updatedAt: new Date(),
+          profileName: profileName || "Profil Utama",
+          businessName: businessName.trim(),
+          productCategory: productCategory || "",
+          usp: usp || "",
+          targetAudience: targetAudience || "",
+          monthlyBudget: monthlyBudget || "",
+          mainPlatforms: Array.isArray(mainPlatforms) ? mainPlatforms : [],
+          isDefault: Boolean(isDefault),
+          updatedAt: new Date() as any,
         })
-        .where(eq(workroomDeliverables.id, deliverableId))
+        .where(and(eq(businessProfiles.id, id), eq(businessProfiles.userId, userId)))
         .returning();
 
-      return res.json(updated);
+      if (!updated) return res.status(404).json({ error: "Profil tidak ditemukan" });
+      res.json(updated);
     } catch (err) {
-      console.error("Deliverable revise error:", err);
-      return res.status(500).json({ error: "Revision failed" });
+      console.error("Business profile update error:", err);
+      res.status(500).json({ error: "Gagal memperbarui profil bisnis" });
+    }
+  });
+
+  // DELETE /api/business-profiles/:id
+  app.delete("/api/business-profiles/:id", async (req, res) => {
+    const userId = (req as any).user?.claims?.sub;
+    if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+    try {
+      const id = parseInt(req.params.id);
+      await db.delete(businessProfiles)
+        .where(and(eq(businessProfiles.id, id), eq(businessProfiles.userId, userId)));
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Business profile delete error:", err);
+      res.status(500).json({ error: "Gagal menghapus profil bisnis" });
+    }
+  });
+
+  // POST /api/business-profiles/:id/set-default — activate a profile
+  app.post("/api/business-profiles/:id/set-default", async (req, res) => {
+    const userId = (req as any).user?.claims?.sub;
+    if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+    try {
+      const id = parseInt(req.params.id);
+      // Unset all defaults for this user
+      await db.update(businessProfiles)
+        .set({ isDefault: false })
+        .where(eq(businessProfiles.userId, userId));
+      // Set the selected one as default
+      const [updated] = await db.update(businessProfiles)
+        .set({ isDefault: true })
+        .where(and(eq(businessProfiles.id, id), eq(businessProfiles.userId, userId)))
+        .returning();
+      if (!updated) return res.status(404).json({ error: "Profil tidak ditemukan" });
+      res.json(updated);
+    } catch (err) {
+      console.error("Business profile set-default error:", err);
+      res.status(500).json({ error: "Gagal mengaktifkan profil bisnis" });
     }
   });
 
