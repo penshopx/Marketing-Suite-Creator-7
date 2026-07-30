@@ -3947,7 +3947,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
 
       const [updated] = await db
         .update(workroomDeliverables)
-        .set({ content: revisedContent, updatedAt: new Date() } as any)
+        .set({ content: revisedContent, status: "draft", updatedAt: new Date() } as any)
         .where(eq(workroomDeliverables.id, id))
         .returning();
 
