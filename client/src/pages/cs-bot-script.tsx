@@ -62,38 +62,9 @@ export default function CsBotScript() {
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
+  // Task #24: single hydration effect — Workroom prefill (accurate extraction) → URL params → campaign defaults
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("workroom_prefill");
-      if (!raw) return;
-      sessionStorage.removeItem("workroom_prefill");
-      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
-        deliverableType: string; content: string; projectName: string; title: string;
-      };
-      if (deliverableType === "cs_bot_script") {
-        // Extract price and product name from script content
-        const priceMatch = content.match(/Rp[\s]?[\d.,]+(?:\s*(?:rb|ribu|k|juta|M))?/i);
-        if (priceMatch) setHarga(priceMatch[0].replace(/\s+/g, " ").trim());
-        const produkMatch = content.match(/(?:produk|nama produk)[:\s]+([^\n,.(]{3,60})/i);
-        setProduk(produkMatch ? produkMatch[1].trim() : projectName);
-        setDeskripsiProduk(content.slice(0, 300));
-      }
-      protectWorkroomFields(["produk", "harga", "deskripsiProduk"]);
-      setWorkroomBanner(`${projectName} — ${title}`);
-    } catch { /* ignore */ }
-  }, []);
-
-  const handleAutoFill = (fields: Record<string, string>) => {
-    if (fields.produk) setProduk(fields.produk);
-    if (fields.harga) setHarga(fields.harga);
-    if (fields.deskripsiProduk) setDeskripsiProduk(fields.deskripsiProduk);
-    if (fields.target) setTarget(fields.target);
-  };
-
-  // Single hydration effect: precedence = URL params > Workroom prefill > campaign defaults
-  useEffect(() => {
-    // 1. Check and consume Workroom prefill
-    const workroomFilled = { produk: false, deskripsiProduk: false };
+    const workroomFilled = { produk: false, harga: false, deskripsiProduk: false };
     try {
       const raw = sessionStorage.getItem("workroom_prefill");
       if (raw) {
@@ -102,17 +73,21 @@ export default function CsBotScript() {
           deliverableType: string; content: string; projectName: string; title: string;
         };
         if (deliverableType === "cs_bot_script") {
-          if (title) { setProduk(title); workroomFilled.produk = true; }
-          setDeskripsiProduk(`[Dari Workroom: ${projectName}]\n${content}`.slice(0, 2000));
+          // Extract price and product name from script content
+          const priceMatch = content.match(/Rp[\s]?[\d.,]+(?:\s*(?:rb|ribu|k|juta|M))?/i);
+          if (priceMatch) { setHarga(priceMatch[0].replace(/\s+/g, " ").trim()); workroomFilled.harga = true; }
+          const produkMatch = content.match(/(?:produk|nama produk)[:\s]+([^\n,.(]{3,60})/i);
+          setProduk(produkMatch ? produkMatch[1].trim() : (title || projectName));
+          workroomFilled.produk = true;
+          setDeskripsiProduk(content.slice(0, 300));
           workroomFilled.deskripsiProduk = true;
           setWorkroomBanner(`${projectName} — ${title}`);
+          protectWorkroomFields(["produk", "harga", "deskripsiProduk"]);
         }
       }
-    } catch {
-      // ignore parse errors
-    }
+    } catch { /* ignore */ }
 
-    // 2. URL params (override everything, including Workroom)
+    // URL params override everything
     const params = new URLSearchParams(window.location.search);
     const p = params.get("produk");
     const h = params.get("harga");
@@ -120,12 +95,18 @@ export default function CsBotScript() {
     if (p) setProduk(p);
     else if (!workroomFilled.produk && campaign.produk) setProduk(campaign.produk);
     if (h) setHarga(h);
-    else if (campaign.harga) setHarga(campaign.harga);
+    else if (!workroomFilled.harga && campaign.harga) setHarga(campaign.harga);
     if (t) setTarget(t);
     else if (campaign.target) setTarget(campaign.target);
-    // Campaign USP only when Workroom didn't fill deskripsiProduk
     if (!workroomFilled.deskripsiProduk && campaign.usp) setDeskripsiProduk(campaign.usp);
   }, []);
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.produk) setProduk(fields.produk);
+    if (fields.harga) setHarga(fields.harga);
+    if (fields.deskripsiProduk) setDeskripsiProduk(fields.deskripsiProduk);
+    if (fields.target) setTarget(fields.target);
+  };
 
   const handleGenerate = async () => {
     if (!produk.trim()) {

@@ -1142,9 +1142,17 @@ export default function Workroom() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(project.updatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(project.updatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                        {/* Task #37: show deliverable count before user opens the project */}
+                        {(project as any).deliverableCount > 0 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            · {(project as any).deliverableCount} deliverable
+                          </span>
+                        )}
+                      </div>
                       <Button size="sm" className="h-7 text-xs gap-1" onClick={() => openProject(project)}>
                         <FolderOpen className="w-3 h-3" /> Buka
                       </Button>

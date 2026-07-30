@@ -135,9 +135,10 @@ export default function GuideChatbot() {
     setInput("");
     setIsLoading(true);
 
-    try {
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    // Add a placeholder so the loading bubble shows while the first token arrives
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
+    try {
       await streamSSE(
         "/api/guide-chat",
         { message: messageText, history: updatedHistory.slice(0, -1) },
@@ -154,19 +155,33 @@ export default function GuideChatbot() {
           }
         },
       );
+
+      // Task #27: after streaming, remove orphaned empty assistant message
+      // (can appear when stream ends immediately with no tokens)
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && !last.content.trim()) {
+          return prev.slice(0, -1);
+        }
+        return prev;
+      });
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: error instanceof Error 
-            ? `Maaf, terjadi kesalahan: ${error.message}` 
-            : "Maaf, terjadi kesalahan. Silakan coba lagi.",
-        },
-      ]);
+      const errorText = error instanceof Error
+        ? `Maaf, terjadi kesalahan: ${error.message}`
+        : "Maaf, terjadi kesalahan. Silakan coba lagi.";
+      // Task #27: replace the empty placeholder with the error message
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && !last.content.trim()) {
+          return [...prev.slice(0, -1), { role: "assistant", content: errorText }];
+        }
+        return [...prev, { role: "assistant", content: errorText }];
+      });
     } finally {
       setIsLoading(false);
+      // Refocus textarea so user can type the next message immediately
+      setTimeout(() => textareaRef.current?.focus(), 50);
     }
   };
 

@@ -70,38 +70,11 @@ export default function WaBroadcast() {
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
+  // Task #24: single hydration effect — Workroom prefill (with accurate price/product extraction)
+  // then URL params then campaign defaults. Previously split into two effects which caused the
+  // second to find sessionStorage already cleared by the first, losing Workroom protection.
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("workroom_prefill");
-      if (!raw) return;
-      sessionStorage.removeItem("workroom_prefill");
-      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
-        deliverableType: string; content: string; projectName: string; title: string;
-      };
-      if (deliverableType === "wa_broadcast") {
-        // Extract price (e.g. "Rp 150.000" or "Rp150rb")
-        const priceMatch = content.match(/Rp[\s]?[\d.,]+(?:\s*(?:rb|ribu|k|juta|M))?/i);
-        if (priceMatch) setHarga(priceMatch[0].replace(/\s+/g, " ").trim());
-        // Extract explicit product name, fall back to project name
-        const produkMatch = content.match(/(?:produk|nama produk)[:\s]+([^\n,.(]{3,60})/i);
-        setProduk(produkMatch ? produkMatch[1].trim() : projectName);
-        setUsp(content.split("\n").filter(Boolean)[0]?.slice(0, 150) ?? "");
-      }
-      protectWorkroomFields(["produk", "harga", "usp"]);
-      setWorkroomBanner(`${projectName} — ${title}`);
-    } catch { /* ignore */ }
-  }, []);
-
-  const handleAutoFill = (fields: Record<string, string>) => {
-    if (fields.produk) setProduk(fields.produk);
-    if (fields.harga) setHarga(fields.harga);
-    if (fields.usp) setUsp(fields.usp);
-  };
-
-  // Single hydration effect: precedence = URL params > Workroom prefill > campaign defaults
-  useEffect(() => {
-    // 1. Check and consume Workroom prefill
-    const workroomFilled = { produk: false, usp: false };
+    const workroomFilled = { produk: false, harga: false, usp: false };
     try {
       const raw = sessionStorage.getItem("workroom_prefill");
       if (raw) {
@@ -110,17 +83,22 @@ export default function WaBroadcast() {
           deliverableType: string; content: string; projectName: string; title: string;
         };
         if (deliverableType === "wa_broadcast") {
-          if (title) { setProduk(title); workroomFilled.produk = true; }
-          setUsp(`[Dari Workroom: ${projectName}]\n${content}`.slice(0, 2000));
+          // Extract price from content (e.g. "Rp 150.000" or "Rp150rb")
+          const priceMatch = content.match(/Rp[\s]?[\d.,]+(?:\s*(?:rb|ribu|k|juta|M))?/i);
+          if (priceMatch) { setHarga(priceMatch[0].replace(/\s+/g, " ").trim()); workroomFilled.harga = true; }
+          // Extract explicit product name, fall back to title then project name
+          const produkMatch = content.match(/(?:produk|nama produk)[:\s]+([^\n,.(]{3,60})/i);
+          setProduk(produkMatch ? produkMatch[1].trim() : (title || projectName));
+          workroomFilled.produk = true;
+          setUsp(content.split("\n").filter(Boolean)[0]?.slice(0, 150) ?? "");
           workroomFilled.usp = true;
           setWorkroomBanner(`${projectName} — ${title}`);
+          protectWorkroomFields(["produk", "harga", "usp"]);
         }
       }
-    } catch {
-      // ignore parse errors
-    }
+    } catch { /* ignore */ }
 
-    // 2. URL params (override everything, including Workroom)
+    // URL params override everything
     const params = new URLSearchParams(window.location.search);
     const p = params.get("produk") || params.get("niche");
     const h = params.get("harga");
@@ -128,11 +106,16 @@ export default function WaBroadcast() {
     if (p) setProduk(p);
     else if (!workroomFilled.produk && campaign.produk) setProduk(campaign.produk);
     if (h) setHarga(h);
-    else if (campaign.harga) setHarga(campaign.harga);
+    else if (!workroomFilled.harga && campaign.harga) setHarga(campaign.harga);
     if (s && segmenOptions.find((o) => o.value === s)) setSegmen(s);
-    // Campaign USP only when Workroom didn't fill it
     if (!workroomFilled.usp && campaign.usp) setUsp(campaign.usp);
   }, []);
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.produk) setProduk(fields.produk);
+    if (fields.harga) setHarga(fields.harga);
+    if (fields.usp) setUsp(fields.usp);
+  };
 
   const handleGenerate = async () => {
     if (!produk.trim()) {

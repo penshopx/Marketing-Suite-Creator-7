@@ -298,7 +298,26 @@ function BusinessProfileIndicator() {
     staleTime: 60_000,
   });
 
-  if (!user || !profile?.businessName) return null;
+  if (!user) return null;
+
+  // Task #18: show a nudge when user is logged in but hasn't set up a profile yet
+  if (profile === null) {
+    return (
+      <Link href="/business-profile">
+        <div className="px-2 py-2 rounded-lg bg-amber-500/10 border border-amber-300/40 dark:border-amber-700/40 cursor-pointer hover:bg-amber-500/15 transition-colors">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Sparkles className="h-3 w-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 truncate">
+              Atur Profil Bisnis
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-0.5 ml-4">Agar AI lebih relevan untuk bisnismu</p>
+        </div>
+      </Link>
+    );
+  }
+
+  if (!profile?.businessName) return null;
 
   return (
     <Link href="/settings">
