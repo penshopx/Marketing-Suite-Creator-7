@@ -1,14 +1,23 @@
 ---
 name: Business Profile Context Injection
-description: Middleware sets (req as any).bpCtx on every request; schema fields and middleware must stay in sync — they diverged once already.
+description: Middleware sets (req as any).bpCtx on every request using the ACTUAL schema columns — do not change field names without checking shared/schema.ts first.
 ---
 
 **Per-request middleware** (app.use near top of registerRoutes) + **getBusinessProfileContext()** standalone function both build the same block. Keep them in sync.
 
-**Fields injected (in order):** businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, monthlyBudget, goals, competitors, additionalContext.
+**Actual schema columns in business_profiles table (shared/schema.ts):**
+businessName, productCategory, usp, targetAudience, monthlyBudget, mainPlatforms (jsonb array), isDefault.
 
-Each field is only added when non-empty (falsy guard). Entire block is skipped if lines.length === 0 — so no empty context is injected.
+**Fields injected into bpCtx (in order):**
+- businessName → "Nama Bisnis/Produk"
+- productCategory → "Kategori"
+- usp → "USP/Keunggulan"
+- targetAudience → "Target Audience"
+- monthlyBudget → "Budget Bulanan"
+- mainPlatforms → "Platform Utama" (joined array)
 
-**Bug history:** original code read productCategory, usp, mainPlatforms — none of which exist in the schema. Those were always undefined/falsy so bpCtx was effectively just businessName + targetAudience + monthlyBudget. Fixed to use the actual schema columns.
+Each field is only added when non-empty (falsy guard). Entire block is skipped if lines.length === 0.
 
-**Why:** Task #8 merged a schema with different column names than the middleware assumed. Any future schema column rename must also update both bpCtx locations.
+**Critical mistake to avoid:** An earlier session incorrectly "fixed" these to read businessType, valueProposition, industry, productsServices, tone, goals, competitors, additionalContext — none of which exist in the schema. This made bpCtx always empty. Always check shared/schema.ts before changing field reads here.
+
+**Why:** Task #8 merged a schema with simple columns. Any future schema column additions must be reflected in BOTH bpCtx locations and the GET /api/business-profile + POST/PUT /api/business-profiles endpoints simultaneously.

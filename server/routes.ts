@@ -54,16 +54,12 @@ async function getBusinessProfileContext(req: Request): Promise<string> {
     const p = rows[0];
     const lines: string[] = [];
     if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
-    if (p.businessType) lines.push(`Tipe Bisnis: ${p.businessType}`);
-    if (p.industry) lines.push(`Industri: ${p.industry}`);
-    if (p.productsServices) lines.push(`Produk/Layanan: ${p.productsServices}`);
+    if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
+    if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
     if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
-    if (p.valueProposition) lines.push(`Value Proposition/USP: ${p.valueProposition}`);
-    if (p.tone) lines.push(`Tone Komunikasi: ${p.tone}`);
     if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
-    if (p.goals) lines.push(`Goals: ${p.goals}`);
-    if (p.competitors) lines.push(`Kompetitor: ${p.competitors}`);
-    if (p.additionalContext) lines.push(`Konteks Tambahan: ${p.additionalContext}`);
+    const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
+    if (platforms) lines.push(`Platform Utama: ${platforms}`);
     if (lines.length === 0) return "";
     return `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
   } catch {
@@ -123,16 +119,12 @@ export async function registerRoutes(
           const p = rows[0];
           const lines: string[] = [];
           if (p.businessName) lines.push(`Nama Bisnis/Produk: ${p.businessName}`);
-          if (p.businessType) lines.push(`Tipe Bisnis: ${p.businessType}`);
-          if (p.industry) lines.push(`Industri: ${p.industry}`);
-          if (p.productsServices) lines.push(`Produk/Layanan: ${p.productsServices}`);
+          if (p.productCategory) lines.push(`Kategori: ${p.productCategory}`);
+          if (p.usp) lines.push(`USP/Keunggulan: ${p.usp}`);
           if (p.targetAudience) lines.push(`Target Audience: ${p.targetAudience}`);
-          if (p.valueProposition) lines.push(`Value Proposition/USP: ${p.valueProposition}`);
-          if (p.tone) lines.push(`Tone Komunikasi: ${p.tone}`);
           if (p.monthlyBudget) lines.push(`Budget Bulanan: ${p.monthlyBudget}`);
-          if (p.goals) lines.push(`Goals: ${p.goals}`);
-          if (p.competitors) lines.push(`Kompetitor: ${p.competitors}`);
-          if (p.additionalContext) lines.push(`Konteks Tambahan: ${p.additionalContext}`);
+          const platforms = Array.isArray(p.mainPlatforms) ? (p.mainPlatforms as string[]).join(", ") : "";
+          if (platforms) lines.push(`Platform Utama: ${platforms}`);
           if (lines.length > 0) {
             (req as any).bpCtx = `\n\n[KONTEKS BISNIS PENGGUNA]\n${lines.join("\n")}\n[/KONTEKS]\nGunakan informasi bisnis di atas untuk mempersonalisasi semua output AI agar relevan dengan bisnis pengguna.`;
           }
