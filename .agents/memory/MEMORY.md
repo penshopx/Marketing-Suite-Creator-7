@@ -8,3 +8,4 @@
 - [Workroom Revision History](workroom-revision-history.md) — table workroom_deliverable_revisions (max 5 per deliverable); GET /revisions + POST /revert/:id endpoints; DeliverableCard "Riwayat" button with restore.
 - [Workroom Share Link](workroom-share-link.md) — shareToken varchar(64) column on workroom_projects; POST /share generates UUID token; GET /api/workroom/share/:token serves public read-only HTML (no auth); client copies full URL to clipboard.
 - [Business Profile Prefill from Workroom](bp-prefill-workroom.md) — POST /api/business-profiles/prefill-from-workroom; takes projectId; AI extracts 12 BP fields from brief+deliverables; client dialog in business-profile.tsx with createInitial state override.
+- [Simple Auth Session Cookie](simple-auth-session-cookie.md) — `secure: true` blocks Set-Cookie on HTTP; use `secure: NODE_ENV==="production"`; plus req.user sync middleware for dev simple auth.

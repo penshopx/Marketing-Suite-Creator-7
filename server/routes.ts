@@ -42,7 +42,7 @@ function isAdminUser(req: Request): boolean {
 /** Returns the formatted business-profile context block to inject into AI system messages.
  *  Result is "" when the user has no saved profile or is not logged in. */
 async function getBusinessProfileContext(req: Request): Promise<string> {
-  const userId = (req as any).user?.claims?.sub;
+  const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
   if (!userId) return "";
   try {
     // Most-recently-updated profile is treated as active (no is_default column in DB)
@@ -130,9 +130,20 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
+  // Middleware: in dev/simple-auth mode, sync session.simpleUser → req.user so that
+  // (req as any).user?.id is available in all downstream route handlers (mirrors what
+  // Replit OIDC middleware does automatically in production via getMiddleware()).
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    const r = req as any;
+    if (!r.user && r.session?.simpleUser) {
+      r.user = r.session.simpleUser;
+    }
+    next();
+  });
+
   // Middleware: attach business profile context to every request
   app.use(async (req: Request, _res: Response, next: NextFunction) => {
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
     if (userId) {
       try {
         // Most-recently-updated profile is treated as active (no is_default column in DB)
@@ -3936,6 +3947,32 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     try {
       const id = parseInt(req.params.id);
       const { status, content } = req.body;
+
+      // Task #46: save a revision snapshot when content is being manually changed
+      if (content) {
+        const [current] = await db.select()
+          .from(workroomDeliverables)
+          .where(eq(workroomDeliverables.id, id));
+        if (current && current.content !== content) {
+          const existingRevs = await db
+            .select({ id: workroomDeliverableRevisions.id })
+            .from(workroomDeliverableRevisions)
+            .where(eq(workroomDeliverableRevisions.deliverableId, id))
+            .orderBy(workroomDeliverableRevisions.createdAt);
+          await db.insert(workroomDeliverableRevisions).values({
+            deliverableId: id,
+            content: current.content,
+            revisionInstructions: "Edit manual",
+            versionNumber: existingRevs.length + 1,
+          });
+          // Keep at most 5 snapshots
+          if (existingRevs.length >= 5 && existingRevs[0]) {
+            await db.delete(workroomDeliverableRevisions)
+              .where(eq(workroomDeliverableRevisions.id, existingRevs[0].id));
+          }
+        }
+      }
+
       const updates: Record<string, unknown> = { updatedAt: new Date() };
       if (status) updates.status = status;
       if (content) updates.content = content;
@@ -4082,6 +4119,25 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     } catch (err) {
       console.error("Revert error:", err);
       res.status(500).json({ error: "Gagal memulihkan revisi" });
+    }
+  });
+
+  // DELETE /api/workroom/projects/:id/share — revoke the share link (Task #47)
+  app.delete("/api/workroom/projects/:id/share", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = (req as any).user?.claims?.sub ?? "";
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const [project] = await db.select().from(workroomProjects)
+        .where(eq(workroomProjects.id, id));
+      if (!project) return res.status(404).json({ error: "Project tidak ditemukan" });
+      if (project.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+      await db.update(workroomProjects).set({ shareToken: null } as any)
+        .where(eq(workroomProjects.id, id));
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Revoke share error:", err);
+      res.status(500).json({ error: "Gagal mencabut link berbagi" });
     }
   });
 
@@ -4830,7 +4886,7 @@ Format respons (JSON only, no markdown):
 
   // GET /api/business-profile — get the active (most-recently-updated) profile
   app.get("/api/business-profile", async (req, res) => {
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
     if (!userId) return res.json(null);
     try {
       const rows = await db.select().from(businessProfiles)
@@ -4846,7 +4902,7 @@ Format respons (JSON only, no markdown):
 
   // GET /api/business-profiles — list all profiles for the current user
   app.get("/api/business-profiles", async (req, res) => {
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
     if (!userId) return res.json([]);
     try {
       const rows = await db.select().from(businessProfiles)
@@ -4862,7 +4918,7 @@ Format respons (JSON only, no markdown):
 
   // POST /api/business-profiles — create a new profile
   app.post("/api/business-profiles", async (req, res) => {
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
     if (!userId) return res.status(401).json({ error: "Login diperlukan" });
     try {
       const { businessName, businessType, industry, productsServices, targetAudience, valueProposition, tone, location, monthlyBudget, goals, competitors, additionalContext } = req.body;
@@ -4894,7 +4950,7 @@ Format respons (JSON only, no markdown):
 
   // PUT /api/business-profiles/:id — update an existing profile
   app.put("/api/business-profiles/:id", async (req, res) => {
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
     if (!userId) return res.status(401).json({ error: "Login diperlukan" });
     try {
       const id = parseInt(req.params.id);
@@ -4931,7 +4987,7 @@ Format respons (JSON only, no markdown):
 
   // DELETE /api/business-profiles/:id
   app.delete("/api/business-profiles/:id", async (req, res) => {
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
     if (!userId) return res.status(401).json({ error: "Login diperlukan" });
     try {
       const id = parseInt(req.params.id);
@@ -4947,7 +5003,7 @@ Format respons (JSON only, no markdown):
   // POST /api/business-profiles/:id/set-default — activate a profile
   // "Active" = most-recently-updated; just touch updatedAt so it sorts first.
   app.post("/api/business-profiles/:id/set-default", async (req, res) => {
-    const userId = (req as any).user?.claims?.sub;
+    const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
     if (!userId) return res.status(401).json({ error: "Login diperlukan" });
     try {
       const id = parseInt(req.params.id);

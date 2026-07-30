@@ -34,7 +34,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      // secure: true only in production so that smoke-test HTTP connections
+      // (localhost:5000, no TLS proxy) can still receive the session cookie.
+      secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
     },
   });

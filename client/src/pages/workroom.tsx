@@ -850,9 +850,11 @@ export default function Workroom() {
         credentials: "include",
       });
       if (!r.ok) throw new Error("Share failed");
-      const { shareUrl } = await r.json() as { token: string; shareUrl: string };
+      const { token, shareUrl } = await r.json() as { token: string; shareUrl: string };
       const fullUrl = window.location.origin + shareUrl;
       await navigator.clipboard.writeText(fullUrl);
+      // Task #47: update local state so "Cabut Link" button appears immediately
+      setSelectedProject((p) => p ? { ...p, shareToken: token } : p);
       toast({
         title: "Link disalin ke clipboard ✓",
         description: "Siapa saja dengan link ini bisa melihat campaign brief (read-only).",
@@ -860,6 +862,22 @@ export default function Workroom() {
       });
     } catch {
       toast({ title: "Gagal membuat link berbagi", variant: "destructive" });
+    }
+  };
+
+  // Task #47 — revoke the share link
+  const handleRevokeBrief = async () => {
+    if (!selectedProject) return;
+    try {
+      const r = await fetch(`/api/workroom/projects/${selectedProject.id}/share`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!r.ok) throw new Error("Revoke failed");
+      setSelectedProject((p) => p ? { ...p, shareToken: null } : p);
+      toast({ title: "Link berbagi dicabut ✓", description: "Link lama tidak lagi bisa diakses.", duration: 3000 });
+    } catch {
+      toast({ title: "Gagal mencabut link berbagi", variant: "destructive" });
     }
   };
 
@@ -989,15 +1007,27 @@ export default function Workroom() {
                 <Download className="w-3.5 h-3.5" />
                 Export Brief
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs"
-                onClick={handleShareBrief}
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                Bagikan Link
-              </Button>
+              {selectedProject?.shareToken ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs text-destructive border-destructive/40 hover:bg-destructive/5"
+                  onClick={handleRevokeBrief}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  Cabut Link
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={handleShareBrief}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  Bagikan Link
+                </Button>
+              )}
             </div>
           )}
 

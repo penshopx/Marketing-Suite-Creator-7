@@ -208,6 +208,77 @@ if (bpRes.status === 200) {
   fail(`GET /api/business-profile → unexpected ${bpRes.status}`);
 }
 
+// ─── [6] AI Auto-Fill uses business profile when no brief is typed (Task #48) ─
+console.log("\n[6] POST /api/ai-autofill — uses business profile context when no brief typed");
+
+const BP_PRODUCT = "KursusSEO_UniqueMarker_9x7q"; // unique enough to detect in AI output
+let bpId: number | null = null;
+
+// Create a temporary business profile for this test
+const createBpRes = await fetch(`${BASE}/api/business-profiles`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", Cookie: sessionCookie },
+  body: JSON.stringify({
+    businessName: "TestBrand AutoFill Check",
+    businessType: "Produk Digital (kursus, ebook, template)",
+    industry: "Pendidikan Digital",
+    productsServices: BP_PRODUCT,
+    targetAudience: "Pemilik UMKM usia 30-50 yang ingin belajar SEO",
+    valueProposition: "Belajar SEO dalam 7 hari dengan panduan step-by-step",
+    tone: "profesional",
+    location: "Indonesia",
+    monthlyBudget: "",
+    goals: "Meningkatkan traffic organik",
+    competitors: "",
+    additionalContext: "",
+  }),
+});
+
+if (createBpRes.ok) {
+  const bpData = await createBpRes.json();
+  bpId = bpData.id ?? null;
+  ok(`Created temporary business profile (id=${bpId})`);
+} else {
+  fail(`Failed to create temporary business profile (status ${createBpRes.status})`);
+}
+
+if (bpId !== null) {
+  // Call ai-autofill with EMPTY userBrief — should rely entirely on bpCtx
+  const fillRes = await fetch(`${BASE}/api/ai-autofill`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: sessionCookie },
+    body: JSON.stringify({ toolName: "wa-broadcast", userBrief: "" }),
+  });
+
+  if (fillRes.ok) {
+    const payload = await fillRes.json() as { fields?: Record<string, string> };
+    const fields = payload.fields ?? {};
+    const produk = (fields.produk ?? "").trim();
+
+    produk.length > 0
+      ? ok(`Auto-Fill returned non-empty produk field: "${produk.slice(0, 70)}"`)
+      : fail(`Auto-Fill returned empty produk — profile context not used`);
+
+    // Verify it doesn't fall back to a hardcoded generic placeholder
+    const GENERIC = ["produk a", "contoh produk", "your product", "nama produk"];
+    const isGeneric = GENERIC.some(p => produk.toLowerCase().includes(p));
+    !isGeneric
+      ? ok(`Produk field does not look like a generic placeholder`)
+      : fail(`Produk field looks like a generic placeholder — profile context not applied`);
+  } else {
+    fail(`POST /api/ai-autofill → ${fillRes.status}`);
+  }
+
+  // Clean up: delete the temporary profile
+  const delRes = await fetch(`${BASE}/api/business-profiles/${bpId}`, {
+    method: "DELETE",
+    headers: { Cookie: sessionCookie },
+  });
+  delRes.ok
+    ? ok("Temporary business profile cleaned up")
+    : fail(`Failed to clean up temporary profile (status ${delRes.status})`);
+}
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 console.log(`\n── Result: ${passed} passed, ${failed} failed ──\n`);
 process.exit(failed > 0 ? 1 : 0);
