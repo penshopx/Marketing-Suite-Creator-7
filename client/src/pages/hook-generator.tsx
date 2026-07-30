@@ -53,7 +53,7 @@ export default function HookGenerator() {
   const [result, setResult] = useState<HookResponse | null>(null);
   const [history, setHistory] = useState<HookResponse[]>([]);
   const { toast } = useToast();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,6 +67,7 @@ export default function HookGenerator() {
       if (deliverableType === "hook") {
         if (title) setTopic(title);
         setKeyMessage(`[Dari Workroom: ${projectName}]\n${content}`.slice(0, 2000));
+        protectWorkroomFields(["topic", "keyMessage"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch {

@@ -67,7 +67,7 @@ export default function WaBroadcast() {
   const { toast } = useToast();
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,6 +87,7 @@ export default function WaBroadcast() {
         setProduk(produkMatch ? produkMatch[1].trim() : projectName);
         setUsp(content.split("\n").filter(Boolean)[0]?.slice(0, 150) ?? "");
       }
+      protectWorkroomFields(["produk", "harga", "usp"]);
       setWorkroomBanner(`${projectName} — ${title}`);
     } catch { /* ignore */ }
   }, []);

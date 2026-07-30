@@ -59,7 +59,7 @@ export default function CsBotScript() {
   const { toast } = useToast();
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,6 +78,7 @@ export default function CsBotScript() {
         setProduk(produkMatch ? produkMatch[1].trim() : projectName);
         setDeskripsiProduk(content.slice(0, 300));
       }
+      protectWorkroomFields(["produk", "harga", "deskripsiProduk"]);
       setWorkroomBanner(`${projectName} — ${title}`);
     } catch { /* ignore */ }
   }, []);

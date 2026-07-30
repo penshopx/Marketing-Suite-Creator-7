@@ -43,7 +43,7 @@ export default function AudienceBuilder() {
   const [newInterest, setNewInterest] = useState("");
   const [ageRange, setAgeRange] = useState([25, 45]);
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
 
   // Read pre-fill data from Workroom export
   useEffect(() => {
@@ -74,6 +74,7 @@ export default function AudienceBuilder() {
           const max = Math.max(min, Math.min(65, parseInt(ageMatch[2])));
           setAgeRange([min, max]);
         }
+        protectWorkroomFields(["productDescription"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch {

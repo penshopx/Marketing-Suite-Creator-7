@@ -92,7 +92,7 @@ export default function VideoScript() {
   const [result, setResult] = useState<VideoScript | null>(null);
   const [activeTab, setActiveTab] = useState("script");
   const { toast } = useToast();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -109,6 +109,7 @@ export default function VideoScript() {
         // Store script content as context in targetAudience field isn't ideal;
         // Put a note in topik so user knows it came from Workroom
         setTopik(`[Dari Workroom: ${projectName}] ${title}`.slice(0, 200));
+        protectWorkroomFields(["topik", "produk", "targetAudience"]);
         setWorkroomBanner(`${projectName} — ${title}`);
         // Also store the full script content via targetAudience as context hint
         if (content) setTargetAudience(`Berdasarkan script Workroom: ${content}`.slice(0, 300));

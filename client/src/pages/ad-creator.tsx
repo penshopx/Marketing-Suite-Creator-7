@@ -52,7 +52,7 @@ export default function AdCreator() {
   const [generatedAd, setGeneratedAd] = useState<GeneratedAd | null>(null);
   const [adHistory, setAdHistory] = useState<GeneratedAd[]>([]);
   const { toast } = useToast();
-  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,6 +66,7 @@ export default function AdCreator() {
       if (deliverableType === "ad_copy") {
         if (title) setProductName(title);
         setProductDescription(`[Dari Workroom: ${projectName}]\n${content}`.slice(0, 2000));
+        protectWorkroomFields(["productName", "productDescription"]);
         setWorkroomBanner(`${projectName} — ${title}`);
       }
     } catch {
