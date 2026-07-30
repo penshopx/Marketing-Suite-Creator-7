@@ -4126,6 +4126,210 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
             goals: "Tujuan konten (awareness/engagement/konversi)",
           },
         },
+        "ab-variant": {
+          description: "A/B variant generator untuk iklan dan landing page",
+          fields: {
+            headline: "Headline utama iklan atau halaman",
+            bodyText: "Body copy/teks deskripsi produk atau tawaran",
+            cta: "Call-to-action yang digunakan (misal: Beli Sekarang, Coba Gratis)",
+            targetAudience: "Target audience yang dituju",
+            platform: "Platform iklan (Meta Ads / Google Ads / TikTok Ads)",
+          },
+        },
+        "ad-scale-advisor": {
+          description: "Advisor untuk scaling budget iklan",
+          fields: {
+            platform: "Platform iklan yang digunakan (Meta/Google/TikTok)",
+            objective: "Objective kampanye (traffic/konversi/awareness)",
+            additionalContext: "Informasi tambahan produk atau kampanye",
+          },
+        },
+        "ad-simulation": {
+          description: "Simulasi performa iklan digital",
+          fields: {
+            platform: "Platform iklan (Meta Ads / Google Ads / TikTok Ads)",
+            productName: "Nama produk yang diiklankan",
+            productDescription: "Deskripsi singkat produk",
+            targetAudience: "Target audience iklan",
+            adBudget: "Budget iklan harian/bulanan dalam Rupiah",
+          },
+        },
+        "affiliate-content": {
+          description: "Generator konten untuk affiliate marketing",
+          fields: {
+            productName: "Nama produk yang dipromosikan sebagai afiliasi",
+            niche: "Niche atau kategori produk",
+            commission: "Komisi afiliasi (misal: 10% atau Rp 50.000/sale)",
+          },
+        },
+        "ai-articles": {
+          description: "Generator artikel SEO dengan AI",
+          fields: {
+            topic: "Topik utama artikel yang akan ditulis",
+            keywords: "Kata kunci SEO (comma-separated)",
+            tone: "Tone penulisan (profesional/santai/edukatif/persuasif)",
+          },
+        },
+        "campaign-analyzer": {
+          description: "Analyzer performa iklan dan kampanye",
+          fields: {
+            adCopy: "Teks iklan yang akan dianalisa",
+            platform: "Platform iklan (Meta/Google/TikTok)",
+            objective: "Objective kampanye yang ingin dicapai",
+          },
+        },
+        "campaign-launcher": {
+          description: "Campaign launcher checklist dan setup guide",
+          fields: {
+            productName: "Nama produk atau layanan",
+            productType: "Tipe produk (fisik/digital/jasa)",
+            targetMarket: "Target pasar dan segmen audience",
+            productBenefit: "Benefit utama produk untuk audience",
+            objective: "Objective kampanye (awareness/traffic/konversi/retargeting)",
+          },
+        },
+        "campaign-report": {
+          description: "Generator laporan performa kampanye",
+          fields: {
+            businessName: "Nama bisnis atau brand",
+            platform: "Platform iklan yang dilaporkan",
+            period: "Periode laporan (misal: Juli 2025 atau Q3 2025)",
+          },
+        },
+        "content-repurposer": {
+          description: "Repurpose konten ke berbagai format",
+          fields: {
+            originalContent: "Konten asli yang akan di-repurpose (artikel/caption/script)",
+          },
+        },
+        "cs-closing": {
+          description: "Script closing untuk customer service dan sales",
+          fields: {
+            productName: "Nama produk atau layanan",
+            productPrice: "Harga produk",
+            productBenefit: "Benefit utama produk",
+            objection: "Keberatan umum yang sering muncul dari calon pembeli",
+          },
+        },
+        "customer-journey": {
+          description: "Customer journey map generator",
+          fields: {
+            productName: "Nama produk atau layanan",
+            targetAudience: "Target audience utama",
+            productPrice: "Harga produk",
+            businessModel: "Model bisnis (B2C/B2B/D2C/marketplace)",
+            competitors: "Kompetitor utama di pasar",
+          },
+        },
+        "digital-products": {
+          description: "Kalkulator dan planner produk digital",
+          fields: {
+            productName: "Nama produk digital yang akan dijual",
+            sellPrice: "Harga jual produk digital dalam Rupiah",
+          },
+        },
+        "funnel-planner": {
+          description: "Marketing funnel planner dan builder",
+          fields: {
+            productName: "Nama produk atau layanan",
+            targetAudience: "Target audience yang dituju funnel",
+            platform: "Platform utama funnel (Meta/Google/TikTok/Organik)",
+            cta: "Call-to-action utama funnel (Beli/Daftar/Download/Konsultasi)",
+          },
+        },
+        "hashtag-generator": {
+          description: "Generator hashtag untuk konten sosial media",
+          fields: {
+            platform: "Platform sosial media (Instagram/TikTok/Twitter/LinkedIn)",
+            niche: "Niche atau topik konten",
+            contentType: "Tipe konten (produk/edukatif/hiburan/promosi)",
+            keywords: "Kata kunci utama konten",
+          },
+        },
+        "interest-finder": {
+          description: "Facebook/Meta interest targeting finder",
+          fields: {
+            keyword: "Kata kunci produk atau bisnis untuk mencari interest",
+            audienceDescription: "Deskripsi singkat target audience yang dituju",
+          },
+        },
+        "keyword-marketplace": {
+          description: "Keyword research untuk marketplace (Tokopedia/Shopee/Lazada)",
+          fields: {
+            marketplace: "Marketplace target (Tokopedia/Shopee/Lazada/Tiktok Shop)",
+            productName: "Nama produk yang dijual",
+            category: "Kategori produk di marketplace",
+            targetBuyer: "Deskripsi pembeli yang dituju",
+          },
+        },
+        "lp-html-generator": {
+          description: "Generator landing page HTML siap pakai",
+          fields: {
+            productName: "Nama produk yang dipromosikan",
+            tagline: "Tagline landing page (max 10 kata)",
+            targetAudience: "Target audience landing page",
+            offer: "Penawaran utama atau promo yang ditawarkan",
+            cta: "Teks tombol CTA (misal: Pesan Sekarang / Hubungi Kami)",
+            price: "Harga produk (bisa include harga coret jika ada)",
+          },
+        },
+        "product-research": {
+          description: "Riset produk untuk dijual online",
+          fields: {
+            niche: "Niche atau kategori produk yang diriset",
+            format: "Format produk (fisik/digital/jasa/dropship)",
+            priceRange: "Range harga target produk dalam Rupiah",
+          },
+        },
+        "product-validator": {
+          description: "Validator kelayakan produk sebelum launch",
+          fields: {
+            productName: "Nama produk yang akan divalidasi",
+            productDescription: "Deskripsi produk dan apa yang ditawarkan",
+            targetMarket: "Target pasar yang dituju",
+            platform: "Platform penjualan utama (marketplace/website/sosmed)",
+          },
+        },
+        "profit-lab": {
+          description: "Kalkulator profitabilitas dan break-even iklan",
+          fields: {
+            sellingPrice: "Harga jual produk dalam Rupiah",
+            costPrice: "Harga modal/HPP produk dalam Rupiah",
+            shippingCost: "Biaya ongkir rata-rata dalam Rupiah",
+            adSpend: "Budget iklan yang direncanakan dalam Rupiah",
+          },
+        },
+        "spy-kompetitor": {
+          description: "Spy dan analisis kompetitor di marketplace",
+          fields: {
+            marketplace: "Marketplace yang dianalisa (Tokopedia/Shopee/Lazada)",
+            yourProduct: "Nama produk kamu yang akan dibandingkan",
+            category: "Kategori produk di marketplace",
+            yourStrengths: "Keunggulan produk kamu vs kompetitor",
+          },
+        },
+        "story-telling": {
+          description: "Generator story telling untuk konten marketing",
+          fields: {
+            storyType: "Tipe story (before-after/problem-solution/testimonial/brand-story)",
+            emotion: "Emosi yang ingin dibangkitkan (inspirasi/empati/urgensi/kepercayaan)",
+            productName: "Nama produk atau layanan",
+            productBenefit: "Benefit utama produk",
+            targetAudience: "Target audience yang dituju",
+            additionalContext: "Konteks tambahan atau detail spesifik cerita",
+          },
+        },
+        "video-script": {
+          description: "Script video marketing untuk berbagai platform",
+          fields: {
+            platform: "Platform video (TikTok/Instagram Reels/YouTube Shorts/YouTube)",
+            topic: "Topik atau angle utama video",
+            productName: "Nama produk yang dipromosikan",
+            objective: "Objective video (awareness/edukasi/konversi/testimonial)",
+            videoStyle: "Gaya video (talking head/UGC/demonstrasi/animasi)",
+            targetAudience: "Target audience video",
+          },
+        },
       };
 
       const config = TOOL_CONFIGS[toolName];

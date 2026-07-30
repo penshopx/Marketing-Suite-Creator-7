@@ -9,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Anchor, Loader2, Copy, Sparkles } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiYoutube } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const platforms = [
   { id: "tiktok", name: "TikTok", icon: SiTiktok, color: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-200" },
@@ -50,6 +53,13 @@ export default function HookGenerator() {
   const [result, setResult] = useState<HookResponse | null>(null);
   const [history, setHistory] = useState<HookResponse[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.topic) setTopic(fields.topic);
+    if (fields.audience) setTargetAudience(fields.audience);
+    if (fields.painPoint) setKeyMessage(fields.painPoint);
+  };
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -191,13 +201,20 @@ export default function HookGenerator() {
                     <CardDescription>Isi minimal topik / produknya</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <AIAutoFillButton
+                      toolName="hook-generator"
+                      onFill={handleAutoFill}
+                      isAutoFilling={isAutoFilling}
+                      triggerAutoFill={triggerAutoFill}
+                    />
                     <div className="space-y-2">
                       <Label htmlFor="topic">Topik / Produk *</Label>
                       <Input
                         id="topic"
                         placeholder="Contoh: skincare untuk kulit berjerawat"
                         value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
+                        onChange={(e) => { markManualEdit("topic"); setTopic(e.target.value); }}
+                        className={cn(aiFilledFields.has("topic") && AI_FIELD_CLASS)}
                         data-testid="input-topic"
                       />
                     </div>
@@ -208,7 +225,8 @@ export default function HookGenerator() {
                         id="targetAudience"
                         placeholder="Contoh: wanita 20-30 tahun, ibu muda"
                         value={targetAudience}
-                        onChange={(e) => setTargetAudience(e.target.value)}
+                        onChange={(e) => { markManualEdit("targetAudience"); setTargetAudience(e.target.value); }}
+                        className={cn(aiFilledFields.has("targetAudience") && AI_FIELD_CLASS)}
                         data-testid="input-target-audience"
                       />
                     </div>
@@ -219,8 +237,8 @@ export default function HookGenerator() {
                         id="keyMessage"
                         placeholder="Contoh: serum vitamin C yang menghilangkan jerawat dalam 7 hari"
                         value={keyMessage}
-                        onChange={(e) => setKeyMessage(e.target.value)}
-                        className="min-h-[80px]"
+                        onChange={(e) => { markManualEdit("keyMessage"); setKeyMessage(e.target.value); }}
+                        className={cn("min-h-[80px]", aiFilledFields.has("keyMessage") && AI_FIELD_CLASS)}
                         data-testid="input-key-message"
                       />
                     </div>

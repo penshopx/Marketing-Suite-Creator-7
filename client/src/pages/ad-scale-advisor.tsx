@@ -13,6 +13,9 @@ import {
   BarChart2, DollarSign, RefreshCw, Info,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const platforms = [
   { id: "meta", label: "Meta Ads (FB/IG)" },
@@ -106,6 +109,11 @@ export default function AdScaleAdvisor() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ScaleAnalysis | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.additionalContext) setAdditionalContext(fields.additionalContext);
+  };
 
   const handleAnalyze = async () => {
     if (!dailyBudget || !daysRunning) {
@@ -199,6 +207,7 @@ export default function AdScaleAdvisor() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="ad-scale-advisor" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Platform Iklan</Label>
                   <div className="grid grid-cols-3 gap-2">
@@ -316,8 +325,8 @@ export default function AdScaleAdvisor() {
                   <Textarea
                     placeholder="contoh: Ini produk digital harga 97k, sudah split test 3 creative, yang paling bagus CTR 2.1%..."
                     value={additionalContext}
-                    onChange={(e) => setAdditionalContext(e.target.value)}
-                    className="min-h-[60px] resize-none text-sm"
+                    className={cn("min-h-[60px] resize-none text-sm", aiFilledFields.has("additionalContext") && AI_FIELD_CLASS)}
+                    onChange={(e) => { setAdditionalContext(e.target.value); markManualEdit("additionalContext"); }}
                     data-testid="input-context"
                   />
                 </div>

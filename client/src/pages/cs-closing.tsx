@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import {
   MessageCircle, Loader2, Copy, Sparkles, ChevronRight,
   Flame, Snowflake, ThermometerSun, RefreshCw, CheckCircle2,
@@ -86,6 +89,14 @@ export default function CSClosing() {
   const [history, setHistory] = useState<GeneratedScript[]>([]);
   const [activeSection, setActiveSection] = useState("opening");
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProductName(fields.productName);
+    if (fields.productPrice) setProductPrice(fields.productPrice);
+    if (fields.productBenefit) setProductBenefit(fields.productBenefit);
+    if (fields.objection) setObjection(fields.objection);
+  };
 
   const handleGenerate = async () => {
     if (!productName.trim()) {
@@ -188,12 +199,14 @@ export default function CSClosing() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="cs-closing" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama Produk *</Label>
                   <Input
                     placeholder="contoh: Kelas Meta Ads Mastery"
                     value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
+                    onChange={(e) => { setProductName(e.target.value); markManualEdit("productName"); }}
+                    className={cn(aiFilledFields.has("productName") && AI_FIELD_CLASS)}
                     data-testid="input-cs-product-name"
                   />
                 </div>
@@ -202,7 +215,8 @@ export default function CSClosing() {
                   <Input
                     placeholder="contoh: Rp 97.000"
                     value={productPrice}
-                    onChange={(e) => setProductPrice(e.target.value)}
+                    onChange={(e) => { setProductPrice(e.target.value); markManualEdit("productPrice"); }}
+                    className={cn(aiFilledFields.has("productPrice") && AI_FIELD_CLASS)}
                     data-testid="input-cs-price"
                   />
                 </div>
@@ -211,8 +225,8 @@ export default function CSClosing() {
                   <Textarea
                     placeholder="contoh: Bisa mulai ngiklan dari 100k, dapat script iklan yang winning, bimbingan sampai berhasil..."
                     value={productBenefit}
-                    onChange={(e) => setProductBenefit(e.target.value)}
-                    className="min-h-[70px] resize-none"
+                    onChange={(e) => { setProductBenefit(e.target.value); markManualEdit("productBenefit"); }}
+                    className={cn("min-h-[70px] resize-none", aiFilledFields.has("productBenefit") && AI_FIELD_CLASS)}
                     data-testid="input-cs-benefit"
                   />
                 </div>

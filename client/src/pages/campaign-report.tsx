@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import {
   BarChart3, Loader2, ChevronRight, Copy,
   RefreshCw, TrendingUp, TrendingDown, Minus,
@@ -108,6 +111,12 @@ export default function CampaignReport() {
   const [waCopied, setWaCopied] = useState(false);
   const [waFmt, setWaFmt] = useState<"ringkas" | "detail">("ringkas");
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.businessName) setNamaBisnis(fields.businessName);
+    if (fields.period) setPeriod(fields.period);
+  };
 
   const buildWaText = (r: ReportResult, format: "ringkas" | "detail") => {
     const score = r.skor;
@@ -313,9 +322,10 @@ export default function CampaignReport() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="campaign-report" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama Bisnis / Kampanye</Label>
-                  <Input placeholder="contoh: Toko Baju X, Brand Skincare Y..." value={namaBisnis} onChange={(e) => setNamaBisnis(e.target.value)} data-testid="input-rp-nama" />
+                  <Input placeholder="contoh: Toko Baju X, Brand Skincare Y..." value={namaBisnis} onChange={(e) => { setNamaBisnis(e.target.value); markManualEdit("namaBisnis"); }} className={cn(aiFilledFields.has("namaBisnis") && AI_FIELD_CLASS)} data-testid="input-rp-nama" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">

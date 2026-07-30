@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import {
   Rocket, Loader2, Sparkles, ChevronRight, Copy,
   CheckCircle2, Megaphone, Globe, MessageCircle,
@@ -82,6 +85,13 @@ export default function CampaignLauncher() {
   const [result, setResult] = useState<CampaignPackage | null>(null);
   const [activeTab, setActiveTab] = useState("metaAds");
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProductName(fields.productName);
+    if (fields.targetMarket) setTargetMarket(fields.targetMarket);
+    if (fields.productBenefit) setProductBenefit(fields.productBenefit);
+  };
 
   const handleLaunch = async () => {
     if (!productName.trim() || !productBenefit.trim()) {
@@ -216,12 +226,14 @@ export default function CampaignLauncher() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="campaign-launcher" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama Produk *</Label>
                   <Input
                     placeholder="contoh: Kelas Meta Ads 100K ke 1 Miliar"
                     value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
+                    onChange={(e) => { setProductName(e.target.value); markManualEdit("productName"); }}
+                    className={cn(aiFilledFields.has("productName") && AI_FIELD_CLASS)}
                     data-testid="input-launch-product"
                   />
                 </div>
@@ -261,8 +273,8 @@ export default function CampaignLauncher() {
                   <Textarea
                     placeholder="Apa yang didapat pembeli? contoh: Bisa mulai ngiklan dari 100k, dapat script iklan winning, strategi scale sampai 1 miliar..."
                     value={productBenefit}
-                    onChange={(e) => setProductBenefit(e.target.value)}
-                    className="min-h-[80px] resize-none"
+                    onChange={(e) => { setProductBenefit(e.target.value); markManualEdit("productBenefit"); }}
+                    className={cn("min-h-[80px] resize-none", aiFilledFields.has("productBenefit") && AI_FIELD_CLASS)}
                     data-testid="input-launch-benefit"
                   />
                 </div>

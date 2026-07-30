@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import {
   Clapperboard, Loader2, Sparkles, ChevronRight, Copy,
   CheckCircle2, RefreshCw, Download, Zap, Hash,
@@ -89,6 +92,13 @@ export default function VideoScript() {
   const [result, setResult] = useState<VideoScript | null>(null);
   const [activeTab, setActiveTab] = useState("script");
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.topic) setTopik(fields.topic);
+    if (fields.productName) setProduk(fields.productName);
+    if (fields.targetAudience) setTargetAudience(fields.targetAudience);
+  };
 
   const handleGenerate = async () => {
     if (!topik.trim()) {
@@ -236,12 +246,19 @@ export default function VideoScript() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton
+                  toolName="video-script"
+                  onFill={handleAutoFill}
+                  isAutoFilling={isAutoFilling}
+                  triggerAutoFill={triggerAutoFill}
+                />
                 <div className="space-y-1.5">
                   <Label>Topik / Ide Konten *</Label>
                   <Input
                     placeholder="contoh: Tips jualan online modal HP, 3 kesalahan pemula di Meta Ads..."
                     value={topik}
-                    onChange={(e) => setTopik(e.target.value)}
+                    onChange={(e) => { markManualEdit("topik"); setTopik(e.target.value); }}
+                    className={cn(aiFilledFields.has("topik") && AI_FIELD_CLASS)}
                     data-testid="input-script-topik"
                   />
                 </div>
@@ -250,7 +267,8 @@ export default function VideoScript() {
                   <Input
                     placeholder="contoh: Kelas Online Marketing Pro, Skincare Brand X..."
                     value={produk}
-                    onChange={(e) => setProduk(e.target.value)}
+                    onChange={(e) => { markManualEdit("produk"); setProduk(e.target.value); }}
+                    className={cn(aiFilledFields.has("produk") && AI_FIELD_CLASS)}
                     data-testid="input-script-produk"
                   />
                 </div>
@@ -259,7 +277,8 @@ export default function VideoScript() {
                   <Input
                     placeholder="contoh: Pebisnis online pemula, Ibu muda 25-35 tahun..."
                     value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
+                    onChange={(e) => { markManualEdit("targetAudience"); setTargetAudience(e.target.value); }}
+                    className={cn(aiFilledFields.has("targetAudience") && AI_FIELD_CLASS)}
                     data-testid="input-script-audience"
                   />
                 </div>

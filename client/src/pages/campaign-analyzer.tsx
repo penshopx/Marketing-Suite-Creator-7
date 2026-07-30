@@ -7,6 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, CheckCircle2, XCircle, AlertTriangle, Sparkles, Loader2, Target, TrendingUp, Zap, MessageSquare, Eye, MousePointer } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface AnalysisResult {
   overallScore: number;
@@ -27,6 +30,12 @@ export default function CampaignAnalyzer() {
   const [objective, setObjective] = useState("conversions");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.adCopy) setAdCopy(fields.adCopy);
+    if (fields.objective) setObjective(fields.objective);
+  };
 
   const getFallbackResult = (): AnalysisResult => ({
     overallScore: 65,
@@ -117,6 +126,7 @@ export default function CampaignAnalyzer() {
               <CardDescription>Masukkan copy iklan yang ingin Anda analisis</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <AIAutoFillButton toolName="campaign-analyzer" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Platform</Label>
@@ -155,9 +165,9 @@ export default function CampaignAnalyzer() {
                   data-testid="input-analyzer-ad-copy"
                   placeholder="Paste seluruh copy iklan Anda di sini termasuk headline, body text, dan CTA..."
                   value={adCopy}
-                  onChange={(e) => setAdCopy(e.target.value)}
+                  onChange={(e) => { setAdCopy(e.target.value); markManualEdit("adCopy"); }}
                   rows={10}
-                  className="resize-none"
+                  className={cn("resize-none", aiFilledFields.has("adCopy") && AI_FIELD_CLASS)}
                 />
               </div>
               <Button 

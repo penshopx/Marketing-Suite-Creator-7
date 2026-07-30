@@ -13,6 +13,9 @@ import {
   Target, BarChart3, BookOpen, Zap, ArrowRight
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const templateTypes = [
   {
@@ -330,6 +333,12 @@ export default function AffiliateContent() {
   const [customProduct, setCustomProduct] = useState("");
   const [customNiche, setCustomNiche] = useState("");
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setCustomProduct(fields.productName);
+    if (fields.niche) setCustomNiche(fields.niche);
+  };
 
   const copyText = (text: string, label?: string) => {
     navigator.clipboard.writeText(text);
@@ -382,15 +391,16 @@ export default function AffiliateContent() {
 
         <TabsContent value="templates" className="space-y-4 mt-4">
           <div className="p-4 rounded-lg bg-muted">
+            <AIAutoFillButton toolName="affiliate-content" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
             <p className="text-sm font-medium mb-2">Personalisasi Template (Opsional)</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Nama Produk Affiliate</Label>
-                <Input placeholder="contoh: Blueprint Digital" value={customProduct} onChange={e => setCustomProduct(e.target.value)} data-testid="input-product-name" />
+                <Input placeholder="contoh: Blueprint Digital" value={customProduct} className={cn(aiFilledFields.has("customProduct") && AI_FIELD_CLASS)} onChange={e => { setCustomProduct(e.target.value); markManualEdit("customProduct"); }} data-testid="input-product-name" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Niche Konten Kamu</Label>
-                <Input placeholder="contoh: digital marketing" value={customNiche} onChange={e => setCustomNiche(e.target.value)} data-testid="input-niche" />
+                <Input placeholder="contoh: digital marketing" value={customNiche} className={cn(aiFilledFields.has("customNiche") && AI_FIELD_CLASS)} onChange={e => { setCustomNiche(e.target.value); markManualEdit("customNiche"); }} data-testid="input-niche" />
               </div>
             </div>
           </div>

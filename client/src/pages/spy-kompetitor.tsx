@@ -15,6 +15,9 @@ import {
   Minus, Lightbulb, Trophy,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const marketplaces = [
   { id: "shopee", label: "Shopee", emoji: "🛒" },
@@ -84,6 +87,13 @@ export default function SpyKompetitor() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<SpyResult | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.yourProduct) setProdukKamu(fields.yourProduct);
+    if (fields.category) setKategori(fields.category);
+    if (fields.yourStrengths) setKeunggulanKamu(fields.yourStrengths);
+  };
 
   const handleAnalyze = async () => {
     if (!produkKamu.trim() || !infoKompetitor.trim()) {
@@ -174,12 +184,14 @@ export default function SpyKompetitor() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="spy-kompetitor" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Produk / Bisnis Kamu *</Label>
                   <Input
                     placeholder="contoh: Kaos oversize lokal brand X, skincare serum vitamin C..."
                     value={produkKamu}
-                    onChange={(e) => setProdukKamu(e.target.value)}
+                    className={cn(aiFilledFields.has("produkKamu") && AI_FIELD_CLASS)}
+                    onChange={(e) => { setProdukKamu(e.target.value); markManualEdit("produkKamu"); }}
                     data-testid="input-spy-produk"
                   />
                 </div>
@@ -208,7 +220,8 @@ export default function SpyKompetitor() {
                   <Input
                     placeholder="contoh: 100% cotton premium, free ongkir, garansi 30 hari..."
                     value={keunggulanKamu}
-                    onChange={(e) => setKeunggulanKamu(e.target.value)}
+                    className={cn(aiFilledFields.has("keunggulanKamu") && AI_FIELD_CLASS)}
+                    onChange={(e) => { setKeunggulanKamu(e.target.value); markManualEdit("keunggulanKamu"); }}
                     data-testid="input-spy-usp"
                   />
                 </div>

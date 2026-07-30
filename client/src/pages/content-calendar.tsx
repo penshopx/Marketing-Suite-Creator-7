@@ -9,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Loader2, Copy, Sparkles, Download } from "lucide-react";
 import { SiInstagram, SiTiktok, SiFacebook, SiYoutube, SiLinkedin } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const platforms = [
   { id: "instagram", name: "Instagram", icon: SiInstagram, color: "bg-pink-500/10 text-pink-600" },
@@ -56,6 +59,13 @@ export default function ContentCalendar() {
   const [result, setResult] = useState<CalendarResponse | null>(null);
   const [history, setHistory] = useState<CalendarResponse[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.niche) setNiche(fields.niche);
+    if (fields.targetAudience) setAudience(fields.targetAudience);
+    if (fields.goals) setExtraContext(fields.goals);
+  };
 
   const togglePillar = (pillar: string) => {
     setPillars((prev) =>
@@ -195,13 +205,20 @@ export default function ContentCalendar() {
                     <CardTitle>Detail Bisnis</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <AIAutoFillButton
+                      toolName="content-calendar"
+                      onFill={handleAutoFill}
+                      isAutoFilling={isAutoFilling}
+                      triggerAutoFill={triggerAutoFill}
+                    />
                     <div className="space-y-2">
                       <Label htmlFor="niche">Niche / Produk *</Label>
                       <Input
                         id="niche"
                         placeholder="Contoh: skincare untuk kulit berjerawat"
                         value={niche}
-                        onChange={(e) => setNiche(e.target.value)}
+                        onChange={(e) => { markManualEdit("niche"); setNiche(e.target.value); }}
+                        className={cn(aiFilledFields.has("niche") && AI_FIELD_CLASS)}
                         data-testid="input-niche"
                       />
                     </div>
@@ -212,7 +229,8 @@ export default function ContentCalendar() {
                         id="audience"
                         placeholder="Contoh: wanita 20-30 tahun"
                         value={audience}
-                        onChange={(e) => setAudience(e.target.value)}
+                        onChange={(e) => { markManualEdit("audience"); setAudience(e.target.value); }}
+                        className={cn(aiFilledFields.has("audience") && AI_FIELD_CLASS)}
                         data-testid="input-audience"
                       />
                     </div>
@@ -223,8 +241,8 @@ export default function ContentCalendar() {
                         id="extraContext"
                         placeholder="Promo, event, USP, larangan tone..."
                         value={extraContext}
-                        onChange={(e) => setExtraContext(e.target.value)}
-                        className="min-h-[80px]"
+                        onChange={(e) => { markManualEdit("extraContext"); setExtraContext(e.target.value); }}
+                        className={cn("min-h-[80px]", aiFilledFields.has("extraContext") && AI_FIELD_CLASS)}
                         data-testid="input-extra"
                       />
                     </div>

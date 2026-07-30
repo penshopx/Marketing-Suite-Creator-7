@@ -13,6 +13,9 @@ import {
   DollarSign, ArrowRight, RotateCcw, Info,
   Percent, ShoppingBag, Megaphone, FlaskConical,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("id-ID").format(Math.round(n));
@@ -86,6 +89,14 @@ function RoasCalculator() {
   const [ongkir, setOngkir] = useState("0");
   const [adSpend, setAdSpend] = useState("500000");
   const [konversi, setKonversi] = useState("10");
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.sellingPrice) setHargaJual(fields.sellingPrice);
+    if (fields.costPrice) setHargaModal(fields.costPrice);
+    if (fields.shippingCost) setOngkir(fields.shippingCost);
+    if (fields.adSpend) setAdSpend(fields.adSpend);
+  };
 
   const r = useMemo(() => {
     const hj = parseFloat(hargaJual) || 0;
@@ -121,11 +132,12 @@ function RoasCalculator() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <NumInput label="Harga Jual Produk" value={hargaJual} onChange={setHargaJual} testId="input-roas-price" />
-          <NumInput label="Harga Modal / COGS" value={hargaModal} onChange={setHargaModal} hint="Termasuk packaging, produksi" testId="input-roas-cogs" />
-          <NumInput label="Ongkos Kirim (jika ditanggung)" value={ongkir} onChange={setOngkir} testId="input-roas-ongkir" />
+          <AIAutoFillButton toolName="profit-lab" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
+          <NumInput label="Harga Jual Produk" value={hargaJual} onChange={(v) => { setHargaJual(v); markManualEdit("hargaJual"); }} testId="input-roas-price" />
+          <NumInput label="Harga Modal / COGS" value={hargaModal} onChange={(v) => { setHargaModal(v); markManualEdit("hargaModal"); }} hint="Termasuk packaging, produksi" testId="input-roas-cogs" />
+          <NumInput label="Ongkos Kirim (jika ditanggung)" value={ongkir} onChange={(v) => { setOngkir(v); markManualEdit("ongkir"); }} testId="input-roas-ongkir" />
           <div className="border-t pt-3">
-            <NumInput label="Total Budget Iklan" value={adSpend} onChange={setAdSpend} testId="input-roas-spend" />
+            <NumInput label="Total Budget Iklan" value={adSpend} onChange={(v) => { setAdSpend(v); markManualEdit("adSpend"); }} testId="input-roas-spend" />
             <div className="mt-3">
               <NumInput label="Jumlah Konversi / Penjualan" value={konversi} onChange={setKonversi} prefix="#" hint="Berapa order yang dihasilkan dari iklan ini" testId="input-roas-conv" />
             </div>

@@ -15,6 +15,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
 import { CampaignContextBar } from "@/components/campaign-context-bar";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface Interest {
   name: string;
@@ -51,6 +54,12 @@ export default function InterestFinder() {
   const { toast } = useToast();
   const { campaign, save, addInterests, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.keyword) setKeyword(fields.keyword);
+    if (fields.audienceDescription) setDeskripsiAudience(fields.audienceDescription);
+  };
 
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
@@ -227,15 +236,16 @@ export default function InterestFinder() {
             <CardTitle className="text-base">Parameter Riset</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <AIAutoFillButton toolName="interest-finder" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
             <div>
               <Label>Keyword Produk / Niche *</Label>
               <Input
                 placeholder="e.g. skincare, kursus trading, dropship baju"
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => { setKeyword(e.target.value); markManualEdit("keyword"); }}
                 onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
                 data-testid="input-keyword-interest"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("keyword") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -243,9 +253,9 @@ export default function InterestFinder() {
               <Textarea
                 placeholder="Siapa target Anda? Umur, gender, masalah, kebiasaan..."
                 value={deskripsiAudience}
-                onChange={(e) => setDeskripsiAudience(e.target.value)}
+                onChange={(e) => { setDeskripsiAudience(e.target.value); markManualEdit("deskripsiAudience"); }}
                 data-testid="input-audience-desc"
-                className="mt-1 h-20 resize-none"
+                className={cn("mt-1 h-20 resize-none", aiFilledFields.has("deskripsiAudience") && AI_FIELD_CLASS)}
               />
             </div>
             <div>

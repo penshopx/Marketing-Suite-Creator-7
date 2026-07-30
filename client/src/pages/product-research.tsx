@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +12,9 @@ import {
   BookOpen, FileSpreadsheet, Image, Video, Code,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const niches = [
   { id: "bisnis_online", label: "🛒 Bisnis Online & E-Commerce", hot: true },
@@ -106,6 +110,12 @@ export default function ProductResearch() {
   const [result, setResult] = useState<ResearchResult | null>(null);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.niche) setNiche(fields.niche);
+    if (fields.priceRange) setPriceRange(fields.priceRange);
+  };
 
   const handleResearch = async () => {
     if (!niche) {
@@ -169,6 +179,7 @@ export default function ProductResearch() {
         {/* Filter Section */}
         <Card>
           <CardContent className="pt-5">
+            <AIAutoFillButton toolName="product-research" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5 font-semibold">

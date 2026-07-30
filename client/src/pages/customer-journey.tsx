@@ -14,6 +14,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCampaignStore } from "@/hooks/use-campaign-store";
 import { CampaignContextBar } from "@/components/campaign-context-bar";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface JourneyStage {
   id: string;
@@ -59,6 +62,15 @@ export default function CustomerJourney() {
   const { toast } = useToast();
   const { campaign, save, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProduk(fields.productName);
+    if (fields.targetAudience) setTarget(fields.targetAudience);
+    if (fields.productPrice) setHarga(fields.productPrice);
+    if (fields.businessModel) setModel(fields.businessModel);
+    if (fields.competitors) setKompetitor(fields.competitors);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -181,14 +193,15 @@ export default function CustomerJourney() {
             <CardTitle className="text-base">Detail Bisnis</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <AIAutoFillButton toolName="customer-journey" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
             <div>
               <Label>Produk / Bisnis *</Label>
               <Input
                 placeholder="e.g. Skincare, SaaS, Kursus Online"
                 value={produk}
-                onChange={(e) => setProduk(e.target.value)}
+                onChange={(e) => { setProduk(e.target.value); markManualEdit("produk"); }}
                 data-testid="input-produk-journey"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("produk") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -196,9 +209,9 @@ export default function CustomerJourney() {
               <Textarea
                 placeholder="Siapa customer ideal Anda? Umur, profesi, pain point..."
                 value={target}
-                onChange={(e) => setTarget(e.target.value)}
+                onChange={(e) => { setTarget(e.target.value); markManualEdit("target"); }}
                 data-testid="input-target-journey"
-                className="mt-1 h-16 resize-none"
+                className={cn("mt-1 h-16 resize-none", aiFilledFields.has("target") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -206,9 +219,9 @@ export default function CustomerJourney() {
               <Input
                 placeholder="e.g. Rp 149k / Rp 299k-599k"
                 value={harga}
-                onChange={(e) => setHarga(e.target.value)}
+                onChange={(e) => { setHarga(e.target.value); markManualEdit("harga"); }}
                 data-testid="input-harga-journey"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("harga") && AI_FIELD_CLASS)}
               />
             </div>
             <div>
@@ -232,9 +245,9 @@ export default function CustomerJourney() {
               <Input
                 placeholder="e.g. Wardah, Sociolla, dll"
                 value={kompetitor}
-                onChange={(e) => setKompetitor(e.target.value)}
+                onChange={(e) => { setKompetitor(e.target.value); markManualEdit("kompetitor"); }}
                 data-testid="input-kompetitor-journey"
-                className="mt-1"
+                className={cn("mt-1", aiFilledFields.has("kompetitor") && AI_FIELD_CLASS)}
               />
             </div>
 

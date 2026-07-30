@@ -9,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import {
   Globe, Loader2, Copy, Download, Sparkles, Eye, Code,
   BookOpen, Package, Wrench, Target, Zap, Star, Clock,
@@ -164,6 +167,15 @@ export default function LandingPageCreator() {
 
   const toggleSection = (id: string) => setOptionalSections((prev) => ({ ...prev, [id]: !prev[id] }));
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProductName(fields.productName);
+    if (fields.tagline) setTagline(fields.tagline);
+    if (fields.description) setDescription(fields.description);
+    if (fields.benefits) setBenefits(fields.benefits);
+    if (fields.targetMarket) setTargetMarket(fields.targetMarket);
+  };
 
   const handleGenerate = async () => {
     if (!productName.trim() || !tagline.trim()) {
@@ -310,13 +322,20 @@ export default function LandingPageCreator() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    <AIAutoFillButton
+                      toolName="landing-page"
+                      onFill={handleAutoFill}
+                      isAutoFilling={isAutoFilling}
+                      triggerAutoFill={triggerAutoFill}
+                    />
                     <div className="space-y-1.5">
                       <Label htmlFor="productName">Nama Produk / Layanan *</Label>
                       <Input
                         id="productName"
                         placeholder="contoh: Kelas Online Copywriting Masterclass"
                         value={productName}
-                        onChange={(e) => setProductName(e.target.value)}
+                        onChange={(e) => { markManualEdit("productName"); setProductName(e.target.value); }}
+                        className={cn(aiFilledFields.has("productName") && AI_FIELD_CLASS)}
                         data-testid="input-product-name"
                       />
                     </div>
@@ -326,7 +345,8 @@ export default function LandingPageCreator() {
                         id="tagline"
                         placeholder="contoh: Kuasai Copywriting dalam 30 Hari"
                         value={tagline}
-                        onChange={(e) => setTagline(e.target.value)}
+                        onChange={(e) => { markManualEdit("tagline"); setTagline(e.target.value); }}
+                        className={cn(aiFilledFields.has("tagline") && AI_FIELD_CLASS)}
                         data-testid="input-tagline"
                       />
                     </div>
@@ -336,8 +356,8 @@ export default function LandingPageCreator() {
                         id="description"
                         placeholder="Jelaskan produk Anda secara singkat..."
                         value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="min-h-[70px] resize-none"
+                        onChange={(e) => { markManualEdit("description"); setDescription(e.target.value); }}
+                        className={cn("min-h-[70px] resize-none", aiFilledFields.has("description") && AI_FIELD_CLASS)}
                         data-testid="input-description"
                       />
                     </div>
@@ -347,8 +367,8 @@ export default function LandingPageCreator() {
                         id="benefits"
                         placeholder={"Hemat 80% waktu produksi konten\nHasil iklan lebih converting\nBisa langsung digunakan tanpa coding"}
                         value={benefits}
-                        onChange={(e) => setBenefits(e.target.value)}
-                        className="min-h-[80px] resize-none"
+                        onChange={(e) => { markManualEdit("benefits"); setBenefits(e.target.value); }}
+                        className={cn("min-h-[80px] resize-none", aiFilledFields.has("benefits") && AI_FIELD_CLASS)}
                         data-testid="input-benefits"
                       />
                     </div>

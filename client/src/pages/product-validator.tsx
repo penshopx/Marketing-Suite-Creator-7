@@ -13,6 +13,9 @@ import {
   ThumbsUp, ThumbsDown, Target, RefreshCw, Copy,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const platformOptions = [
   "WhatsApp / Telegram",
@@ -120,6 +123,13 @@ export default function ProductValidator() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProductName(fields.productName);
+    if (fields.productDescription) setProductDescription(fields.productDescription);
+    if (fields.targetMarket) setTargetMarket(fields.targetMarket);
+  };
 
   const handleValidate = async () => {
     if (!productName.trim() || !productDescription.trim()) {
@@ -197,12 +207,14 @@ export default function ProductValidator() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="product-validator" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama Produk *</Label>
                   <Input
                     placeholder="contoh: Template Notion Keuangan Bulanan"
                     value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
+                    className={cn(aiFilledFields.has("productName") && AI_FIELD_CLASS)}
+                    onChange={(e) => { setProductName(e.target.value); markManualEdit("productName"); }}
                     data-testid="input-val-name"
                   />
                 </div>
@@ -211,8 +223,8 @@ export default function ProductValidator() {
                   <Textarea
                     placeholder="Ceritakan produkmu: apa itu, untuk siapa, masalah apa yang diselesaikan, isi/fiturnya apa saja..."
                     value={productDescription}
-                    onChange={(e) => setProductDescription(e.target.value)}
-                    className="min-h-[100px] resize-none"
+                    className={cn("min-h-[100px] resize-none", aiFilledFields.has("productDescription") && AI_FIELD_CLASS)}
+                    onChange={(e) => { setProductDescription(e.target.value); markManualEdit("productDescription"); }}
                     data-testid="input-val-description"
                   />
                 </div>
@@ -221,7 +233,8 @@ export default function ProductValidator() {
                   <Input
                     placeholder="contoh: Mahasiswa & fresh graduate yang boros tapi mau nabung"
                     value={targetMarket}
-                    onChange={(e) => setTargetMarket(e.target.value)}
+                    className={cn(aiFilledFields.has("targetMarket") && AI_FIELD_CLASS)}
+                    onChange={(e) => { setTargetMarket(e.target.value); markManualEdit("targetMarket"); }}
                     data-testid="input-val-target"
                   />
                 </div>

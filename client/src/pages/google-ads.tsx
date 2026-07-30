@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import {
   Loader2, ChevronRight, Copy, RefreshCw, CheckCircle2,
   AlertCircle, Sparkles, Target, Zap, Star, List,
@@ -110,6 +113,14 @@ export default function GoogleAds() {
   const [serpH, setSerpH] = useState([0, 1, 2]);
   const [serpD, setSerpD] = useState([0, 1]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.produk) setProduk(fields.produk);
+    if (fields.targetAudience) setTargetAudience(fields.targetAudience);
+    if (fields.usp) setUsp(fields.usp);
+    if (fields.keywords) setKeywords(fields.keywords);
+  };
 
   const getAdStrength = (group: typeof result extends null ? never : NonNullable<typeof result>["adGroups"][0]) => {
     if (!group) return 0;
@@ -233,12 +244,19 @@ export default function GoogleAds() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton
+                  toolName="google-ads"
+                  onFill={handleAutoFill}
+                  isAutoFilling={isAutoFilling}
+                  triggerAutoFill={triggerAutoFill}
+                />
                 <div className="space-y-1.5">
                   <Label>Produk / Bisnis / Jasa *</Label>
                   <Input
                     placeholder="contoh: Kursus Digital Marketing, Jasa Pembuatan Website..."
                     value={produk}
-                    onChange={(e) => setProduk(e.target.value)}
+                    onChange={(e) => { markManualEdit("produk"); setProduk(e.target.value); }}
+                    className={cn(aiFilledFields.has("produk") && AI_FIELD_CLASS)}
                     data-testid="input-ga-produk"
                   />
                 </div>
@@ -267,8 +285,8 @@ export default function GoogleAds() {
                   <Textarea
                     placeholder="kursus digital marketing, belajar google ads, training marketing online..."
                     value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    className="min-h-[70px] text-sm"
+                    onChange={(e) => { markManualEdit("keywords"); setKeywords(e.target.value); }}
+                    className={cn("min-h-[70px] text-sm", aiFilledFields.has("keywords") && AI_FIELD_CLASS)}
                     data-testid="input-ga-kw"
                   />
                 </div>
@@ -277,7 +295,8 @@ export default function GoogleAds() {
                   <Input
                     placeholder="contoh: Garansi sertifikat, mentor berpengalaman 10 tahun..."
                     value={usp}
-                    onChange={(e) => setUsp(e.target.value)}
+                    onChange={(e) => { markManualEdit("usp"); setUsp(e.target.value); }}
+                    className={cn(aiFilledFields.has("usp") && AI_FIELD_CLASS)}
                     data-testid="input-ga-usp"
                   />
                 </div>
@@ -286,7 +305,8 @@ export default function GoogleAds() {
                   <Input
                     placeholder="contoh: Pebisnis online, fresh graduate, UKM..."
                     value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
+                    onChange={(e) => { markManualEdit("targetAudience"); setTargetAudience(e.target.value); }}
+                    className={cn(aiFilledFields.has("targetAudience") && AI_FIELD_CLASS)}
                     data-testid="input-ga-audience"
                   />
                 </div>

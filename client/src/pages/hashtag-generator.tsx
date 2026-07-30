@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { SiTiktok, SiInstagram, SiYoutube, SiX, SiLinkedin, SiFacebook } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const platforms = [
   { id: "tiktok", label: "TikTok", icon: SiTiktok, maxHashtag: 30, iconClass: "text-black dark:text-white" },
@@ -69,6 +72,12 @@ export default function HashtagGenerator() {
   const [result, setResult] = useState<HashtagResult | null>(null);
   const [copiedTier, setCopiedTier] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.niche) setNiche(fields.niche);
+    if (fields.keywords) setKeywords(fields.keywords);
+  };
 
   const platformInfo = platforms.find((p) => p.id === platform);
 
@@ -163,6 +172,7 @@ export default function HashtagGenerator() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="hashtag-generator" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Niche / Industri</Label>
                   <Select value={niche} onValueChange={setNiche}>
@@ -190,8 +200,9 @@ export default function HashtagGenerator() {
                   <Input
                     placeholder="contoh: jual kaos, UMKM Bandung, skincare BPOM..."
                     value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
+                    onChange={(e) => { setKeywords(e.target.value); markManualEdit("keywords"); }}
                     data-testid="input-ht-keywords"
+                    className={cn(aiFilledFields.has("keywords") && AI_FIELD_CLASS)}
                   />
                   <p className="text-xs text-muted-foreground">Keyword spesifik untuk hasil lebih relevan</p>
                 </div>

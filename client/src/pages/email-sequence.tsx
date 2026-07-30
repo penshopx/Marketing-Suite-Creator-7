@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Loader2, Copy, Sparkles, Heart, Zap, ShoppingCart, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const sequenceTypes = [
   { id: "welcome", name: "Welcome Series", desc: "Onboarding subscriber baru", icon: Heart, count: 5 },
@@ -41,6 +44,13 @@ export default function EmailSequence() {
   const [result, setResult] = useState<SequenceResponse | null>(null);
   const [history, setHistory] = useState<SequenceResponse[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.product) setProduct(fields.product);
+    if (fields.audience) setAudience(fields.audience);
+    if (fields.extraContext) setExtraContext(fields.extraContext);
+  };
 
   const handleGenerate = async () => {
     if (!product.trim()) {
@@ -145,13 +155,20 @@ export default function EmailSequence() {
                     <CardDescription>Isi info produk dan audience</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <AIAutoFillButton
+                      toolName="email-sequence"
+                      onFill={handleAutoFill}
+                      isAutoFilling={isAutoFilling}
+                      triggerAutoFill={triggerAutoFill}
+                    />
                     <div className="space-y-2">
                       <Label htmlFor="product">Produk / Brand *</Label>
                       <Input
                         id="product"
                         placeholder="Contoh: Skincare GlowPro — serum vitamin C"
                         value={product}
-                        onChange={(e) => setProduct(e.target.value)}
+                        onChange={(e) => { markManualEdit("product"); setProduct(e.target.value); }}
+                        className={cn(aiFilledFields.has("product") && AI_FIELD_CLASS)}
                         data-testid="input-product"
                       />
                     </div>
@@ -162,7 +179,8 @@ export default function EmailSequence() {
                         id="audience"
                         placeholder="Contoh: wanita 25-35, urban, peduli skincare"
                         value={audience}
-                        onChange={(e) => setAudience(e.target.value)}
+                        onChange={(e) => { markManualEdit("audience"); setAudience(e.target.value); }}
+                        className={cn(aiFilledFields.has("audience") && AI_FIELD_CLASS)}
                         data-testid="input-audience"
                       />
                     </div>
@@ -184,8 +202,8 @@ export default function EmailSequence() {
                         id="extraContext"
                         placeholder="Promo, USP, deadline, social proof..."
                         value={extraContext}
-                        onChange={(e) => setExtraContext(e.target.value)}
-                        className="min-h-[80px]"
+                        onChange={(e) => { markManualEdit("extraContext"); setExtraContext(e.target.value); }}
+                        className={cn("min-h-[80px]", aiFilledFields.has("extraContext") && AI_FIELD_CLASS)}
                         data-testid="input-extra"
                       />
                     </div>

@@ -10,6 +10,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Loader2, Copy, Download, Sparkles, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { streamSSE } from "@/lib/stream-sse";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface GeneratedArticle {
   id: string;
@@ -28,6 +31,12 @@ export default function AIArticles() {
   const [articles, setArticles] = useState<GeneratedArticle[]>([]);
   const [currentArticle, setCurrentArticle] = useState<GeneratedArticle | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.topic) setTopic(fields.topic);
+    if (fields.keywords) setKeywords(fields.keywords);
+  };
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -142,13 +151,15 @@ export default function AIArticles() {
                   <CardDescription>Configure your article parameters</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <AIAutoFillButton toolName="ai-articles" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                   <div className="space-y-2">
                     <Label htmlFor="topic">Topic / Title</Label>
                     <Input
                       id="topic"
                       placeholder="10 Tips for Effective Digital Marketing"
                       value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
+                      className={cn(aiFilledFields.has("topic") && AI_FIELD_CLASS)}
+                      onChange={(e) => { setTopic(e.target.value); markManualEdit("topic"); }}
                       data-testid="input-article-topic"
                     />
                   </div>
@@ -159,7 +170,8 @@ export default function AIArticles() {
                       id="keywords"
                       placeholder="SEO, marketing, social media"
                       value={keywords}
-                      onChange={(e) => setKeywords(e.target.value)}
+                      className={cn(aiFilledFields.has("keywords") && AI_FIELD_CLASS)}
+                      onChange={(e) => { setKeywords(e.target.value); markManualEdit("keywords"); }}
                       data-testid="input-article-keywords"
                     />
                   </div>

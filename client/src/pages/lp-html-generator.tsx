@@ -15,6 +15,9 @@ import {
   Users, Gift, Star,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const nichePresets = [
   {
@@ -114,6 +117,16 @@ export default function LpHtmlGenerator() {
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProduk(fields.productName);
+    if (fields.tagline) setTagline(fields.tagline);
+    if (fields.targetAudience) setTarget(fields.targetAudience);
+    if (fields.offer) setOffer(fields.offer);
+    if (fields.cta) setCta(fields.cta);
+    if (fields.price) setHarga(fields.price);
+  };
 
   const applyPreset = (presetId: string) => {
     const preset = nichePresets.find((p) => p.id === presetId);
@@ -282,27 +295,28 @@ export default function LpHtmlGenerator() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="lp-html-generator" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama Produk / Bisnis *</Label>
-                  <Input placeholder="contoh: Kursus Copywriting Kilat, Jasa Desain Logo..." value={produk} onChange={(e) => setProduk(e.target.value)} data-testid="input-lph-produk" />
+                  <Input placeholder="contoh: Kursus Copywriting Kilat, Jasa Desain Logo..." value={produk} onChange={(e) => { setProduk(e.target.value); markManualEdit("produk"); }} data-testid="input-lph-produk" className={cn(aiFilledFields.has("produk") && AI_FIELD_CLASS)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Tagline / Headline Utama</Label>
-                  <Input placeholder="contoh: Belajar Copywriting & Langsung Cuan dalam 7 Hari" value={tagline} onChange={(e) => setTagline(e.target.value)} data-testid="input-lph-tagline" />
+                  <Input placeholder="contoh: Belajar Copywriting & Langsung Cuan dalam 7 Hari" value={tagline} onChange={(e) => { setTagline(e.target.value); markManualEdit("tagline"); }} data-testid="input-lph-tagline" className={cn(aiFilledFields.has("tagline") && AI_FIELD_CLASS)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Target Pembeli / Audiens</Label>
-                  <Input placeholder="contoh: Pebisnis online pemula, ibu rumah tangga, freelancer..." value={target} onChange={(e) => setTarget(e.target.value)} data-testid="input-lph-target" />
+                  <Input placeholder="contoh: Pebisnis online pemula, ibu rumah tangga, freelancer..." value={target} onChange={(e) => { setTarget(e.target.value); markManualEdit("target"); }} data-testid="input-lph-target" className={cn(aiFilledFields.has("target") && AI_FIELD_CLASS)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Penawaran / Offer</Label>
-                  <Textarea placeholder="contoh: Bonus 3 template, garansi uang kembali 7 hari, akses lifetime..." value={offer} onChange={(e) => setOffer(e.target.value)} className="min-h-[70px] text-sm" data-testid="input-lph-offer" />
+                  <Textarea placeholder="contoh: Bonus 3 template, garansi uang kembali 7 hari, akses lifetime..." value={offer} onChange={(e) => { setOffer(e.target.value); markManualEdit("offer"); }} className={cn("min-h-[70px] text-sm", aiFilledFields.has("offer") && AI_FIELD_CLASS)} data-testid="input-lph-offer" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1.5">
                     <Label>Harga Jual (Rp)</Label>
-                    <Input placeholder="297.000" value={harga} onChange={(e) => setHarga(e.target.value)} data-testid="input-lph-harga" />
+                    <Input placeholder="297.000" value={harga} onChange={(e) => { setHarga(e.target.value); markManualEdit("harga"); }} data-testid="input-lph-harga" className={cn(aiFilledFields.has("harga") && AI_FIELD_CLASS)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Harga Coret (Rp)</Label>
@@ -312,7 +326,7 @@ export default function LpHtmlGenerator() {
 
                 <div className="space-y-1.5">
                   <Label>Teks Tombol CTA</Label>
-                  <Input placeholder="contoh: BELI SEKARANG, YA, SAYA MAU!, DAFTAR GRATIS" value={cta} onChange={(e) => setCta(e.target.value)} data-testid="input-lph-cta" />
+                  <Input placeholder="contoh: BELI SEKARANG, YA, SAYA MAU!, DAFTAR GRATIS" value={cta} onChange={(e) => { setCta(e.target.value); markManualEdit("cta"); }} data-testid="input-lph-cta" className={cn(aiFilledFields.has("cta") && AI_FIELD_CLASS)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Nomor WhatsApp (opsional)</Label>

@@ -14,6 +14,9 @@ import {
   List, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const marketplaces = [
   { id: "shopee", label: "Shopee", emoji: "🛒", color: "border-orange-400 bg-orange-50 dark:bg-orange-950/20" },
@@ -83,6 +86,13 @@ export default function KeywordMarketplace() {
   const [result, setResult] = useState<KeywordResult | null>(null);
   const [expandedGroup, setExpandedGroup] = useState<number | null>(0);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProduk(fields.productName);
+    if (fields.category) setKategori(fields.category);
+    if (fields.targetBuyer) setTargetBuyer(fields.targetBuyer);
+  };
 
   const handleGenerate = async () => {
     if (!produk.trim()) {
@@ -168,13 +178,15 @@ export default function KeywordMarketplace() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="keyword-marketplace" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama / Deskripsi Produk *</Label>
                   <Input
                     placeholder="contoh: Kaos Polos Oversize, Serum Vitamin C, Vacuum Cleaner Mini..."
                     value={produk}
-                    onChange={(e) => setProduk(e.target.value)}
+                    onChange={(e) => { setProduk(e.target.value); markManualEdit("produk"); }}
                     data-testid="input-kw-produk"
+                    className={cn(aiFilledFields.has("produk") && AI_FIELD_CLASS)}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -193,8 +205,9 @@ export default function KeywordMarketplace() {
                   <Input
                     placeholder="contoh: Mahasiswa, ibu muda, pria 25-40 tahun..."
                     value={targetBuyer}
-                    onChange={(e) => setTargetBuyer(e.target.value)}
+                    onChange={(e) => { setTargetBuyer(e.target.value); markManualEdit("targetBuyer"); }}
                     data-testid="input-kw-target"
+                    className={cn(aiFilledFields.has("targetBuyer") && AI_FIELD_CLASS)}
                   />
                 </div>
                 <div className="space-y-1.5">

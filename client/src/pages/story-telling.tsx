@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, Loader2, Copy, Sparkles, Heart, Zap, Trophy, Users, Target, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { streamSSE } from "@/lib/stream-sse";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const storyTypes = [
   { id: "hero_journey", name: "Hero's Journey", icon: Trophy, description: "Customer as the hero overcoming challenges" },
@@ -50,6 +53,14 @@ export default function StoryTelling() {
   const [currentStory, setCurrentStory] = useState<GeneratedStory | null>(null);
   const [stories, setStories] = useState<GeneratedStory[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setProductName(fields.productName);
+    if (fields.productBenefit) setProductBenefit(fields.productBenefit);
+    if (fields.targetAudience) setTargetAudience(fields.targetAudience);
+    if (fields.additionalContext) setAdditionalContext(fields.additionalContext);
+  };
 
   const handleGenerate = async () => {
     if (!productName.trim() || !productBenefit.trim()) {
@@ -202,13 +213,20 @@ export default function StoryTelling() {
                     <CardDescription>Provide information for your story</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <AIAutoFillButton
+                      toolName="story-telling"
+                      onFill={handleAutoFill}
+                      isAutoFilling={isAutoFilling}
+                      triggerAutoFill={triggerAutoFill}
+                    />
                     <div className="space-y-2">
                       <Label htmlFor="productName">Product/Brand Name *</Label>
                       <Input
                         id="productName"
                         placeholder="e.g., EcoBottle"
                         value={productName}
-                        onChange={(e) => setProductName(e.target.value)}
+                        onChange={(e) => { markManualEdit("productName"); setProductName(e.target.value); }}
+                        className={cn(aiFilledFields.has("productName") && AI_FIELD_CLASS)}
                         data-testid="input-product-name"
                       />
                     </div>
@@ -219,7 +237,8 @@ export default function StoryTelling() {
                         id="productBenefit"
                         placeholder="e.g., Helps reduce plastic waste while staying hydrated"
                         value={productBenefit}
-                        onChange={(e) => setProductBenefit(e.target.value)}
+                        onChange={(e) => { markManualEdit("productBenefit"); setProductBenefit(e.target.value); }}
+                        className={cn(aiFilledFields.has("productBenefit") && AI_FIELD_CLASS)}
                         data-testid="input-product-benefit"
                       />
                     </div>
@@ -230,7 +249,8 @@ export default function StoryTelling() {
                         id="targetAudience"
                         placeholder="e.g., Environmentally conscious millennials"
                         value={targetAudience}
-                        onChange={(e) => setTargetAudience(e.target.value)}
+                        onChange={(e) => { markManualEdit("targetAudience"); setTargetAudience(e.target.value); }}
+                        className={cn(aiFilledFields.has("targetAudience") && AI_FIELD_CLASS)}
                         data-testid="input-target-audience"
                       />
                     </div>
@@ -241,8 +261,8 @@ export default function StoryTelling() {
                         id="additionalContext"
                         placeholder="Any specific details, scenarios, or elements to include..."
                         value={additionalContext}
-                        onChange={(e) => setAdditionalContext(e.target.value)}
-                        className="min-h-[80px]"
+                        onChange={(e) => { markManualEdit("additionalContext"); setAdditionalContext(e.target.value); }}
+                        className={cn("min-h-[80px]", aiFilledFields.has("additionalContext") && AI_FIELD_CLASS)}
                         data-testid="input-additional-context"
                       />
                     </div>

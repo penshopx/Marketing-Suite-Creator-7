@@ -14,6 +14,9 @@ import {
   Heart, RefreshCw, Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const productTypes = [
   { id: "digital", label: "Produk Digital", examples: "Ebook, course, template, preset" },
@@ -93,6 +96,12 @@ export default function FunnelPlanner() {
   const [result, setResult] = useState<GeneratedFunnel | null>(null);
   const [activeStage, setActiveStage] = useState(0);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.targetAudience) setTargetMarket(fields.targetAudience);
+    if (fields.cta) setProductName(fields.cta);
+  };
 
   const handleGenerate = async () => {
     if (!productName.trim() || !targetMarket.trim()) {
@@ -211,6 +220,7 @@ export default function FunnelPlanner() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="funnel-planner" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Nama Produk *</Label>
                   <Input
@@ -252,8 +262,9 @@ export default function FunnelPlanner() {
                   <Input
                     placeholder="contoh: Wirausahawan muda 20-35 tahun yang ingin mulai jual produk digital"
                     value={targetMarket}
-                    onChange={(e) => setTargetMarket(e.target.value)}
+                    onChange={(e) => { setTargetMarket(e.target.value); markManualEdit("audience"); }}
                     data-testid="input-funnel-target"
+                    className={cn(aiFilledFields.has("audience") && AI_FIELD_CLASS)}
                   />
                 </div>
                 <div className="space-y-1.5">

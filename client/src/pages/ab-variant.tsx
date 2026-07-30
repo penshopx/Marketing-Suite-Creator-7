@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shuffle, Loader2, Copy, Sparkles, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 interface Variant {
   label: string;
@@ -37,6 +40,14 @@ export default function AbVariant() {
   const [result, setResult] = useState<VariantResponse | null>(null);
   const [history, setHistory] = useState<VariantResponse[]>([]);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.headline) setHeadline(fields.headline);
+    if (fields.bodyText) setBody(fields.bodyText);
+    if (fields.cta) setCta(fields.cta);
+    if (fields.targetAudience) setAudience(fields.targetAudience);
+  };
 
   const handleGenerate = async () => {
     if (!headline.trim() || !body.trim()) {
@@ -112,13 +123,15 @@ export default function AbVariant() {
                     <CardDescription>Tempel copy yang ingin ditesting variannya</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <AIAutoFillButton toolName="ab-variant" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                     <div className="space-y-2">
                       <Label htmlFor="headline">Headline *</Label>
                       <Input
                         id="headline"
                         placeholder="Contoh: Glowing Skin dalam 7 Hari"
                         value={headline}
-                        onChange={(e) => setHeadline(e.target.value)}
+                        onChange={(e) => { setHeadline(e.target.value); markManualEdit("headline"); }}
+                        className={cn(aiFilledFields.has("headline") && AI_FIELD_CLASS)}
                         data-testid="input-headline"
                       />
                     </div>
@@ -128,8 +141,8 @@ export default function AbVariant() {
                         id="body"
                         placeholder="Tempel body iklan asli kamu di sini..."
                         value={body}
-                        onChange={(e) => setBody(e.target.value)}
-                        className="min-h-[120px]"
+                        onChange={(e) => { setBody(e.target.value); markManualEdit("body"); }}
+                        className={cn("min-h-[120px]", aiFilledFields.has("body") && AI_FIELD_CLASS)}
                         data-testid="input-body"
                       />
                     </div>
@@ -139,7 +152,8 @@ export default function AbVariant() {
                         id="cta"
                         placeholder="Contoh: Coba Sekarang"
                         value={cta}
-                        onChange={(e) => setCta(e.target.value)}
+                        onChange={(e) => { setCta(e.target.value); markManualEdit("cta"); }}
+                        className={cn(aiFilledFields.has("cta") && AI_FIELD_CLASS)}
                         data-testid="input-cta"
                       />
                     </div>
@@ -167,7 +181,8 @@ export default function AbVariant() {
                         id="audience"
                         placeholder="Contoh: wanita 25-35, peduli skincare"
                         value={audience}
-                        onChange={(e) => setAudience(e.target.value)}
+                        onChange={(e) => { setAudience(e.target.value); markManualEdit("audience"); }}
+                        className={cn(aiFilledFields.has("audience") && AI_FIELD_CLASS)}
                         data-testid="input-audience"
                       />
                     </div>

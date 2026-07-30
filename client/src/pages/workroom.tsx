@@ -14,7 +14,7 @@ import {
   ChevronDown, ChevronRight, Send, Sparkles, Zap, CheckCircle2,
   Loader2, RefreshCw, Bot, Network, Crown, Plus, Trash2, ArrowRight,
   ArrowLeft, Copy, ExternalLink, Clock, FolderOpen, Rocket, TrendingUp,
-  Check, XCircle, AlertCircle, Eye, ChevronUp, DollarSign,
+  Check, XCircle, AlertCircle, Eye, ChevronUp, DollarSign, Download,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -632,6 +632,119 @@ export default function Workroom() {
     }
   };
 
+  const exportBrief = () => {
+    if (!selectedProject) return;
+    const project = selectedProject;
+    const allDelivs = deliverables;
+    const exportDate = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+
+    const phaseColors: Record<number, string> = { 1: "#3b82f6", 2: "#ec4899", 3: "#f97316", 4: "#22c55e" };
+    const statusLabel: Record<string, string> = { draft: "Draft", under_review: "Under Review", approved: "Approved ✓", exported: "Exported" };
+    const statusBg: Record<string, string> = { draft: "#f1f5f9", under_review: "#fef9c3", approved: "#dcfce7", exported: "#f3e8ff" };
+    const statusColor: Record<string, string> = { draft: "#64748b", under_review: "#854d0e", approved: "#166534", exported: "#6b21a8" };
+
+    const renderDeliverables = (phase: number) => {
+      const phaseDelivs = allDelivs.filter((d) => d.phase === phase);
+      if (phaseDelivs.length === 0) return "<p style='color:#94a3b8;font-style:italic;margin:0'>Belum ada deliverable</p>";
+      return phaseDelivs.map((d) => {
+        const typeLabel = DELIVERABLE_TYPE_TITLES[d.deliverableType] ?? d.deliverableType;
+        const st = d.status as string;
+        return `
+        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:12px;background:#fff">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+            <div>
+              <span style="font-size:13px;font-weight:700;color:#1e293b">${typeLabel}</span>
+              <p style="font-size:12px;color:#64748b;margin:2px 0 0">${d.title}</p>
+            </div>
+            <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;white-space:nowrap;background:${statusBg[st] ?? "#f1f5f9"};color:${statusColor[st] ?? "#64748b"}">${statusLabel[st] ?? st}</span>
+          </div>
+          <pre style="font-family:inherit;font-size:12px;line-height:1.7;color:#334155;white-space:pre-wrap;word-break:break-word;margin:0;background:#f8fafc;border-radius:6px;padding:12px;border:1px solid #e2e8f0">${d.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
+        </div>`;
+      }).join("");
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Campaign Brief — ${project.name}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1e293b;background:#f8fafc;padding:0}
+  @media print{body{background:#fff}.no-print{display:none}}
+</style>
+</head>
+<body>
+<div style="max-width:860px;margin:0 auto;padding:40px 32px">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid #e2e8f0">
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🦂 MultiClaw Campaign Brief</div>
+      <h1 style="font-size:28px;font-weight:800;color:#0f172a;line-height:1.2;margin-bottom:8px">${project.name}</h1>
+      <p style="font-size:14px;color:#475569;line-height:1.6;max-width:540px">${project.brief}</p>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <p style="font-size:11px;color:#94a3b8">Diekspor ${exportDate}</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:2px">Fase ${project.currentPhase}/4 selesai</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:2px">${allDelivs.length} deliverable</p>
+    </div>
+  </div>
+
+  <!-- Phase Summary -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:40px">
+    ${PHASES.map((p) => {
+      const done = project.currentPhase >= p.num;
+      const count = allDelivs.filter((d) => d.phase === p.num).length;
+      const bg = done ? phaseColors[p.num] : "#e2e8f0";
+      const fg = done ? "#fff" : "#94a3b8";
+      return `<div style="border-radius:10px;padding:14px;background:${done ? phaseColors[p.num] + "15" : "#f8fafc"};border:1px solid ${done ? phaseColors[p.num] + "40" : "#e2e8f0"}">
+        <div style="width:28px;height:28px;border-radius:50%;background:${bg};color:${fg};font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:8px">${p.num}</div>
+        <p style="font-size:12px;font-weight:700;color:${done ? phaseColors[p.num] : "#94a3b8"}">${p.name}</p>
+        <p style="font-size:11px;color:#94a3b8;margin-top:2px">${p.fullName}</p>
+        <p style="font-size:11px;font-weight:600;color:${done ? phaseColors[p.num] : "#cbd5e1"};margin-top:6px">${count} deliverable</p>
+      </div>`;
+    }).join("")}
+  </div>
+
+  <!-- Deliverables per Phase -->
+  ${PHASES.map((p) => {
+    const phaseDelivs = allDelivs.filter((d) => d.phase === p.num);
+    if (phaseDelivs.length === 0) return "";
+    return `
+  <div style="margin-bottom:40px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid ${phaseColors[p.num]}30">
+      <div style="width:8px;height:8px;border-radius:50%;background:${phaseColors[p.num]};flex-shrink:0"></div>
+      <h2 style="font-size:16px;font-weight:700;color:${phaseColors[p.num]}">Fase ${p.num}: ${p.fullName}</h2>
+      <span style="font-size:11px;color:#94a3b8">${p.description}</span>
+    </div>
+    ${renderDeliverables(p.num)}
+  </div>`;
+  }).join("")}
+
+  <!-- Footer -->
+  <div style="margin-top:48px;padding-top:20px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+    <p style="font-size:11px;color:#94a3b8">Dibuat dengan AI Marketing Tools · MultiClaw Campaign Hub</p>
+    <p style="font-size:11px;color:#94a3b8">${exportDate}</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Campaign Brief — ${project.name.replace(/[^a-zA-Z0-9 ]/g, "")}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: "Brief berhasil diekspor ✓", description: "File HTML siap dibuka di browser atau dicetak sebagai PDF." });
+  };
+
   const handleUseInTool = (deliverable: WorkroomDeliverable) => {
     if (!deliverable.targetTool) return;
     // Store prefill data in sessionStorage for the target tool to read
@@ -736,6 +849,19 @@ export default function Workroom() {
               </p>
             </div>
           </div>
+
+          {/* Export Brief button — visible only in project detail */}
+          {showProjectDetail && tab === "projects" && deliverables.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs flex-shrink-0"
+              onClick={exportBrief}
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export Brief
+            </Button>
+          )}
 
           {/* Tab switcher */}
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">

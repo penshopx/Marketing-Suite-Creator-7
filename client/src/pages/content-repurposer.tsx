@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import {
   RefreshCw, Loader2, Sparkles, ChevronRight, Copy,
   CheckCircle2, Download, Repeat2, Zap,
@@ -56,6 +59,11 @@ export default function ContentRepurposer() {
   const [result, setResult] = useState<RepurposeResult | null>(null);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.originalContent) setOriginalContent(fields.originalContent);
+  };
 
   const toggleFormat = (id: string) => {
     setSelectedFormats((prev) =>
@@ -155,6 +163,7 @@ export default function ContentRepurposer() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <AIAutoFillButton toolName="content-repurposer" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-1.5">
                   <Label>Jenis Konten Asal</Label>
                   <Select value={contentType} onValueChange={setContentType}>
@@ -176,8 +185,8 @@ export default function ContentRepurposer() {
                   <Textarea
                     placeholder="Paste copy iklan, artikel, testimoni, atau konten apapun yang ingin direpurpose..."
                     value={originalContent}
-                    onChange={(e) => setOriginalContent(e.target.value)}
-                    className="min-h-[180px] resize-none text-sm"
+                    onChange={(e) => { setOriginalContent(e.target.value); markManualEdit("originalContent"); }}
+                    className={cn("min-h-[180px] resize-none text-sm", aiFilledFields.has("originalContent") && AI_FIELD_CLASS)}
                     data-testid="textarea-original-content"
                   />
                 </div>

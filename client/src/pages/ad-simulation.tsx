@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 import { 
   Play, ChevronRight, ChevronLeft, CheckCircle2, Target, Users, 
   DollarSign, Image, FileText, BarChart3, Sparkles, Eye, MousePointer,
@@ -967,6 +970,13 @@ export default function AdSimulation() {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isSimulating, setIsSimulating] = useState(false);
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.productName) setFormData(prev => ({...prev, productName: fields.productName}));
+    if (fields.productDescription) setFormData(prev => ({...prev, productDescription: fields.productDescription}));
+    if (fields.targetAudience) setFormData(prev => ({...prev, targetAudience: fields.targetAudience}));
+  };
 
   const platform = platformData[selectedPlatform];
   const progress = ((currentStep + 1) / platform.steps.length) * 100;
@@ -1138,6 +1148,7 @@ export default function AdSimulation() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                <AIAutoFillButton toolName="ad-simulation" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                 <div className="space-y-2">
                   {platform.steps[currentStep].tips.map((tip, index) => (
                     <div key={index} className="flex items-start gap-3">
@@ -1161,7 +1172,8 @@ export default function AdSimulation() {
                             <Input
                               placeholder={field.placeholder}
                               value={formData[field.name] || ""}
-                              onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+                              onChange={(e) => { setFormData({ ...formData, [field.name]: e.target.value }); markManualEdit(field.name); }}
+                              className={cn(aiFilledFields.has(field.name) && AI_FIELD_CLASS)}
                               data-testid={`input-${field.name}`}
                             />
                           )}
@@ -1169,7 +1181,8 @@ export default function AdSimulation() {
                             <Textarea
                               placeholder={field.placeholder}
                               value={formData[field.name] || ""}
-                              onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+                              onChange={(e) => { setFormData({ ...formData, [field.name]: e.target.value }); markManualEdit(field.name); }}
+                              className={cn(aiFilledFields.has(field.name) && AI_FIELD_CLASS)}
                               rows={3}
                               data-testid={`textarea-${field.name}`}
                             />

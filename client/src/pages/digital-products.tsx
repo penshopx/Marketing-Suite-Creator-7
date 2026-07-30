@@ -14,6 +14,9 @@ import {
   ChevronDown, ChevronUp, Shield, Award
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAIAutoFill } from "@/lib/use-ai-autofill";
+import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
 
 const products = [
   {
@@ -306,6 +309,11 @@ export default function DigitalProducts() {
   const [sellPrice, setSellPrice] = useState("");
   const [unitTarget, setUnitTarget] = useState("");
   const { toast } = useToast();
+  const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  const handleAutoFill = (fields: Record<string, string>) => {
+    if (fields.sellPrice) setSellPrice(fields.sellPrice);
+  };
 
   const copyText = (text: string, label?: string) => {
     navigator.clipboard.writeText(text);
@@ -577,6 +585,7 @@ export default function DigitalProducts() {
                 </TabsContent>
 
                 <TabsContent value="kalkulator" className="space-y-4 mt-3">
+                  <AIAutoFillButton toolName="digital-products" onFill={handleAutoFill} isAutoFilling={isAutoFilling} triggerAutoFill={triggerAutoFill} />
                   <div className="p-3 rounded-lg bg-muted">
                     <p className="text-sm font-medium mb-3 flex items-center gap-2">
                       <Calculator className="h-4 w-4" /> Kalkulator Potensi Profit
@@ -588,7 +597,7 @@ export default function DigitalProducts() {
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="sell-price" className="text-xs">Harga Jual yang Kamu Tentukan</Label>
-                        <Input id="sell-price" placeholder="contoh: 200000" value={sellPrice} onChange={e => setSellPrice(e.target.value)} data-testid="input-sell-price" />
+                        <Input id="sell-price" placeholder="contoh: 200000" value={sellPrice} className={cn(aiFilledFields.has("sellPrice") && AI_FIELD_CLASS)} onChange={e => { setSellPrice(e.target.value); markManualEdit("sellPrice"); }} data-testid="input-sell-price" />
                         <p className="text-xs text-muted-foreground">Rekomendasi: {selectedProduct.suggestedPrice}</p>
                       </div>
                       <div className="space-y-1">
