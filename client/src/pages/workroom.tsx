@@ -180,13 +180,41 @@ function DeliverableCard({
   deliverable,
   onStatusChange,
   onUseInTool,
+  onUpdate,
 }: {
   deliverable: WorkroomDeliverable;
   onStatusChange: (id: number, status: WorkroomDeliverable["status"]) => void;
   onUseInTool: (deliverable: WorkroomDeliverable) => void;
+  onUpdate?: (updated: WorkroomDeliverable) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showRevise, setShowRevise] = useState(false);
+  const [revisionText, setRevisionText] = useState("");
+  const [isRevising, setIsRevising] = useState(false);
   const { toast } = useToast();
+
+  const handleRevise = async () => {
+    if (!revisionText.trim()) return;
+    setIsRevising(true);
+    try {
+      const res = await fetch(`/api/workroom/deliverables/${deliverable.id}/revise`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ revisionInstructions: revisionText }),
+      });
+      if (!res.ok) throw new Error();
+      const updated: WorkroomDeliverable = await res.json();
+      onUpdate?.(updated);
+      setShowRevise(false);
+      setRevisionText("");
+      toast({ title: "Deliverable direvisi ✓", description: "AI telah memperbarui konten sesuai instruksi." });
+    } catch {
+      toast({ title: "Revisi gagal", description: "Coba lagi sebentar.", variant: "destructive" });
+    } finally {
+      setIsRevising(false);
+    }
+  };
 
   const typeLabel = DELIVERABLE_TYPE_TITLES[deliverable.deliverableType] ?? deliverable.title;
 
@@ -268,6 +296,18 @@ function DeliverableCard({
               <Copy className="w-3 h-3" /> Salin
             </Button>
 
+            {/* Revise with AI */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowRevise((p) => !p)}
+              disabled={isRevising}
+            >
+              <Sparkles className="w-3 h-3" />
+              Revisi AI
+            </Button>
+
             {/* Use in tool */}
             {deliverable.targetTool && (
               <Button
@@ -280,6 +320,33 @@ function DeliverableCard({
               </Button>
             )}
           </div>
+
+          {/* Inline revision form */}
+          {showRevise && (
+            <div className="space-y-2 pt-1 border-t mt-1">
+              <p className="text-[11px] text-muted-foreground font-medium">Instruksi revisi untuk AI:</p>
+              <Textarea
+                rows={2}
+                placeholder="e.g. Buat lebih spesifik untuk ibu muda usia 28-35 yang tinggal di Jakarta..."
+                value={revisionText}
+                onChange={(e) => setRevisionText(e.target.value)}
+                className="text-xs resize-none"
+              />
+              <div className="flex gap-2 justify-end">
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setShowRevise(false); setRevisionText(""); }}>
+                  Batal
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={handleRevise}
+                  disabled={isRevising || !revisionText.trim()}
+                >
+                  {isRevising ? <><Loader2 className="w-3 h-3 animate-spin" /> Merevisi...</> : <><Send className="w-3 h-3" /> Revisi</>}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -293,6 +360,7 @@ function AgentSection({
   generatingAgents,
   onStatusChange,
   onUseInTool,
+  onUpdate,
 }: {
   agentId: string;
   agentName: string;
@@ -300,6 +368,7 @@ function AgentSection({
   generatingAgents: Set<string>;
   onStatusChange: (id: number, status: WorkroomDeliverable["status"]) => void;
   onUseInTool: (d: WorkroomDeliverable) => void;
+  onUpdate?: (updated: WorkroomDeliverable) => void;
 }) {
   const isGenerating = generatingAgents.has(agentId);
   const agentDef = OPENCLAW_AGENTS.find((a) => a.id === agentId);
@@ -326,6 +395,7 @@ function AgentSection({
           deliverable={d}
           onStatusChange={onStatusChange}
           onUseInTool={onUseInTool}
+          onUpdate={onUpdate}
         />
       ))}
     </div>
@@ -917,6 +987,7 @@ export default function Workroom() {
                               generatingAgents={generatingAgents}
                               onStatusChange={updateDeliverableStatus}
                               onUseInTool={handleUseInTool}
+                              onUpdate={(updated) => setDeliverables((prev) => prev.map((d) => d.id === updated.id ? updated : d))}
                             />
                           );
                         })}

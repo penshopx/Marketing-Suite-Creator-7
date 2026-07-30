@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,44 @@ export default function AudienceBuilder() {
   const [interests, setInterests] = useState<string[]>([]);
   const [newInterest, setNewInterest] = useState("");
   const [ageRange, setAgeRange] = useState([25, 45]);
+  const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
+
+  // Read pre-fill data from Workroom export
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("workroom_prefill");
+      if (!raw) return;
+      sessionStorage.removeItem("workroom_prefill");
+      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
+        deliverableType: string; content: string; projectName: string; title: string;
+      };
+      if (deliverableType === "audience_persona") {
+        // Put the persona content as product description context so AI Auto-Fill can work from it
+        setProductDescription(`[Dari Workroom: ${projectName}]\n${content}`);
+        // Try to extract interests from "Contoh minat spesifik" or last section
+        const minatMatch = content.match(/Contoh minat spesifik[:\s]+([^\n]+(?:\n[^\n]+)*)/i);
+        if (minatMatch) {
+          const extracted = minatMatch[1]
+            .split(/[,;]/)
+            .map((s) => s.trim().replace(/^[-•*]\s*/, "").split(/[|(]/)[0].trim())
+            .filter((s) => s.length > 2 && s.length < 60)
+            .slice(0, 10);
+          if (extracted.length > 0) setInterests(extracted);
+        }
+        // Try to extract age from "Demografi" section
+        const ageMatch = content.match(/(\d{2})[–\-–](\d{2})\s*tahun/i);
+        if (ageMatch) {
+          const min = Math.max(18, Math.min(65, parseInt(ageMatch[1])));
+          const max = Math.max(min, Math.min(65, parseInt(ageMatch[2])));
+          setAgeRange([min, max]);
+        }
+        setWorkroomBanner(`${projectName} — ${title}`);
+      }
+    } catch {
+      // Silently ignore parse errors
+    }
+  }, []);
 
   const handleAutoFill = (fields: Record<string, string>) => {
     if (fields.productDescription) {
@@ -164,6 +201,21 @@ export default function AudienceBuilder() {
               triggerAutoFill={triggerAutoFill}
             />
           </div>
+
+          {/* Workroom pre-fill banner */}
+          {workroomBanner && (
+            <div className="flex items-center gap-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 px-4 py-3 text-sm">
+              <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold text-purple-700 dark:text-purple-300">Data dari Workroom termuat:</span>{" "}
+                <span className="text-purple-600 dark:text-purple-400 truncate">{workroomBanner}</span>
+                <span className="text-muted-foreground ml-2 text-xs">— Form sudah terisi, klik Buat Persona atau sesuaikan terlebih dahulu.</span>
+              </div>
+              <button onClick={() => setWorkroomBanner(null)} className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
 
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-1">

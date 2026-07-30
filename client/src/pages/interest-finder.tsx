@@ -52,12 +52,37 @@ export default function InterestFinder() {
   const { campaign, save, addInterests, markToolUsed } = useCampaignStore();
   const [, navigate] = useLocation();
 
+  const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
+
   useEffect(() => {
+    // URL params (existing behaviour)
     const params = new URLSearchParams(window.location.search);
     const niche = params.get("niche");
     const target = params.get("target");
     if (niche) setKeyword(niche);
     if (target) setDeskripsiAudience(target);
+
+    // Workroom pre-fill via sessionStorage
+    try {
+      const raw = sessionStorage.getItem("workroom_prefill");
+      if (!raw) return;
+      sessionStorage.removeItem("workroom_prefill");
+      const { deliverableType, content, projectName, title } = JSON.parse(raw) as {
+        deliverableType: string; content: string; projectName: string; title: string;
+      };
+      if (deliverableType === "interest_list") {
+        // Use project name as keyword, existing interest data as audience description context
+        if (projectName && !niche) setKeyword(projectName);
+        setDeskripsiAudience(`[Riset awal dari Workroom]\n${content.slice(0, 600)}`);
+        setWorkroomBanner(`${projectName} — ${title}`);
+      } else if (deliverableType === "audience_persona") {
+        if (projectName && !niche) setKeyword(projectName);
+        setDeskripsiAudience(`[Persona dari Workroom]\n${content.slice(0, 600)}`);
+        setWorkroomBanner(`${projectName} — ${title}`);
+      }
+    } catch {
+      // Silently ignore
+    }
   }, []);
 
   const handleGenerate = async () => {
@@ -180,6 +205,21 @@ export default function InterestFinder() {
         currentValues={{ niche: keyword, target: deskripsiAudience }}
         onSave={() => save({ niche: keyword, target: deskripsiAudience })}
       />
+
+      {/* Workroom pre-fill banner */}
+      {workroomBanner && (
+        <div className="flex items-center gap-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 px-4 py-3 text-sm">
+          <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold text-purple-700 dark:text-purple-300">Data dari Workroom termuat:</span>{" "}
+            <span className="text-purple-600 dark:text-purple-400">{workroomBanner}</span>
+            <span className="text-muted-foreground ml-2 text-xs">— Konteks riset awal sudah diisi, klik Cari Interest untuk memperdalam.</span>
+          </div>
+          <button onClick={() => setWorkroomBanner(null)} className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+            <Info className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 h-fit">

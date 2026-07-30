@@ -3778,7 +3778,7 @@ Bahasa Indonesia. Human, persuasif, conversion-focused.`,
     try {
       const id = parseInt(req.params.id);
       const { status, content } = req.body;
-      const updates: Record<string, string> = { updatedAt: new Date().toISOString() };
+      const updates: Record<string, unknown> = { updatedAt: new Date() };
       if (status) updates.status = status;
       if (content) updates.content = content;
       const [updated] = await db.update(workroomDeliverables)
@@ -4220,6 +4220,67 @@ Format respons (JSON only, no markdown):
     } catch (error) {
       console.error("AI auto-fill error:", error);
       return res.status(500).json({ error: "Failed to auto-fill" });
+    }
+  });
+
+  // ─── AI Revision of Workroom Deliverable ────────────────────────────────────
+  app.post("/api/workroom/deliverables/:id/revise", async (req: Request, res: Response) => {
+    const userId = (req.session as any)?.simpleUser?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const deliverableId = parseInt(req.params.id);
+    if (isNaN(deliverableId)) return res.status(400).json({ error: "Invalid ID" });
+
+    const { revisionInstructions = "" } = req.body as { revisionInstructions: string };
+    if (!revisionInstructions.trim()) return res.status(400).json({ error: "Instruksi revisi wajib diisi" });
+
+    try {
+      const [deliverable] = await db
+        .select()
+        .from(workroomDeliverables)
+        .where(eq(workroomDeliverables.id, deliverableId))
+        .limit(1);
+
+      if (!deliverable) return res.status(404).json({ error: "Deliverable not found" });
+
+      const systemPrompt = `Kamu adalah AI Marketing Specialist yang bertugas merevisi deliverable marketing berdasarkan instruksi spesifik dari user. Pertahankan format dan struktur asli, hanya perbarui konten sesuai instruksi. Jangan tambahkan komentar atau penjelasan — hanya output konten yang sudah direvisi.`;
+
+      const userPrompt = `Judul deliverable: ${deliverable.title}
+Tipe: ${deliverable.deliverableType}
+
+Konten asli:
+${deliverable.content}
+
+Instruksi revisi dari user:
+${revisionInstructions}
+
+Tugas: Revisi konten di atas sesuai instruksi. Pertahankan format, struktur, dan kedalaman detail yang sama. Output hanya konten yang sudah direvisi, tanpa penjelasan tambahan.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_completion_tokens: 2000,
+      });
+
+      const revisedContent = completion.choices[0]?.message?.content?.trim() ?? deliverable.content;
+
+      const [updated] = await db
+        .update(workroomDeliverables)
+        .set({
+          content: revisedContent,
+          status: "draft",
+          updatedAt: new Date(),
+        })
+        .where(eq(workroomDeliverables.id, deliverableId))
+        .returning();
+
+      return res.json(updated);
+    } catch (err) {
+      console.error("Deliverable revise error:", err);
+      return res.status(500).json({ error: "Revision failed" });
     }
   });
 
