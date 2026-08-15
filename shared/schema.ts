@@ -216,6 +216,18 @@ export type InsertWorkroomDeliverable = z.infer<typeof insertWorkroomDeliverable
 export type WorkroomDeliverableRevision = typeof workroomDeliverableRevisions.$inferSelect;
 
 
+// ─── Campaign Wizard Session History ─────────────────────────────────────────
+export const campaignWizardSessions = pgTable("campaign_wizard_sessions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  productName: text("product_name").notNull().default(""),
+  campaignData: jsonb("campaign_data").notNull(),
+  winningStrategy: text("winning_strategy").notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export type CampaignWizardSession = typeof campaignWizardSessions.$inferSelect;
+
 // Platform options for ads
 export const adPlatforms = [
   "meta_ads",

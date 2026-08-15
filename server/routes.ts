@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
 import { db } from "./db";
-import { workroomProjects, workroomDeliverables, workroomDeliverableRevisions, businessProfiles } from "@shared/schema";
+import { workroomProjects, workroomDeliverables, workroomDeliverableRevisions, businessProfiles, campaignWizardSessions } from "@shared/schema";
 import { eq, desc, and, inArray, count } from "drizzle-orm";
 import type { Express, Request, Response, NextFunction } from "express";
 
@@ -4259,6 +4259,60 @@ ${delivHTML}
     } catch (err) {
       console.error("Prefill from workroom error:", err);
       res.status(500).json({ error: "Gagal mengekstrak data dari Workroom" });
+    }
+  });
+
+  // ─── Campaign Wizard Session History ─────────────────────────────────────────
+  app.get("/api/campaign-wizard/sessions", async (req, res) => {
+    try {
+      const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const sessions = await db
+        .select()
+        .from(campaignWizardSessions)
+        .where(eq(campaignWizardSessions.userId, userId))
+        .orderBy(desc(campaignWizardSessions.createdAt))
+        .limit(50);
+      res.json(sessions);
+    } catch (err) {
+      console.error("Campaign wizard sessions list error:", err);
+      res.status(500).json({ error: "Gagal mengambil riwayat" });
+    }
+  });
+
+  app.post("/api/campaign-wizard/sessions", async (req, res) => {
+    try {
+      const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const { productName, campaignData, winningStrategy } = req.body as {
+        productName: string;
+        campaignData: Record<string, string>;
+        winningStrategy: string;
+      };
+      if (!winningStrategy) return res.status(400).json({ error: "winningStrategy diperlukan" });
+      const [session] = await db
+        .insert(campaignWizardSessions)
+        .values({ userId, productName: productName || "Tanpa Nama", campaignData, winningStrategy })
+        .returning();
+      res.json(session);
+    } catch (err) {
+      console.error("Campaign wizard session save error:", err);
+      res.status(500).json({ error: "Gagal menyimpan sesi" });
+    }
+  });
+
+  app.delete("/api/campaign-wizard/sessions/:id", async (req, res) => {
+    try {
+      const userId = (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const id = parseInt(req.params.id);
+      await db
+        .delete(campaignWizardSessions)
+        .where(and(eq(campaignWizardSessions.id, id), eq(campaignWizardSessions.userId, userId)));
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Campaign wizard session delete error:", err);
+      res.status(500).json({ error: "Gagal menghapus sesi" });
     }
   });
 

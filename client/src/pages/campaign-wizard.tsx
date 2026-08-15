@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { streamSSE } from "@/lib/stream-sse";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Circle, ArrowRight, ArrowLeft, Target, Users, Lightbulb, Rocket, TrendingUp, Sparkles, Trophy, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, ArrowRight, ArrowLeft, Target, Users, Lightbulb, Rocket, TrendingUp, Sparkles, Trophy, Loader2, History, Trash2, RotateCcw, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIAutoFill } from "@/lib/use-ai-autofill";
 import { AIAutoFillButton, AI_FIELD_CLASS } from "@/components/ai-autofill-button";
+import { useToast } from "@/hooks/use-toast";
 
 interface WizardStep {
   id: number;
@@ -89,7 +90,16 @@ function inlineBold(text: string) {
   );
 }
 
+interface HistorySession {
+  id: number;
+  productName: string;
+  campaignData: Record<string, string>;
+  winningStrategy: string;
+  createdAt: string;
+}
+
 export default function CampaignWizard() {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -112,6 +122,23 @@ export default function CampaignWizard() {
     duration: "",
   });
   const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
+
+  // History state
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<HistorySession[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [viewingSession, setViewingSession] = useState<HistorySession | null>(null);
+
+  // Load history when panel opens
+  useEffect(() => {
+    if (!showHistory) return;
+    setHistoryLoading(true);
+    fetch("/api/campaign-wizard/sessions")
+      .then(r => r.ok ? r.json() : [])
+      .then(setHistory)
+      .catch(() => setHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [showHistory]);
 
   const progress = (currentStep / steps.length) * 100;
 
@@ -141,24 +168,65 @@ export default function CampaignWizard() {
     }));
   };
 
+  // Auto-save winning strategy to history
+  const saveSession = async (strategy: string) => {
+    try {
+      const res = await fetch("/api/campaign-wizard/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: campaignData.productName || "Tanpa Nama",
+          campaignData,
+          winningStrategy: strategy,
+        }),
+      });
+      if (res.ok) {
+        toast({ title: "✅ Strategi tersimpan", description: "Bisa dilihat kembali di Riwayat." });
+      }
+    } catch {
+      // silent — save failure shouldn't interrupt user
+    }
+  };
+
+  const deleteSession = async (id: number) => {
+    await fetch(`/api/campaign-wizard/sessions/${id}`, { method: "DELETE" });
+    setHistory(prev => prev.filter(s => s.id !== id));
+    if (viewingSession?.id === id) setViewingSession(null);
+  };
+
+  const restoreSession = (session: HistorySession) => {
+    setCampaignData(session.campaignData as typeof campaignData);
+    setAiSuggestions({ winningStrategy: session.winningStrategy });
+    setCurrentStep(5);
+    setShowHistory(false);
+    setViewingSession(null);
+    toast({ title: "📂 Sesi dipulihkan", description: `Strategi "${session.productName}" dimuat kembali.` });
+  };
+
   const generateAISuggestion = async (field: string, prompt: string) => {
     setIsGenerating(true);
     setAiSuggestions(prev => ({ ...prev, [field]: "" }));
     // Scroll to result area immediately so user sees it appear
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    let accumulated = "";
     try {
       await streamSSE(
         "/api/chat",
         { message: prompt, history: [] },
         (data) => {
           if (data.content) {
+            accumulated += data.content as string;
             setAiSuggestions(prev => ({
               ...prev,
-              [field]: (prev[field] ?? "") + (data.content as string),
+              [field]: accumulated,
             }));
           }
         },
       );
+      // Auto-save if this is the winning strategy and we got content
+      if (field === "winningStrategy" && accumulated.length > 100) {
+        saveSession(accumulated);
+      }
     } catch (error) {
       console.error("Error generating suggestion:", error);
       setAiSuggestions(prev => ({
@@ -701,13 +769,112 @@ Buatkan Winning Campaign Strategy yang komprehensif dan siap dieksekusi. Format 
                 Ikuti panduan langkah demi langkah untuk membuat kampanye iklan yang winning
               </p>
             </div>
-            <AIAutoFillButton
-              toolName="campaign-wizard"
-              onFill={handleAutoFill}
-              isAutoFilling={isAutoFilling}
-              triggerAutoFill={triggerAutoFill}
-            />
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setShowHistory(h => !h)}
+              >
+                <History className="h-4 w-4" />
+                Riwayat
+                {history.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">{history.length}</Badge>
+                )}
+              </Button>
+              <AIAutoFillButton
+                toolName="campaign-wizard"
+                onFill={handleAutoFill}
+                isAutoFilling={isAutoFilling}
+                triggerAutoFill={triggerAutoFill}
+              />
+            </div>
           </div>
+
+          {/* History Panel */}
+          {showHistory && (
+            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <History className="h-4 w-4 text-amber-600" />
+                  Riwayat Strategi Tersimpan
+                </CardTitle>
+                <CardDescription>Klik strategi untuk melihat atau pulihkan ke wizard</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {historyLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Memuat riwayat...
+                  </div>
+                ) : history.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Belum ada riwayat. Generate strategi pertama Anda!
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {history.map(session => (
+                      <div
+                        key={session.id}
+                        className={cn(
+                          "flex items-center justify-between gap-3 p-3 rounded-lg border bg-background cursor-pointer hover:border-primary/50 transition-colors",
+                          viewingSession?.id === session.id && "border-primary bg-primary/5"
+                        )}
+                        onClick={() => setViewingSession(v => v?.id === session.id ? null : session)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{session.productName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(session.createdAt).toLocaleDateString("id-ID", {
+                              day: "numeric", month: "short", year: "numeric",
+                              hour: "2-digit", minute: "2-digit"
+                            })}
+                            {session.campaignData?.platform && ` · ${session.campaignData.platform}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-primary"
+                            title="Pulihkan ke wizard"
+                            onClick={(e) => { e.stopPropagation(); restoreSession(session); }}
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive"
+                            title="Hapus"
+                            onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Expanded session view */}
+                {viewingSession && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-semibold text-sm">{viewingSession.productName}</p>
+                      <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => restoreSession(viewingSession)}>
+                        <RotateCcw className="h-3 w-3" />
+                        Pulihkan
+                      </Button>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto p-3 bg-background rounded-lg border text-sm">
+                      <SimpleMarkdown text={viewingSession.winningStrategy} />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
           {isAutoFilling && (
             <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg px-3 py-2">
               <Loader2 className="h-4 w-4 animate-spin" />
