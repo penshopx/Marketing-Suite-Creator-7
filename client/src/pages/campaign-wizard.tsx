@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { streamSSE } from "@/lib/stream-sse";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,9 +50,49 @@ function AIOutputCard({ content }: { content: string }) {
   );
 }
 
+// Lightweight inline markdown renderer (headers, bold, hr, bullets)
+function SimpleMarkdown({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="text-sm space-y-1 leading-relaxed">
+      {lines.map((line, i) => {
+        if (/^###\s/.test(line))
+          return <h3 key={i} className="font-semibold text-base mt-3 text-primary">{line.replace(/^###\s/, "")}</h3>;
+        if (/^##\s/.test(line))
+          return <h2 key={i} className="font-bold text-base mt-4 border-b pb-1">{line.replace(/^##\s/, "")}</h2>;
+        if (/^#\s/.test(line))
+          return <h1 key={i} className="font-bold text-lg mt-4">{line.replace(/^#\s/, "")}</h1>;
+        if (/^---+$/.test(line.trim()))
+          return <hr key={i} className="my-3 border-border" />;
+        if (/^[-*]\s/.test(line))
+          return <li key={i} className="ml-4 list-disc">{inlineBold(line.replace(/^[-*]\s/, ""))}</li>;
+        if (/^\d+\.\s/.test(line))
+          return <li key={i} className="ml-4 list-decimal">{inlineBold(line.replace(/^\d+\.\s/, ""))}</li>;
+        if (line.trim() === "")
+          return <div key={i} className="h-1" />;
+        return <p key={i}>{inlineBold(line)}</p>;
+      })}
+    </div>
+  );
+}
+
+function inlineBold(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**")
+          ? <strong key={i}>{part.slice(2, -2)}</strong>
+          : part
+      )}
+    </>
+  );
+}
+
 export default function CampaignWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit } = useAIAutoFill();
   const [campaignData, setCampaignData] = useState({
     productName: "",
@@ -104,6 +144,8 @@ export default function CampaignWizard() {
   const generateAISuggestion = async (field: string, prompt: string) => {
     setIsGenerating(true);
     setAiSuggestions(prev => ({ ...prev, [field]: "" }));
+    // Scroll to result area immediately so user sees it appear
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     try {
       await streamSSE(
         "/api/chat",
@@ -621,9 +663,18 @@ Buatkan Winning Campaign Strategy yang komprehensif dan siap dieksekusi. Format 
                   Generate Winning Strategy
                 </Button>
 
-                {aiSuggestions.winningStrategy && (
-                  <div className="mt-4 p-4 bg-background rounded-lg max-h-[480px] overflow-y-auto">
-                    <p className="text-sm whitespace-pre-wrap">{aiSuggestions.winningStrategy}</p>
+                {/* Loading indicator while generating */}
+                {isGenerating && (
+                  <div ref={resultRef} className="mt-4 flex items-center gap-2 text-sm text-primary p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                    AI sedang menyusun strategi kampanye — ini mungkin butuh ~30 detik...
+                  </div>
+                )}
+
+                {/* Rendered result */}
+                {!isGenerating && aiSuggestions.winningStrategy && (
+                  <div ref={resultRef} className="mt-4 p-4 bg-background rounded-lg border max-h-[600px] overflow-y-auto">
+                    <SimpleMarkdown text={aiSuggestions.winningStrategy} />
                   </div>
                 )}
               </CardContent>
