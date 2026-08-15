@@ -201,7 +201,7 @@ export async function registerRoutes(
         model: "gpt-5",
         messages,
         stream: true,
-        max_completion_tokens: 2048,
+        max_completion_tokens: 8000,
       });
 
       await pipeStreamToSSE(stream, res);
@@ -236,7 +236,7 @@ export async function registerRoutes(
         model: "gpt-5",
         messages,
         stream: true,
-        max_completion_tokens: 2048,
+        max_completion_tokens: 8000,
       });
 
       await pipeStreamToSSE(stream, res);
@@ -935,7 +935,7 @@ Use vivid language, sensory details, and authentic dialogue where appropriate.`;
           { role: "user", content: prompt },
         ],
         stream: true,
-        max_completion_tokens: 2048,
+        max_completion_tokens: 8000,
       });
 
       await pipeStreamToSSE(stream, res);
@@ -1644,7 +1644,7 @@ Berikan feedback yang actionable dan spesifik untuk membuat iklan lebih winning.
           { role: "system", content: `You are an expert ad copywriter and marketing analyst. Analyze ads critically and provide actionable feedback. Always respond with valid JSON.${(req as any).bpCtx || ""}` },
           { role: "user", content: prompt },
         ],
-        max_completion_tokens: 2048,
+        max_completion_tokens: 8000,
       });
 
       const content = response.choices[0]?.message?.content || "{}";
@@ -3578,7 +3578,7 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
           { role: "user", content: message },
         ],
         stream: true,
-        max_completion_tokens: 2048,
+        max_completion_tokens: 8000,
       });
 
       for await (const chunk of introStream) {
@@ -3600,7 +3600,7 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
               },
             ],
             stream: true,
-            max_completion_tokens: 2048,
+            max_completion_tokens: 8000,
           });
 
           for await (const chunk of agentStream) {
@@ -3627,7 +3627,7 @@ Tegas, actionable, terkoordinasi. Bahasa Indonesia. Maks 400 kata.`;
           },
         ],
         stream: true,
-        max_completion_tokens: 2048,
+        max_completion_tokens: 8000,
       });
 
       for await (const chunk of synthesisStream) {
