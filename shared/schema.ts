@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, timestamp, jsonb, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -227,6 +227,27 @@ export const campaignWizardSessions = pgTable("campaign_wizard_sessions", {
 });
 
 export type CampaignWizardSession = typeof campaignWizardSessions.$inferSelect;
+
+// ─── Unified AI Tool History ──────────────────────────────────────────────────
+// Keeps only compact, safe snapshots of successful tool runs. Large generated
+// media is deliberately represented by metadata rather than binary output.
+export const aiToolHistory = pgTable("ai_tool_history", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  toolId: varchar("tool_id", { length: 100 }).notNull(),
+  toolName: text("tool_name").notNull(),
+  toolPath: text("tool_path").notNull(),
+  title: text("title").notNull(),
+  inputData: jsonb("input_data").notNull(),
+  outputData: jsonb("output_data").notNull(),
+  outputPreview: text("output_preview").notNull().default(""),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+  index("ai_tool_history_user_created_idx").on(table.userId, table.createdAt),
+  index("ai_tool_history_user_tool_idx").on(table.userId, table.toolId),
+]);
+
+export type AIToolHistory = typeof aiToolHistory.$inferSelect;
 
 // Platform options for ads
 export const adPlatforms = [

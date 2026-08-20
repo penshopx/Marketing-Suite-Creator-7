@@ -51,6 +51,7 @@ import {
   Shuffle,
   Settings,
   Building2,
+  History,
 } from "lucide-react";
 import { SiTiktok, SiGoogle } from "react-icons/si";
 import { useAuth } from "@/hooks/use-auth";
@@ -87,6 +88,7 @@ const mainItems = [
   { title: "Panduan Fitur", url: "/guide-chatbot", icon: HelpCircle },
   { title: "MultiClaw Workroom", url: "/workroom", icon: Network },
   { title: "Profil Bisnis", url: "/business-profile", icon: Building2 },
+  { title: "Riwayat", url: "/history", icon: History },
 ];
 
 const winningItems = [

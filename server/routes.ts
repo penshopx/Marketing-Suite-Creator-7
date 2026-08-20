@@ -5,8 +5,8 @@ import { storage } from "./storage";
 import { generateImageBuffer, openai as aiIntegrationsOpenai } from "./replit_integrations/image/client";
 import { speechToText, textToSpeech, ensureCompatibleFormat } from "./replit_integrations/audio/client";
 import { db } from "./db";
-import { workroomProjects, workroomDeliverables, workroomDeliverableRevisions, businessProfiles, campaignWizardSessions } from "@shared/schema";
-import { eq, desc, and, inArray, count } from "drizzle-orm";
+import { workroomProjects, workroomDeliverables, workroomDeliverableRevisions, businessProfiles, campaignWizardSessions, aiToolHistory } from "@shared/schema";
+import { eq, desc, and, inArray, count, ilike, or, sql } from "drizzle-orm";
 import type { Express, Request, Response, NextFunction } from "express";
 
 const genAI = process.env.GEMINI_API_KEY 
@@ -26,6 +26,161 @@ const qwenClient = process.env.QWEN_API_KEY
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "admin2024";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+
+type AIToolHistoryConfig = {
+  toolId: string;
+  toolName: string;
+  toolPath: string;
+};
+
+// This catalog is intentionally server-side: it makes activity tracking cover
+// every supported generator, even when a page uses a different request pattern.
+const AI_TOOL_HISTORY_ROUTES: Record<string, AIToolHistoryConfig> = {
+  "/api/generate-image": { toolId: "ai-images", toolName: "Image Creator", toolPath: "/ai-images" },
+  "/api/generate-article": { toolId: "ai-articles", toolName: "Article Creator", toolPath: "/ai-articles" },
+  "/api/generate-email-sequence": { toolId: "email-sequence", toolName: "Email Sequence", toolPath: "/email-sequence" },
+  "/api/generate-content-calendar": { toolId: "content-calendar", toolName: "Content Calendar 30 Hari", toolPath: "/content-calendar" },
+  "/api/generate-ab-variants": { toolId: "ab-variant", toolName: "A/B Variant Generator", toolPath: "/ab-variant" },
+  "/api/generate-hook": { toolId: "hook-generator", toolName: "Hook Generator", toolPath: "/hook-generator" },
+  "/api/generate-ad": { toolId: "ad-creator", toolName: "Ad Creator", toolPath: "/ad-creator" },
+  "/api/generate-story": { toolId: "story-telling", toolName: "Story Telling", toolPath: "/story-telling" },
+  "/api/text-to-speech": { toolId: "ai-tts", toolName: "Text to Speech", toolPath: "/ai-tts" },
+  "/api/speech-to-text": { toolId: "ai-stt", toolName: "Speech to Text", toolPath: "/ai-stt" },
+  "/api/generate-landing-page": { toolId: "landing-page", toolName: "Landing Page", toolPath: "/landing-page" },
+  "/api/research-product": { toolId: "product-research", toolName: "Riset Produk Digital", toolPath: "/product-research" },
+  "/api/validate-product": { toolId: "product-validator", toolName: "Validasi Ide Produk", toolPath: "/product-validator" },
+  "/api/generate-closing-script": { toolId: "cs-closing", toolName: "CS Closing Script", toolPath: "/cs-closing" },
+  "/api/generate-funnel": { toolId: "funnel-planner", toolName: "Funnel Planner", toolPath: "/funnel-planner" },
+  "/api/ad-scale-advisor": { toolId: "ad-scale-advisor", toolName: "Ad Scale Advisor", toolPath: "/ad-scale-advisor" },
+  "/api/analyze-ad": { toolId: "campaign-analyzer", toolName: "Ad Analyzer", toolPath: "/campaign-analyzer" },
+  "/api/generate-audience": { toolId: "audience-builder", toolName: "Audience Builder", toolPath: "/audience-builder" },
+  "/api/launch-campaign": { toolId: "campaign-launcher", toolName: "Campaign Launcher", toolPath: "/campaign-launcher" },
+  "/api/repurpose-content": { toolId: "content-repurposer", toolName: "Content Repurposer", toolPath: "/content-repurposer" },
+  "/api/generate-lp-html": { toolId: "lp-html-generator", toolName: "LP HTML Builder", toolPath: "/lp-html-generator" },
+  "/api/find-interests": { toolId: "interest-finder", toolName: "Interest Finder AI", toolPath: "/interest-finder" },
+  "/api/audience-overlap": { toolId: "audience-overlap", toolName: "Audience Overlap", toolPath: "/audience-overlap" },
+  "/api/generate-auto-rules": { toolId: "auto-rule", toolName: "Auto Rule Builder", toolPath: "/auto-rule" },
+  "/api/improve-lp-html": { toolId: "lp-html-generator", toolName: "LP HTML Builder", toolPath: "/lp-html-generator" },
+  "/api/generate-google-ads": { toolId: "google-ads", toolName: "Google Ads Creator", toolPath: "/google-ads" },
+  "/api/generate-campaign-report": { toolId: "campaign-report", toolName: "Laporan Kampanye", toolPath: "/campaign-report" },
+  "/api/riset-keyword-marketplace": { toolId: "keyword-marketplace", toolName: "Riset Keyword Marketplace", toolPath: "/keyword-marketplace" },
+  "/api/spy-kompetitor": { toolId: "spy-kompetitor", toolName: "Spy Kompetitor", toolPath: "/spy-kompetitor" },
+  "/api/generate-video-script": { toolId: "video-script", toolName: "Video Script", toolPath: "/video-script" },
+  "/api/generate-hashtags": { toolId: "hashtag-generator", toolName: "Hashtag Generator", toolPath: "/hashtag-generator" },
+  "/api/generate-wa-broadcast": { toolId: "wa-broadcast", toolName: "WA Broadcast Sequence", toolPath: "/wa-broadcast" },
+  "/api/generate-cs-bot-script": { toolId: "cs-bot-script", toolName: "CS Bot Script Builder", toolPath: "/cs-bot-script" },
+  "/api/generate-customer-journey": { toolId: "customer-journey", toolName: "Customer Journey Map", toolPath: "/customer-journey" },
+};
+
+const HISTORY_STRING_LIMIT = 15_000;
+const HISTORY_PREVIEW_LIMIT = 300;
+const HISTORY_ENTRY_LIMIT = 150;
+
+function getRequestUserId(req: Request): string {
+  return (req as any).user?.claims?.sub ?? (req as any).user?.id ?? "";
+}
+
+function makeHistorySafe(value: unknown, depth = 0): unknown {
+  if (value === null || value === undefined) return value ?? null;
+  if (depth > 6) return "[Konten terlalu dalam untuk disimpan]";
+  if (typeof value === "string") {
+    if (value.startsWith("data:image") || value.startsWith("data:audio")) {
+      return "[Media dibuat — data biner tidak disimpan di riwayat]";
+    }
+    return value.length > HISTORY_STRING_LIMIT
+      ? `${value.slice(0, HISTORY_STRING_LIMIT)}\n\n[Output dipotong untuk riwayat]`
+      : value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  if (Array.isArray(value)) return value.slice(0, 100).map((item) => makeHistorySafe(item, depth + 1));
+  if (typeof value === "object") {
+    const safe: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>).slice(0, 80)) {
+      if (/^(b64_json|imageData|audioData|buffer|file|audio)$/i.test(key)) {
+        safe[key] = "[Media dibuat — data biner tidak disimpan di riwayat]";
+      } else {
+        safe[key] = makeHistorySafe(item, depth + 1);
+      }
+    }
+    return safe;
+  }
+  return String(value);
+}
+
+function firstHistoryText(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstHistoryText(item);
+      if (found) return found;
+    }
+  }
+  if (value && typeof value === "object") {
+    const object = value as Record<string, unknown>;
+    for (const key of ["title", "headline", "content", "text", "result", "summary", "message", "output"]) {
+      const found = firstHistoryText(object[key]);
+      if (found) return found;
+    }
+    for (const item of Object.values(object)) {
+      const found = firstHistoryText(item);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+
+function getHistoryTitle(config: AIToolHistoryConfig, input: unknown): string {
+  if (input && typeof input === "object") {
+    const body = input as Record<string, unknown>;
+    for (const key of ["productName", "product", "topic", "niche", "keyword", "prompt", "brief", "title", "brandName"]) {
+      if (typeof body[key] === "string" && body[key].trim()) {
+        return `${config.toolName}: ${body[key].trim().slice(0, 100)}`;
+      }
+    }
+  }
+  return `${config.toolName} — hasil baru`;
+}
+
+async function saveAIToolHistory(
+  userId: string,
+  config: AIToolHistoryConfig,
+  input: unknown,
+  output: unknown,
+): Promise<void> {
+  const safeInput = makeHistorySafe(input);
+  const safeOutput = makeHistorySafe(output);
+  const firstText = firstHistoryText(safeOutput);
+  const outputPreview = firstText
+    ? firstText.replace(/\s+/g, " ").slice(0, HISTORY_PREVIEW_LIMIT)
+    : "Hasil berhasil dibuat. Buka detail untuk melihat konteksnya.";
+
+  await db.transaction(async (tx) => {
+    // Serialize cleanup per account so simultaneous completed requests cannot
+    // leave extra rows beyond the retention cap.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+    await tx.insert(aiToolHistory).values({
+      userId,
+      toolId: config.toolId,
+      toolName: config.toolName,
+      toolPath: config.toolPath,
+      title: getHistoryTitle(config, safeInput),
+      inputData: safeInput,
+      outputData: safeOutput,
+      outputPreview,
+    });
+
+    const staleRows = await tx
+      .select({ id: aiToolHistory.id })
+      .from(aiToolHistory)
+      .where(eq(aiToolHistory.userId, userId))
+      .orderBy(desc(aiToolHistory.createdAt), desc(aiToolHistory.id))
+      .offset(HISTORY_ENTRY_LIMIT)
+      .limit(20);
+    if (staleRows.length > 0) {
+      await tx.delete(aiToolHistory).where(inArray(aiToolHistory.id, staleRows.map((row) => row.id)));
+    }
+  });
+}
 
 function isAdminUser(req: Request): boolean {
   const user = (req as any).user;
@@ -173,6 +328,59 @@ export async function registerRoutes(
         }
       } catch { /* non-blocking */ }
     }
+    next();
+  });
+
+  // Capture successful AI generator responses centrally. Pages may use ordinary
+  // JSON or SSE; this wrapper safely collects both without changing tool output.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const config = req.method === "POST" ? AI_TOOL_HISTORY_ROUTES[req.path] : undefined;
+    const userId = getRequestUserId(req);
+    if (!config || !userId) return next();
+
+    let jsonPayload: unknown;
+    const ssePayload: Record<string, unknown> = {};
+    let streamFinished = false;
+    let streamFailed = false;
+    const originalJson = res.json.bind(res);
+    const originalWrite = res.write.bind(res);
+
+    (res as any).json = (body: unknown) => {
+      jsonPayload = body;
+      return originalJson(body);
+    };
+
+    (res as any).write = (chunk: unknown, ...args: unknown[]) => {
+      const text = Buffer.isBuffer(chunk) ? chunk.toString("utf8") : typeof chunk === "string" ? chunk : "";
+      for (const line of text.split("\n")) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const payload = JSON.parse(line.slice(6)) as Record<string, unknown>;
+          if (payload.error) streamFailed = true;
+          if (payload.done) streamFinished = true;
+          for (const [key, value] of Object.entries(payload)) {
+            if (key === "done" || key === "error") continue;
+            if (typeof value === "string" && typeof ssePayload[key] === "string") {
+              ssePayload[key] = `${ssePayload[key]}${value}`;
+            } else {
+              ssePayload[key] = value;
+            }
+          }
+        } catch {
+          // Non-history SSE payloads pass through unchanged.
+        }
+      }
+      return (originalWrite as any)(chunk, ...args);
+    };
+
+    res.on("finish", () => {
+      const output = jsonPayload ?? (streamFinished && !streamFailed ? ssePayload : undefined);
+      if (res.statusCode < 200 || res.statusCode >= 300 || output === undefined || streamFailed) return;
+      void saveAIToolHistory(userId, config, req.body ?? {}, output).catch((error) => {
+        console.error("AI tool history save error:", error);
+      });
+    });
+
     next();
   });
 
@@ -4259,6 +4467,89 @@ ${delivHTML}
     } catch (err) {
       console.error("Prefill from workroom error:", err);
       res.status(500).json({ error: "Gagal mengekstrak data dari Workroom" });
+    }
+  });
+
+  // ─── Unified AI Tool History ─────────────────────────────────────────────────
+  app.get("/api/ai-history/tools", async (req, res) => {
+    const userId = getRequestUserId(req);
+    if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+    const tools = Object.values(AI_TOOL_HISTORY_ROUTES)
+      .filter((tool, index, all) => all.findIndex((item) => item.toolId === tool.toolId) === index)
+      .map(({ toolId, toolName }) => ({ toolId, toolName }));
+    res.json(tools);
+  });
+
+  app.get("/api/ai-history", async (req, res) => {
+    try {
+      const userId = getRequestUserId(req);
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+
+      const toolId = typeof req.query.tool === "string" ? req.query.tool.trim().slice(0, 100) : "";
+      const search = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+      const conditions = [eq(aiToolHistory.userId, userId)];
+      if (toolId) conditions.push(eq(aiToolHistory.toolId, toolId));
+      if (search) {
+        conditions.push(or(
+          ilike(aiToolHistory.title, `%${search}%`),
+          ilike(aiToolHistory.outputPreview, `%${search}%`),
+        )!);
+      }
+
+      const entries = await db
+        .select({
+          id: aiToolHistory.id,
+          toolId: aiToolHistory.toolId,
+          toolName: aiToolHistory.toolName,
+          toolPath: aiToolHistory.toolPath,
+          title: aiToolHistory.title,
+          outputPreview: aiToolHistory.outputPreview,
+          createdAt: aiToolHistory.createdAt,
+        })
+        .from(aiToolHistory)
+        .where(and(...conditions))
+        .orderBy(desc(aiToolHistory.createdAt))
+        .limit(100);
+      res.json(entries);
+    } catch (error) {
+      console.error("AI tool history list error:", error);
+      res.status(500).json({ error: "Gagal mengambil riwayat" });
+    }
+  });
+
+  app.get("/api/ai-history/:id", async (req, res) => {
+    try {
+      const userId = getRequestUserId(req);
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const id = Number.parseInt(req.params.id, 10);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "ID riwayat tidak valid" });
+
+      const [entry] = await db
+        .select()
+        .from(aiToolHistory)
+        .where(and(eq(aiToolHistory.id, id), eq(aiToolHistory.userId, userId)));
+      if (!entry) return res.status(404).json({ error: "Riwayat tidak ditemukan" });
+      res.json(entry);
+    } catch (error) {
+      console.error("AI tool history detail error:", error);
+      res.status(500).json({ error: "Gagal membuka riwayat" });
+    }
+  });
+
+  app.delete("/api/ai-history/:id", async (req, res) => {
+    try {
+      const userId = getRequestUserId(req);
+      if (!userId) return res.status(401).json({ error: "Login diperlukan" });
+      const id = Number.parseInt(req.params.id, 10);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "ID riwayat tidak valid" });
+
+      await db
+        .delete(aiToolHistory)
+        .where(and(eq(aiToolHistory.id, id), eq(aiToolHistory.userId, userId)));
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("AI tool history delete error:", error);
+      res.status(500).json({ error: "Gagal menghapus riwayat" });
     }
   });
 
