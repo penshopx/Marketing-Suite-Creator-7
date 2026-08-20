@@ -1,0 +1,23 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Fuw1okodKd5tZhzLHZdSQ"
+uri = "file://deliverables/Ebook_SBU_SKK_Tanpa_Bingung_Edisi_Komersial.pdf"
+type = "pdf"
+title = "Ebook Utama SBU & SKK — PDF"
+description = "Ebook komersial 21 halaman tentang transisi SBU–SKK, checklist, roadmap, studi kasus, FAQ, dan lampiran."
+
+[[outputs]]
+id = "nPKm-HDk5aj7TzuBMJoQR"
+uri = "file://deliverables/Bonus_Mini_Ebook_Audit_SBU_SKK_14_Hari.pdf"
+type = "pdf"
+title = "Bonus Mini Ebook Audit SBU–SKK 14 Hari — PDF"
+description = "Lead magnet teknis 10 halaman berisi matriks gap, skor risiko, sprint 14 hari, dan CTA siap diisi."
+
+[[outputs]]
+id = "3swSC0Vgp8vBihxBYtgI9"
+uri = "file://deliverables/Paket_Ebook_SBU_SKK_Siap_Jual.zip"
+type = "unspecified"
+title = "Paket Lengkap Ebook SBU–SKK"
+description = "Berisi ebook utama dan bonus mini ebook dalam format PDF siap distribusi serta DOCX editable."
