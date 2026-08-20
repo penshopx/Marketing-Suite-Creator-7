@@ -29,14 +29,15 @@ MAIN_SUBTITLE = (
     "di Era Regulasi Baru"
 )
 MAIN_TAGLINE = "PP 28/2025 • Permen PU 6/2025 • Checklist • Roadmap • Template"
-BRAND = "[NAMA BRAND ANDA]"
+BRAND = "GUSTAFTA"
+BRAND_TAGLINE = "SOLUSI CERDAS KONTRAKTOR INDONESIA"
 
 MINI_TITLE = "Audit SBU–SKK\n14 Hari"
 MINI_SUBTITLE = (
     "Mini Ebook Teknis untuk Memetakan Gap, Menata Dokumen, "
     "dan Menentukan Prioritas Kepatuhan"
 )
-MINI_TAGLINE = "BONUS GRATIS • LEAD MAGNET • PRAKTIS DIGUNAKAN"
+MINI_TAGLINE = "PDF 10 HALAMAN • LEAD MAGNET • PRAKTIS DIGUNAKAN"
 
 INK = "#14213D"
 PURPLE = "#5937D8"
@@ -129,57 +130,64 @@ def style_document(doc: Document, mini: bool = False) -> None:
 
 
 def add_cover_docx(doc: Document, title: str, subtitle: str, tagline: str, free: bool) -> None:
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(84 if free else 78)
-    r = p.add_run("BONUS GRATIS" if free else "EDISI KOMERSIAL")
-    r.bold = True
-    r.font.name = "Aptos"
-    r.font.size = Pt(11)
-    r.font.color.rgb = RGBColor.from_string("5937D8")
+    panel = doc.add_table(rows=1, cols=1)
+    panel.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cell = panel.cell(0, 0)
+    cell_shading(cell, "080D1C")
+    cell_border(cell, "273456")
+    cell.text = ""
 
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(16)
+    p = cell.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    r = p.add_run("◈  ")
+    r.font.size = Pt(15)
+    r.font.color.rgb = RGBColor.from_string("24D6F2")
+    r = p.add_run(BRAND)
+    r.bold = True
+    r.font.name = "Aptos Display"
+    r.font.size = Pt(19)
+    r.font.color.rgb = RGBColor.from_string("24D6F2")
+    p.add_run("\n")
+    r = p.add_run(BRAND_TAGLINE)
+    r.font.size = Pt(7)
+    r.font.color.rgb = RGBColor.from_string("8390B0")
+
+    p = cell.add_paragraph()
+    p.paragraph_format.space_before = Pt(38)
+    r = p.add_run("BONUS GRATIS" if free else "PREMIUM  •  TERBARU")
+    r.bold = True
+    r.font.size = Pt(9)
+    r.font.color.rgb = RGBColor.from_string("62E0A9" if free else "F8A23A")
+
+    p = cell.add_paragraph()
+    p.paragraph_format.space_before = Pt(13)
     for index, line in enumerate(title.split("\n")):
         r = p.add_run(line)
         r.bold = True
         r.font.name = "Aptos Display"
-        r.font.size = Pt(35 if not free else 31)
-        r.font.color.rgb = RGBColor.from_string("14213D")
+        r.font.size = Pt(32 if not free else 29)
+        r.font.color.rgb = RGBColor.from_string("FFFFFF")
         if index < len(title.split("\n")) - 1:
             r.add_break()
 
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(15)
-    p.paragraph_format.space_after = Pt(14)
+    p = cell.add_paragraph()
+    p.paragraph_format.space_before = Pt(13)
     r = p.add_run(subtitle)
-    r.font.size = Pt(13)
-    r.font.color.rgb = RGBColor.from_string("46546D")
+    r.font.size = Pt(12)
+    r.font.color.rgb = RGBColor.from_string("B3BDD5")
 
-    box = doc.add_table(rows=1, cols=1)
-    box.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    cell = box.cell(0, 0)
-    cell_shading(cell, "EEEAFE")
-    cell_border(cell, "C7BEF4")
-    set_cell_text(cell, tagline, bold=True, color="5937D8")
-    cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    badge = cell.add_table(rows=1, cols=1)
+    badge.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    badge_cell = badge.cell(0, 0)
+    cell_shading(badge_cell, "1A2340")
+    cell_border(badge_cell, "3D4B78")
+    set_cell_text(badge_cell, tagline, bold=True, color="24D6F2")
 
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(150 if not free else 140)
-    r = p.add_run(BRAND)
-    r.font.name = "Aptos"
-    r.bold = True
-    r.font.size = Pt(11)
-    r.font.color.rgb = RGBColor.from_string("14213D")
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(f"Edisi digital • {date.today().year}")
+    p = cell.add_paragraph()
+    p.paragraph_format.space_before = Pt(52 if not free else 44)
+    r = p.add_run(f"{BRAND}  •  Edisi digital {date.today().year}")
     r.font.size = Pt(9)
-    r.font.color.rgb = RGBColor.from_string("6B7280")
+    r.font.color.rgb = RGBColor.from_string("8390B0")
     doc.add_page_break()
 
 
@@ -557,6 +565,11 @@ def render_mini_html() -> str:
 def pdf_html(title: str, subtitle: str, tagline: str, body: str, free: bool) -> str:
     label = "BONUS GRATIS" if free else "EDISI KOMERSIAL"
     footer = "Bonus Mini Ebook • Audit SBU–SKK 14 Hari" if free else "SBU & SKK Tanpa Bingung"
+    badges = (
+        "<span class='badge badge-free'>EBOOK GRATIS</span><span class='badge badge-free'>GRATIS</span>"
+        if free
+        else "<span class='badge badge-premium'>PREMIUM</span><span class='badge badge-premium'>TERBARU</span>"
+    )
     return f"""<!doctype html>
 <html lang="id">
 <head>
@@ -572,13 +585,21 @@ def pdf_html(title: str, subtitle: str, tagline: str, body: str, free: bool) -> 
 }}
 * {{ box-sizing: border-box; }}
 body {{ color: {INK}; background: white; font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10.1pt; line-height: 1.52; }}
-.cover {{ min-height: 258mm; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; background: linear-gradient(145deg, #F9F8FF 0%, #FFFFFF 48%, #E8FFF5 100%); border: 2px solid #E6E2FC; padding: 25mm 14mm; }}
-.eyebrow {{ color: {PURPLE}; font-weight: 700; letter-spacing: 1.7px; font-size: 9pt; }}
-.cover h1 {{ margin: 10mm 0 5mm; font-family: "DejaVu Sans", Arial, sans-serif; font-size: {"35pt" if not free else "30pt"}; line-height: 1.04; color: {INK}; }}
-.cover .subtitle {{ max-width: 138mm; margin: 0; color: #46546D; font-size: 14pt; line-height: 1.35; }}
-.pill {{ margin: 13mm 0 0; padding: 4.5mm 6mm; background: #EEEAFE; border: 1px solid #C9BFF2; border-radius: 4mm; color: {PURPLE}; font-weight: 700; font-size: 9.5pt; }}
-.brand {{ margin-top: auto; color: {INK}; font-weight: 700; font-size: 11pt; }}
-.edition {{ color: #687386; font-size: 8.5pt; margin: 2mm 0 0; }}
+.cover {{ min-height: 258mm; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; text-align: left; page-break-after: always; background: #080D1C; border: 2px solid #273456; padding: 17mm 15mm; position: relative; overflow: hidden; }}
+.cover::after {{ content: ""; position: absolute; width: 105mm; height: 105mm; right: -38mm; bottom: -35mm; border: 16mm solid rgba(89,55,216,.24); border-radius: 50%; }}
+.brand-lockup {{ position: relative; z-index: 1; margin-bottom: 19mm; }}
+.brand-mark {{ display: inline-block; color: #24D6F2; font-size: 21pt; line-height: .7; vertical-align: middle; }}
+.brand-name {{ display: inline-block; color: #24D6F2; font-size: 21pt; line-height: 1; font-weight: 800; letter-spacing: .6px; vertical-align: middle; }}
+.brand-sub {{ display: block; margin: 2mm 0 0 10mm; color: #8390B0; font-size: 6.5pt; letter-spacing: .6px; }}
+.cover-badges {{ position: relative; z-index: 1; display: flex; gap: 2.5mm; }}
+.badge {{ padding: 1.6mm 3mm; border-radius: 2mm; font-size: 7.5pt; font-weight: 700; letter-spacing: .3px; }}
+.badge-premium {{ color: #F8A23A; background: #352312; border: 1px solid #74471B; }}
+.badge-free {{ color: #62E0A9; background: #103829; border: 1px solid #1A785A; }}
+.cover h1 {{ position: relative; z-index: 1; margin: 13mm 0 5mm; font-family: "DejaVu Sans", Arial, sans-serif; font-size: {"36pt" if not free else "31pt"}; line-height: 1.04; color: #FFFFFF; letter-spacing: -.7px; }}
+.cover .subtitle {{ position: relative; z-index: 1; max-width: 145mm; margin: 0; color: #B3BDD5; font-size: 13pt; line-height: 1.38; }}
+.pill {{ position: relative; z-index: 1; margin: 13mm 0 0; padding: 4mm 5mm; background: #111C35; border: 1px solid #3D4B78; border-radius: 2mm; color: #24D6F2; font-weight: 700; font-size: 9pt; }}
+.brand {{ margin-top: auto; color: #FFFFFF; font-weight: 700; font-size: 11pt; position: relative; z-index: 1; }}
+.edition {{ color: #8390B0; font-size: 8.5pt; margin: 2mm 0 0; position: relative; z-index: 1; }}
 .legal {{ page-break-after: always; }}
 h1 {{ color: {INK}; font-size: 19pt; line-height: 1.18; margin: 15mm 0 5mm; page-break-after: avoid; }}
 h1.chapter {{ page-break-before: always; }}
@@ -603,7 +624,8 @@ tr:nth-child(even) td {{ background: #F7F8FC; }}
 </head>
 <body>
 <section class="cover">
-  <div class="eyebrow">{label}</div>
+  <div class="brand-lockup"><span class="brand-mark">◈</span> <span class="brand-name">{BRAND}</span><span class="brand-sub">{BRAND_TAGLINE}</span></div>
+  <div class="cover-badges">{badges}</div>
   <h1>{title.replace(chr(10), '<br>')}</h1>
   <p class="subtitle">{subtitle}</p>
   <div class="pill">{tagline}</div>
