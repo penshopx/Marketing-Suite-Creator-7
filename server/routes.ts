@@ -1824,6 +1824,9 @@ Berikan analisis yang JUJUR dan AKURAT berdasarkan data yang ada. Jika data kura
   app.post("/api/analyze-ad", async (req, res) => {
     try {
       const { adCopy, platform, objective } = req.body;
+      if (typeof adCopy !== "string" || !adCopy.trim()) {
+        return res.status(400).json({ error: "Copy iklan wajib diisi" });
+      }
 
       const prompt = `Analisis iklan berikut untuk platform ${platform} dengan objective ${objective}:
 
@@ -1853,31 +1856,69 @@ Berikan feedback yang actionable dan spesifik untuk membuat iklan lebih winning.
           { role: "user", content: prompt },
         ],
         max_completion_tokens: 8000,
+        response_format: { type: "json_object" },
       });
 
       const content = response.choices[0]?.message?.content || "{}";
-      
-      let analysisData;
+      let analysisData: any;
       try {
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
         analysisData = JSON.parse(jsonMatch[1] || content);
-      } catch (e) {
-        analysisData = {
-          overallScore: 65,
-          categories: [
-            { name: "Hook Strength", score: 60, feedback: "Hook bisa lebih kuat", suggestions: ["Tambahkan pertanyaan", "Gunakan angka spesifik"] },
-            { name: "Emotional Appeal", score: 70, feedback: "Emosi cukup baik", suggestions: ["Tambah pain points"] },
-            { name: "Value Proposition", score: 65, feedback: "Value proposition perlu diperkuat", suggestions: ["Highlight benefits"] },
-            { name: "Call to Action", score: 60, feedback: "CTA perlu lebih compelling", suggestions: ["Tambah urgency"] },
-            { name: "Platform Fit", score: 70, feedback: "Sesuai dengan platform", suggestions: ["Sesuaikan panjang copy"] },
-          ],
-          strengths: ["Copy cukup jelas", "Pesan utama tersampaikan"],
-          weaknesses: ["Hook kurang kuat", "CTA bisa diperkuat"],
-          actionItems: ["Perkuat hook di 3 kata pertama", "Tambahkan social proof", "Buat CTA lebih spesifik", "Test beberapa variasi"],
-        };
+      } catch {
+        console.error("Ad analysis returned invalid JSON:", content.slice(0, 500));
+        return res.status(502).json({
+          error: "AI mengembalikan format analisis yang tidak valid. Silakan analisis ulang.",
+        });
       }
 
-      res.json(analysisData);
+      const categoryNames = [
+        "Hook Strength",
+        "Emotional Appeal",
+        "Value Proposition",
+        "Call to Action",
+        "Platform Fit",
+      ];
+      const rawCategories = Array.isArray(analysisData.categories) ? analysisData.categories : [];
+      const categories = categoryNames.map((name, index) => {
+        const category = rawCategories.find(
+          (item: any) => String(item?.name || "").trim().toLowerCase() === name.toLowerCase(),
+        ) || rawCategories[index];
+        const score = Number(category?.score);
+        if (!category || !Number.isFinite(score)) return null;
+        return {
+          name,
+          score: Math.max(0, Math.min(100, Math.round(score))),
+          feedback: typeof category.feedback === "string" ? category.feedback : "",
+          suggestions: Array.isArray(category.suggestions)
+            ? category.suggestions.filter((item: unknown) => typeof item === "string").slice(0, 4)
+            : [],
+        };
+      });
+
+      if (categories.some((category) => category === null)) {
+        console.error("Ad analysis returned incomplete categories:", content.slice(0, 500));
+        return res.status(502).json({
+          error: "AI mengembalikan kategori penilaian yang tidak lengkap. Silakan analisis ulang.",
+        });
+      }
+
+      const validatedCategories = categories as NonNullable<(typeof categories)[number]>[];
+      const overallScore = Math.round(
+        validatedCategories.reduce((total, category) => total + category.score, 0) / validatedCategories.length,
+      );
+      res.json({
+        overallScore,
+        categories: validatedCategories,
+        strengths: Array.isArray(analysisData.strengths)
+          ? analysisData.strengths.filter((item: unknown) => typeof item === "string").slice(0, 5)
+          : [],
+        weaknesses: Array.isArray(analysisData.weaknesses)
+          ? analysisData.weaknesses.filter((item: unknown) => typeof item === "string").slice(0, 5)
+          : [],
+        actionItems: Array.isArray(analysisData.actionItems)
+          ? analysisData.actionItems.filter((item: unknown) => typeof item === "string").slice(0, 6)
+          : [],
+      });
     } catch (error) {
       console.error("Ad analysis error:", error);
       res.status(500).json({ error: "Failed to analyze ad" });

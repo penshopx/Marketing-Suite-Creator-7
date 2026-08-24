@@ -30,6 +30,7 @@ export default function CampaignAnalyzer() {
   const [objective, setObjective] = useState("conversions");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const { isAutoFilling, aiFilledFields, triggerAutoFill, markManualEdit, protectWorkroomFields } = useAIAutoFill();
   const [workroomBanner, setWorkroomBanner] = useState<string | null>(null);
 
@@ -54,28 +55,15 @@ export default function CampaignAnalyzer() {
     if (fields.objective) setObjective(fields.objective);
   };
 
-  const getFallbackResult = (): AnalysisResult => ({
-    overallScore: 65,
-    categories: [
-      { name: "Hook Strength", score: 60, feedback: "Hook bisa lebih kuat", suggestions: ["Tambahkan pertanyaan", "Gunakan angka spesifik"] },
-      { name: "Emotional Appeal", score: 70, feedback: "Emosi cukup baik", suggestions: ["Tambah pain points"] },
-      { name: "Value Proposition", score: 65, feedback: "Value proposition perlu diperkuat", suggestions: ["Highlight benefits"] },
-      { name: "Call to Action", score: 60, feedback: "CTA perlu lebih compelling", suggestions: ["Tambah urgency"] },
-      { name: "Platform Fit", score: 70, feedback: "Sesuai dengan platform", suggestions: ["Sesuaikan panjang copy"] },
-    ],
-    strengths: ["Copy cukup jelas", "Pesan utama tersampaikan", "CTA ada"],
-    weaknesses: ["Hook kurang kuat", "CTA bisa diperkuat", "Kurang social proof"],
-    actionItems: ["Perkuat hook di 3 kata pertama", "Tambahkan social proof", "Buat CTA lebih spesifik", "Test beberapa variasi"],
-  });
-
   const analyzeAd = async () => {
     if (!adCopy.trim()) return;
 
     setIsAnalyzing(true);
     setResult(null);
+    setAnalysisError(null);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
     
     try {
       const response = await fetch("/api/analyze-ad", {
@@ -93,7 +81,7 @@ export default function CampaignAnalyzer() {
 
       const data = await response.json();
       
-      if (data.error || !data.overallScore) {
+      if (data.error || typeof data.overallScore !== "number" || !Array.isArray(data.categories)) {
         throw new Error(data.error || "Invalid response");
       }
 
@@ -101,7 +89,14 @@ export default function CampaignAnalyzer() {
     } catch (error) {
       clearTimeout(timeoutId);
       console.error("Error analyzing ad:", error);
-      setResult(getFallbackResult());
+      const wasTimedOut = error instanceof DOMException && error.name === "AbortError";
+      setAnalysisError(
+        wasTimedOut
+          ? "Analisis membutuhkan waktu lebih dari 45 detik. Tidak ada skor yang ditampilkan—silakan coba lagi."
+          : error instanceof Error
+            ? error.message
+            : "Analisis gagal. Silakan coba lagi.",
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -213,6 +208,16 @@ export default function CampaignAnalyzer() {
               </Button>
             </CardContent>
           </Card>
+
+          {analysisError && (
+            <div
+              className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              role="alert"
+              data-testid="analyzer-error"
+            >
+              Analisis tidak dapat ditampilkan: {analysisError}
+            </div>
+          )}
 
           {result && (
             <Card>
