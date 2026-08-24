@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation } from "wouter";
 import { useGuideContext, type GuideContext } from "@/hooks/use-guide-context";
+import { streamSSE } from "@/lib/stream-sse";
 import { 
   Bot, 
   Send, 
@@ -77,10 +78,13 @@ export function FloatingChatbot() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/guide-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      let assistantMessage = "";
+
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      await streamSSE(
+        "/api/guide-chat",
+        {
           message: text,
           history: updatedHistory.slice(0, -1),
           context: {
@@ -90,61 +94,44 @@ export function FloatingChatbot() {
             currentPageTitle: context.currentPage.title,
             availableFeatures: context.availableFeatures,
           },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get response");
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let assistantMessage = "";
-
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-              if (data === "[DONE]") continue;
-
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.text) {
-                  assistantMessage += parsed.text;
-                  setMessages((prev) => {
-                    const newMessages = [...prev];
-                    newMessages[newMessages.length - 1] = {
-                      role: "assistant",
-                      content: assistantMessage,
-                    };
-                    return newMessages;
-                  });
-                }
-              } catch {
-                // Skip invalid JSON
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: `Maaf, terjadi kesalahan: ${error instanceof Error ? error.message : "Unknown error"}`,
         },
-      ]);
+        (data) => {
+          const content = typeof data.content === "string" ? data.content : "";
+          if (!content) return;
+
+          assistantMessage += content;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const last = newMessages.length - 1;
+            if (newMessages[last]?.role === "assistant") {
+              newMessages[last] = {
+                role: "assistant",
+                content: assistantMessage,
+              };
+            }
+            return newMessages;
+          });
+        },
+      );
+
+      // Remove the placeholder if the stream completed without content.
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        return last?.role === "assistant" && !last.content.trim()
+          ? prev.slice(0, -1)
+          : prev;
+      });
+    } catch (error) {
+      const errorMessage = `Maaf, terjadi kesalahan: ${
+        error instanceof Error ? error.message : "Silakan coba lagi."
+      }`;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && !last.content.trim()) {
+          return [...prev.slice(0, -1), { role: "assistant", content: errorMessage }];
+        }
+        return [...prev, { role: "assistant", content: errorMessage }];
+      });
     } finally {
       setIsLoading(false);
     }
